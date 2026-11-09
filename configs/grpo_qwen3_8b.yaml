@@ -1,0 +1,45 @@
+# GRPO (RLVR) on the merged SFT model with a fresh LoRA. Reward = train/rewards.py.
+# vLLM server on GPU 3, training on GPUs 0-2 (scripts/run_grpo_4xa100.sh)
+model_name_or_path: outputs/sft-qwen3-8b-merged
+dtype: bfloat16
+attn_implementation: flash_attention_2
+use_peft: true
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.0
+lora_target_modules: all-linear
+
+train_files: data/synth/export/grpo_train.jsonl
+eval_files: data/synth/export/grpo_val.jsonl
+tiers: null                         # e.g. "hard,easy" to focus on mined hard samples
+enable_thinking: false
+
+output_dir: outputs/grpo-qwen3-8b
+use_vllm: true
+vllm_mode: server                   # or colocate (+ vllm_gpu_memory_utilization: 0.3)
+num_generations: 8
+temperature: 1.0
+max_prompt_tokens: 7168            # ScriptArgs filter (TRL 1.x has no max_prompt_length)
+max_completion_length: 1024
+per_device_train_batch_size: 8      # completions per device per step (must divide by num_generations groups)
+gradient_accumulation_steps: 4
+learning_rate: 1.0e-5
+lr_scheduler_type: constant_with_warmup
+warmup_steps: 0.02              # float <1 = ratio (transformers 5)
+beta: 0.0                           # no KL ref model (DAPO/Dr.GRPO practice); try 0.01-0.04 if drifting
+loss_type: dapo                     # token-level normalization; alternatives: grpo, dr_grpo, bnpo
+scale_rewards: group
+mask_truncated_completions: true
+reward_weights: [1.0, 0.1, 0.0]     # extraction_reward, format_reward, slot_f1_reward (monitor only)
+num_train_epochs: 1
+max_steps: 500
+gradient_checkpointing: true
+gradient_checkpointing_kwargs: {use_reentrant: false}
+bf16: true
+logging_steps: 2
+log_completions: true
+save_steps: 50
+save_total_limit: 4
+eval_strategy: "no"
+report_to: [tensorboard]
+seed: 42

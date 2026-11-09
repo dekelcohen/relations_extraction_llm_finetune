@@ -1,0 +1,18 @@
+# Training/eval stack for 4xA100 (CUDA 12.x driver >= 550). Pinned to a set where vLLM <-> TRL <-> transformers agree:
+#   vllm 0.32.0 -> torch==2.13.0, transformers>=5.16.1,<5.20 ; trl 1.17.1 [vllm extra allows vllm>=0.22,<0.33]
+torch==2.13.0
+vllm==0.32.0
+transformers>=5.16.1,<5.20
+trl==1.17.1
+peft==0.21.2
+accelerate==1.15.0
+datasets==5.2.0
+deepspeed==0.19.9
+liger-kernel==0.8.5
+lm-eval[vllm]==0.4.13
+tensorboard
+wandb
+python-dotenv
+requests
+pyyaml
+pytest

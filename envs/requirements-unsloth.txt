@@ -1,0 +1,6 @@
+# Optional separate env for Unsloth single-GPU LoRA SFT (fast, 1 GPU). Do NOT mix with the vLLM/TRL env above.
+# conda create -n re-unsloth python=3.11 -y && conda activate re-unsloth && pip install -r envs/requirements-unsloth.txt
+unsloth==2026.11.3
+datasets==5.2.0
+python-dotenv
+requests

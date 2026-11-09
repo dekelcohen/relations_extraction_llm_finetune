@@ -1,0 +1,43 @@
+# SFT: Qwen3-8B + rsLoRA r64 on all linear layers. 4xA100-80GB, ZeRO-2 (see scripts/run_sft_4xa100.sh)
+model_name_or_path: Qwen/Qwen3-8B
+dtype: bfloat16
+attn_implementation: flash_attention_2   # "sdpa" if flash-attn is not installed
+use_peft: true
+lora_r: 64
+lora_alpha: 64
+lora_dropout: 0.05
+use_rslora: true
+lora_target_modules: all-linear
+
+train_files: data/synth/export/sft_train.jsonl
+eval_files: data/synth/export/sft_val.jsonl
+enable_thinking: false
+# anti-forgetting replay (optional): ~10-20% general chat data
+replay_dataset: null          # e.g. allenai/tulu-3-sft-mixture or HuggingFaceTB/smoltalk
+replay_ratio: 0.0
+
+output_dir: outputs/sft-qwen3-8b
+num_train_epochs: 2
+learning_rate: 1.0e-4
+lr_scheduler_type: cosine
+warmup_steps: 0.03              # float <1 = ratio (transformers 5)
+weight_decay: 0.0
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8        # effective batch 2*8*4 = 64
+per_device_eval_batch_size: 4
+max_length: 8192
+completion_only_loss: true
+packing: false
+loss_type: nll                        # "dft" = Dynamic Fine-Tuning loss (less forgetting in some reports)
+gradient_checkpointing: true
+gradient_checkpointing_kwargs: {use_reentrant: false}
+bf16: true
+use_liger_kernel: true                # requires liger-kernel; set false with loss_type dft
+logging_steps: 5
+eval_strategy: steps
+eval_steps: 100
+save_strategy: steps
+save_steps: 200
+save_total_limit: 3
+report_to: [tensorboard]              # or wandb
+seed: 42

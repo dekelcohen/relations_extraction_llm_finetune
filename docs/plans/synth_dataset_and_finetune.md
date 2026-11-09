@@ -71,7 +71,7 @@ All are converted by `re_synth/convert/*.py` into the same prompt+JSON format as
 |---|---|---|---|
 | Wikipedia (`wikimedia/wikipedia` 20231101.he/.fa) | ✓ | ✓ | Clean, diverse topics |
 | Structured Wikipedia (infobox/tables) | **[check config]** | **[check]** | Real tables for HTML |
-| FineWeb-2 `heb_Hebr` / `pes_Arab` | ✓ | ✓ | News, forums, ads, real web genres |
+| FineWeb-2 `heb_Hebr` / `fas_Arab` | ✓ | ✓ | News, forums, ads, real web genres |
 | HPLT 2.0 cleaned | ✓ | ✓ | CC0 |
 | HeDC4 / HeSum | ✓ | — | Hebrew web/news |
 | naab | — | ✓ | Large Persian corpus |
@@ -289,3 +289,65 @@ Reusable local code in `D:\NLP\llm-fine-tune`: `sft_trainer.py`, `dpo_trainer.py
 3. Output detail: verbatim strings only, or normalized dates/IDs too? Evidence spans required?
 4. GPU availability (1× vs multi-GPU) and API budget for generation/mining.
 5. Should one prompt cover multiple main-entity types (multi-schema) or one main type per call?
+
+## 10. Execution status: pilot run (2026-11-10)
+
+**Done (code in `re_synth/`, `train/`, `eval/`, `configs/`, `scripts/`; see README for commands)**
+- Seeds: 256 excerpts (he 120 / fa 76 / en 60) from Wikipedia + FineWeb-2 (`heb_Hebr`, `fas_Arab`) / FineWeb via the HF datasets-server.
+- Synthetic build: 300 samples (100 per language; formats text 44% / html 27% / email 29%; 8 schemas), generator `google/gemini-3.7-flash`.
+  - QC pass 298/300.
+  - Generator cost ≈ $0.66.
+  - Lesson: asking for JSON output broke on Hebrew gershayim (`בע"מ`, `ש"ח`) and failed on ~40% of samples. The generator now returns `<title>…</title><body>…</body>` tags.
+- Baselines on all 298 samples:
+  - Llama-3.3-70B: $0.20.
+  - Claude Sonnet 5.5: $1.36.
+- Mining at F1 ≥ 0.99:
+  - easy 219, **hard 42** (Llama wrong, Sonnet right), ambiguous 22, weird 15.
+  - Ambiguous samples are mostly extra records that come from the seed text, or span-boundary disagreements. They are excluded from training.
+- Export with `--n-aug 2`: SFT train 546 / val 17 / test 28; GRPO train 237.
+- Smoke tests (CPU, `trl-internal-testing/tiny-Qwen3ForCausalLM`) all pass: SFT, GRPO (no vLLM), WiSE merge, HF predict and scoring.
+- API fixes for TRL 1.17 / transformers 5.19:
+  - `warmup_ratio` → float `warmup_steps`.
+  - `max_prompt_length` replaced by a `max_prompt_tokens` filter.
+  - `ModelConfig` has no `trust_remote_code` field.
+- Scorer change: span-boundary leniency with Hebrew prefix letters (`נמל נהריה` ≈ `נהריה`, `חברת X` ≈ `X`). Over-long spans still don't match.
+
+**Pilot baseline** (`data/pilot/score_*.md`; decoy-hit = fraction of planted distractors that were extracted):
+
+| group | n | Llama-3.3-70B slot F1 | Sonnet slot F1 | Llama decoy-hit | Sonnet decoy-hit | Llama exact | Sonnet exact |
+|---|---|---|---|---|---|---|---|
+| all | 298 | 0.958 | 0.984 | 0.024 | 0.003 | 0.785 | 0.876 |
+| lang=en | 99 | 0.969 | 0.981 | 0.022 | 0.004 | 0.798 | 0.849 |
+| lang=fa | 99 | 0.944 | 0.992 | 0.037 | 0.004 | 0.778 | 0.919 |
+| lang=he | 100 | 0.961 | 0.980 | 0.013 | 0.000 | 0.780 | 0.860 |
+| format=email | 85 | 0.953 | 0.969 | 0.020 | 0.008 | 0.765 | 0.824 |
+| format=html | 82 | 0.972 | 0.991 | 0.032 | 0.000 | 0.842 | 0.915 |
+| format=text | 131 | 0.948 | 0.986 | 0.020 | 0.000 | 0.763 | 0.885 |
+| hc=H1 | 75 | 0.962 | 0.972 | 0.025 | 0.000 | 0.760 | 0.800 |
+| hc=H10 | 86 | 0.947 | 0.992 | 0.041 | 0.000 | 0.767 | 0.919 |
+| hc=H11 | 69 | 0.970 | 0.991 | 0.013 | 0.007 | 0.870 | 0.913 |
+| hc=H12 | 71 | 0.967 | 0.984 | 0.005 | 0.000 | 0.845 | 0.901 |
+| hc=H2 | 69 | 0.937 | 0.971 | 0.034 | 0.006 | 0.725 | 0.812 |
+| hc=H3 | 42 | 0.937 | 0.971 | 0.015 | 0.008 | 0.738 | 0.833 |
+| hc=H4 | 63 | 0.981 | 0.991 | 0.008 | 0.000 | 0.857 | 0.889 |
+| hc=H5 | 48 | 0.953 | 0.970 | 0.006 | 0.006 | 0.771 | 0.854 |
+| hc=H6 | 30 | 0.895 | 0.989 | 0.000 | 0.000 | 0.700 | 0.967 |
+| hc=H7 | 36 | 0.980 | 1.000 | 0.042 | 0.000 | 0.861 | 1.000 |
+| hc=H7c | 21 | 0.968 | 1.000 | 0.069 | 0.000 | 0.762 | 1.000 |
+| hc=H9 | 180 | 0.961 | 0.987 | 0.034 | 0.005 | 0.778 | 0.883 |
+
+**Takeaways**
+- The gap between the weak and strong model is real but small (slot F1 0.958 vs 0.984). Llama extracts **8× more decoys** (2.4% vs 0.3%).
+- Llama is weakest on Persian, **H6 subtitle→list** (0.895), H2/H3 (distractor date, email header) and H10.
+- At this difficulty, most samples are easy. To get more hard tiers, the next build should raise difficulty:
+  - more records per document (3–6);
+  - 2–3 decoys per slot;
+  - longer emails and threads;
+  - more H6/H11 cases.
+  - Mining yield goal: ≥ 30% hard.
+
+**Next**
+1. Add the difficulty settings above to `re_synth/hardcases.py`, then scale the build: `N=3000 bash scripts/gen_data.sh` (3000 per language). Estimated cost for 9k samples, extrapolated from the pilot: generation ~$20, weak+strong labelling ~$47.
+2. Convert Re-DocRED and add the P1 public sets.
+3. Run SFT → GRPO on 4×A100 (README §3).
+4. Evaluate on `grpo_test` + forgetting (`eval/forgetting.sh`).

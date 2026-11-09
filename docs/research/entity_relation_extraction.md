@@ -86,7 +86,7 @@ Compiled: 2026-11-10. Focus: 2024–2026 work on fine-tuning open LLMs for gener
 |---|---|---|---|---|---|
 | Wikipedia 20231101.he / .fa | he, fa | text | CC-BY-SA-3.0 | [HF wikimedia/wikipedia](https://huggingface.co/datasets/wikimedia/wikipedia) | Clean seed articles. |
 | Structured Wikipedia | he/fa **[check configs]** | JSON (infoboxes, tables, sections) | CC-BY-SA-4.0 | [HF](https://huggingface.co/datasets/wikimedia/structured-wikipedia) | Source of tables for HTML samples. |
-| FineWeb-2 `heb_Hebr`, `pes_Arab` | he, fa | web text | ODC-By | [HF](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | Diverse genres (news, forums, ads). |
+| FineWeb-2 `heb_Hebr`, `fas_Arab` | he, fa | web text | ODC-By | [HF](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | Diverse genres (news, forums, ads). |
 | HPLT 2.0 cleaned | he, fa | web text | CC0 | [HF](https://huggingface.co/datasets/HPLT/HPLT2.0_cleaned) | Most permissive license. |
 | HeDC4 | he | web text | none on card | [HF](https://huggingface.co/datasets/HeNLP/HeDC4) | Hebrew web. |
 | naab | fa | text | MIT | [HF](https://huggingface.co/datasets/SLPL/naab) | Large Persian corpus. |
