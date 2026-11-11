@@ -172,6 +172,22 @@ Output:
 - An optional `<reasoning>` block (MimicSFT template, ≤ 120 tokens) can be enabled by a flag for RL experiments. Default off at serving.
 - Augmentation (GoLLIE): paraphrase slot names and definitions, shuffle slot order, drop some definitions, vary the number of few-shot examples (0–3).
 
+## 3b. Recommended inference architecture: extract → propose candidate pairs → verify
+
+Full rationale and paper links in [research §8](../research/entity_relation_extraction.md#8-recommended-inference-architecture-extract--propose-candidate-pairs--verify). Rather than a single pass that outputs full records directly (§3), decouple into three stages so recall (finding candidates) and precision (rejecting decoys) are optimized separately:
+
+1. **Stage A — entity/mention extraction.** The fine-tuned extractor emits all entity and attribute-value mentions with spans (main-entity mentions + candidate dates/locations/IDs/orgs/statuses), without committing to slot assignment. Narrower, higher-recall sub-task than full record extraction.
+2. **Stage B — candidate pair proposal (over-generate, no training).**
+   - (a) Model-proposed: the extractor's own guess of which value goes with which entity (today's end-to-end behavior — recall-limited, keep as one signal only).
+   - (b) Heuristic/structural: every value within a proximity window (±N sentences) **and** every value sharing the main entity's structural context (same table row, list item, paragraph, email field block, HTML row/cell/section). Guarantees the correct value is in the candidate set even when (a) misses or misranks it; directly targets the H-case distractor families (§3).
+   - Union of (a)+(b) is intentionally noisy — decoys included by design.
+3. **Stage C — verifier (closed yes/no or choice per candidate pair).** "Is `<value>` the correct `<slot>` for `<main entity>`?" Three implementation tiers, in rollout order:
+   - **(C1) Prompted, zero training:** BRE-style true/false prompting with the existing fine-tuned model — free baseline.
+   - **(C2) Trained classify+confirm model:** Distill-RE-style — a second, typically smaller model fine-tuned on our synthetic gold **and** the planted decoys as hard negatives. **Free training data**: our synthetic injection pipeline already knows the true triple and every planted decoy, so every generated document yields labeled positive/negative pairs for Stage C with zero extra annotation.
+   - **(C3) Distilled decision head (optional, efficiency):** Jev/OpenJev-style — distill C2 into a small LoRA/encoder head that answers in one forward pass per candidate (no generation), if per-candidate latency becomes a bottleneck (Stage C may run many times per document, unlike Stage A/B).
+4. **Reasoning tokens in the verifier (C2):** distilled from a teacher LLM's CoT over training examples (Distill-RE), not hand-written gold, and kept short/templated — closer to MimicSFT's templated reasoning than long free-form CoT. C1 emits whatever the base model naturally does (none, since `enable_thinking=False` by default). C3 emits **no reasoning at all** — pure logit read-off.
+5. **Status:** optional/advanced track alongside the single-pass pipeline in §3–§4, not a replacement. Build and validate the single-pass baseline first (§7 milestones); add Stage A/B/C once decoy false-positives on the hard tier are shown to be the dominant error mode.
+
 ## 4. Training
 
 ### 4.1 Stage 1: SFT (LoRA)
@@ -206,6 +222,12 @@ Output:
 ### 4.4 Optional
 - Distill a Qwen3-32B extractor (stages 1–2) → 8B via GKD for better quality at the same serving cost.
 - Inference cascade (OSLLM): 8B first; low-confidence records (logprob / self-consistency disagreement) escalate to the 32B or a frontier model.
+
+### 4.5 Stage 1c (optional, advanced track): the Stage-C verifier
+- Only build after §3b's single-pass baseline shows decoy false-positives are the dominant error mode.
+- This is the **same model/technique as the "Teacher-CoT classify+confirm" and "Non-generative decision-model distillation" rows in research Table 1** (C2/C3 in §3b/research §8) — do not re-derive a separate recipe here. Implementation tiers, reasoning-token behavior, and architecture choices (LoRA extractor-style vs Jev-style decision head) are specified there.
+- What's specific to *this* stage is only the **data source**: relabel the existing synthetic corpus (no new generation) as pairwise (main entity, slot, candidate value) examples — positive when the candidate matches the injected GT, negative when it's a planted decoy, a same-row/paragraph distractor, or any other nearby non-GT value.
+- **Reward/eval:** decoy-rejection precision/recall on the H1–H12 hard tier, separate from the extractor's record-F1 so regressions are attributable to the right stage.
 
 ## 5. Frameworks (efficient runs)
 
