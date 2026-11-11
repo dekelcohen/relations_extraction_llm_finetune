@@ -38,6 +38,8 @@ Compiled: 2026-11-10. Focus: 2024–2026 work on fine-tuning open LLMs for gener
 | Semi-supervised + LLM augmentation | LLM augments unlabeled text, consistency + pseudo-labels, iterative PEFT of the augmenter | TKDD 2026 low-resource joint ERE | SOTA in low-resource settings | — | Idea for real he/fa text without gold |
 | Replay / data mixing | Mix general instruction and chat data | YAYI-UIE (chat data helps), ADELIE | Neutral-to-positive | Lower | 20–50% replay incl. he/fa chat |
 | Model merging | WiSE-FT, TIES, DARE | general | Slight target loss | Lower | Final safety net |
+| **Teacher-CoT distillation to a classifier + confirmation model** | Teacher LLM writes CoT over training examples to supervise a small classifier plus a separate false-positive filter | Distill-RE (AKBC 2026): +31.5 micro-F1 avg over TACRED/TACREV/Re-TACRED @ 8/16/32-shot | Large, fixes LLM over-prediction bias | n/a (student is a small PLM, not the base chat model) | Two-head idea for our verifier: a classify head + a "is this slot/decoy correct" confirm head |
+| **Non-generative decision-model distillation (typed yes/no/choice/score)** | Distill a teacher (closed LLM or our own model) into a LoRA/encoder head that reads logits once per question instead of generating text | OpenJev / BioJev (community, 2026, unreviewed) | Beats the closed API it was trained to imitate, on the task it was trained on; zero-shot is weak | Very low (base LM untouched or encoder-only) | Candidate **cheap verifier**: one forward pass per slot/decoy ("is `<date>` the correct date for `<entity>`?") instead of full re-generation |
 
 ---
 
@@ -485,6 +487,14 @@ User-priority papers are marked ⭐.
 
 * Also covered under 6b: **UniversalNER** (targeted distillation), **IEPile/B2NERD** (unification + negatives), **KnowCoder-X ParallelNER** (parallel multilingual), **OmniStruct / Extract-0 / Cuckoo** (synthetic structure tasks).
 
+* ⭐ **Distill-RE: Few-Shot Relation Extraction via Teacher LLM Reasoning Distillation** (AKBC 2026, pages 359–378; Sullivan-Pao, Alemany, Simek, MIT Lincoln Lab)
+  ) Problem: LLMs counterintuitively **underperform** small PLMs on few-shot RE because of a systematic over-prediction bias (they guess a relation too often).
+  ) Goal: TLDR - teacher LLM writes **chain-of-thought reasoning over the existing few-shot training examples** (no new instances synthesized) --> supervises **two separate students**: (1) a classification model that predicts the relation, (2) a **confirmation model that filters false positives** from (1).
+  ) Data curation: no data augmentation — reasoning traces are generated over TACRED/TACREV/Re-TACRED's own 8-/16-/32-shot splits; the gain is from *how* the existing shots are used, not from more data.
+  ) Results: **new SOTA for RE student scales 3B–70B**; best config beats the strongest baseline by **+31.5 micro-F1** averaged across TACRED/TACREV/Re-TACRED at 8/16/32-shot. Without synthesizing new instances it still comes within 1.8 F1 of the best data-augmentation baseline.
+  ) Links: Paper https://aclanthology.org/2026.akbc-1.25/ (PDF https://aclanthology.org/2026.akbc-1.25.pdf) / Code n/a / HF n/a
+  ) Relevance: **High.** The classify+confirm two-model split is a direct template for a cheap **decoy-rejection verifier** in our pipeline (§6g); the "reason over existing shots, don't synthesize" framing is a cheaper alternative/complement to our full synthetic-injection approach for the *classification* side specifically.
+
 ### 6d. Document-level, HTML / semi-structured, retrieval, robustness
 
 * ⭐ **OSLLM: A Retrieve-Reason-Refine Framework for Multi-Domain RE with LLMs** (ICME 2025; Jie Zhou et al.; no arXiv; 1 citation)
@@ -608,6 +618,25 @@ User-priority papers are marked ⭐.
 * **RED^FM / SREDFM** (2306.09802) and **MultiTACRED** (2305.04582): multilingual RE (silver Wikipedia/Wikidata and machine-translated TACRED) with **no Hebrew or Persian**. Their recipes (Wikidata alignment + NLI/critic filtering; MT + projection) can be applied to he/fa Wikipedia for a silver real-text eval set.
 * Cross-lingual note: KnowCoder-X (6b) shows parallel en↔X instances with shared schemas transfer strongly to unseen languages. **Generate parallel en/he/fa versions of each synthetic record.**
 
+### 6g. Zero-shot prompting and non-generative decision-model verifiers (inference-time / cheap confirmation)
+
+* ⭐ **Zero-Shot Relation Classification with LLMs: Binary Prompting and Relevance Elicitation (BRE)** (AKBC 2026, pages 343–358; Sullivan-Pao, Alemany, Simek, MIT Lincoln Lab)
+  ) Goal: TLDR - for each entity pair, ask the LLM a **true/false ("binary relevance") question per candidate relation** from a closed schema instead of one open-ended "what is the relation?" question --> score each "true" answer for relevance --> keep the single best-scoring relation (or none).
+  ) Problem: open-ended zero-shot relation classification over-predicts (the LLM picks *some* relation even when none applies); this reduces false positives by decomposing the decision into calibrated binary checks.
+  ) FT: **no fine-tuning** — pure zero-shot prompting framework.
+  ) Results: **new SOTA zero-shot RC accuracy on the TACRED family** (TACRED/TACREV/Re-TACRED) **[exact numbers unverified, abstract only]**.
+  ) Links: Paper https://aclanthology.org/2026.akbc-1.24/ (PDF https://aclanthology.org/2026.akbc-1.24.pdf) / Code n/a / HF n/a
+  ) Relevance: **High, same team/companion paper to Distill-RE (§6c).** Binary true/false-per-candidate is exactly the decoy-rejection pattern we need (e.g. "is `12/2/26` the pickup date for the Mazda?" asked once per candidate date near the main entity), and it needs **no training** — usable immediately as a prompt-engineering baseline for our verifier before we build a trained one.
+
+* **"Jev" decision models (TypeSafe AI, proprietary) and the OpenJev open-source family** (community project, not a single peer-reviewed paper; 2026)
+  ) What it is: a **non-autoregressive "System-1" decision model** paradigm — instead of generating text, the model answers *typed* questions about a fixed input state (`Choice` = pick one of N labels, `Score` = place on an ordered rubric, `Noul` = calibrated P(true) for a yes/no gate) in a **single forward pass**, reading the answer off logits/label heads rather than parsing generated text. Asking 20 typed questions costs about the same as asking one.
+  ) Architecture (OpenJev, `S1LV3RJ1NX/openjev`): default is a **rank-16 LoRA adapter on Qwen3-1.7B** (won an ablation against a ModernBERT encoder head on 7/7 held-out benchmarks for in-domain accuracy, e.g. 0.605 vs 0.343 on Banking77); the ModernBERT encoder alternative trades accuracy for 2.8x lower p95 latency (20ms vs 56ms) and ~6x smaller footprint (0.6GB vs 3.4GB). **Fine-tune-first tool**: a few hundred labeled examples beat the closed commercial API it mimics on that task; zero-shot it is weaker.
+  ) Biomedical RE adaptation: **`Gabriel382/BioJev`** — "biomedical decision-model benchmark and adaptation framework built on OpenJev, with reproducible multi-dataset evaluation, biomedical NLI, **relation extraction, calibration**, and cross-dataset generalization experiments." **`lighteternal/biodecision-v2-4b`** (HF model) benchmarks the same pattern on drug–protein / drug–drug **relation decisions** against TypeSafe's closed Jev 1.13.
+  ) FT: LoRA SFT distillation of a small backbone into typed classification/scoring heads (see Table 1 row "Non-generative decision-model distillation").
+  ) Results: beats the closed API it was fine-tuned to imitate on its training task; **no RE-specific benchmark numbers found [unverified]** — BioJev is a benchmark/framework, not a single reported result.
+  ) Links: OpenJev code https://github.com/S1LV3RJ1NX/openjev (16★, Apache-2.0) / HF https://huggingface.co/s1lv3rj1nx/openjev-general-lora / BioJev code https://github.com/Gabriel382/BioJev (MIT) / biodecision model https://huggingface.co/lighteternal/biodecision-v2-4b / curated alternatives list https://github.com/notsointresting/awesome-jev-family
+  ) Relevance: **Medium-high, as a candidate verifier architecture, not a training recipe for the base extractor.** Instead of (or in addition to) BRE's prompted binary questions, a small LoRA "decision head" distilled from our own teacher could answer "is `<candidate>` the correct `<slot>` for `<main entity>`?" in one forward pass per decoy — much cheaper than re-generating/re-prompting the full 8B extractor per candidate. Treat as a **stage-2+ efficiency optimization** for the decoy-rejection verifier (§3), not a blocker for the initial pipeline.
+
 ---
 
 ## 7. Gaps, caveats and unverified items
@@ -619,3 +648,5 @@ User-priority papers are marked ⭐.
 * RL-vs-SFT forgetting evidence comes mostly from math/QA/tool tasks. For RE only R1-RE measured it (MATH-500/IFEval/GPQA). **We must measure forgetting ourselves.**
 * RL gains on RE can be **evaluation artifacts** under incomplete gold (ConsistRE). Rewards and evals should use complete synthetic gold plus a verified real-text subset.
 * The user's additional search hits (Nov 2026) were added with relevance ratings. Items rated Medium-low (AOCG-LLM+, BIU GutBrainIE) inform data and pipeline choices, not the training recipe.
+* **BRE and Distill-RE (AKBC 2026) have no code/HF releases found** despite GitHub/HF search — abstract-only verification via ACL Anthology; exact result tables are **[unverified]**, and they have no citing papers yet (too new). Re-check for a camera-ready code release closer to the AKBC workshop date.
+* **"Jev" is not a citable paper** — it is a proprietary product (TypeSafe AI) plus an open community clone family (OpenJev/BioJev). Treated here as an architecture pattern for §6g/Table 1, not as peer-reviewed evidence; no RE-specific benchmark numbers were found for the biomedical adaptation.
