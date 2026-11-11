@@ -6,7 +6,7 @@ Companion research: [../research/entity_relation_extraction.md](../research/enti
 
 | Item | Assumption |
 |---|---|
-| Base model | **Qwen3-8B**, thinking mode **A/B'd, not defaulted off** — user's own experience plus Distill-RE/ReasoningNER (+12 F1) indicate reasoning tokens help RE/RC directly, not just as an RL warm-up (§2b/Table 1). **Model-scale ladder** if 8B (either mode) underperforms: Qwen3-14B → Qwen3-32B → a ~27B-class alternative (e.g. Gemma-3-27B) for a differently-trained comparison point. A/B **DictaLM-3.0-12B** for Hebrew. |
+| Base model | **Qwen3-8B**, thinking mode **A/B'd, not defaulted off** — user's own experience plus Distill-RE/ReasoningNER (+12 F1) indicate reasoning tokens help RE/RC directly, not just as an RL warm-up (§2b/Table 1). **Model-scale ladder** if 8B (either mode) underperforms: **Qwen3.8-27B** (`qwen/qwen3.8-27b` on OpenRouter — dense VLM, 1M context, flexible thinking `none`→`xhigh`) → Qwen3-32B → Gemma-3-27B (different pretraining, if the Qwen family plateaus). A/B **DictaLM-3.0-12B** for Hebrew. |
 | Compute | **4× A100 80GB** (320GB total) on Linux/WSL2. Comfortably fits LoRA/QLoRA up to 32B full fine-tuning or 70B QLoRA; use for the model-scale ladder above. Frontier and Llama-3.3-70B through `D:\NLP\llm_providers` (OpenRouter etc.). |
 | Languages | Hebrew, Persian, English (en for replay and transfer). |
 | Output | JSON list of records: main entity + slots; null for absent slots; optional evidence spans. |
@@ -21,7 +21,7 @@ Companion research: [../research/entity_relation_extraction.md](../research/enti
 
 | Phase | Output | Main tools | Exit criterion |
 |---|---|---|---|
-| P0 Baselines | Zero-shot scores on a 300-sample pilot per language | `llm_providers` (OpenRouter) + GitHub Copilot models API (`claude-sonnet-5.5`, `gpt-6.1-terra`), vLLM | Gap between Qwen3-8B (thinking on/off), Qwen3 ~27B-class, Llama-3.3-70B and the two Copilot frontier models is measured |
+| P0 Baselines | Zero-shot scores on a 300-sample pilot per language | `llm_providers` (OpenRouter: `qwen/qwen3.8-27b`, Llama-3.3-70B) + GitHub Copilot models API (`claude-sonnet-5.5`, `gpt-6.1-terra`), vLLM | Gap between Qwen3-8B (thinking on/off), Qwen3.8-27B, Llama-3.3-70B and the two Copilot frontier models is measured |
 | P1 Public data | English/multilingual IE mix (replay + schema diversity) | HF `datasets` | Converted to our JSON format with licenses logged |
 | P2 Synthetic he/fa/en | 30k–60k verified samples (text, HTML, email) with H1–H12 tags | Generator package (`re_synth/`), frontier/cheap LLM via `llm_providers`, vLLM | Verifier pass rate ≥ 90%; manual audit error < 3% |
 | P2b Adversarial mining | "Hard" subset where Llama-3.3-70B fails and frontier succeeds | `llm_providers` | ≥ 5k hard samples across H1–H12 |
@@ -61,7 +61,7 @@ All are converted by `re_synth/convert/*.py` into the same prompt+JSON format as
 2. Build a **pilot of 300 samples per language** with a quick version of P2 (below), audited manually.
 3. Run zero-shot with the identical prompt:
    - **Qwen3-8B**, both `enable_thinking=True` and `enable_thinking=False` (vLLM) — 2 runs, per the reasoning A/B (Assumptions).
-   - **Qwen3 ~27B-class** (vLLM) — exact checkpoint to confirm (e.g. Qwen3-32B or a Qwen3 variant in the 8–27B+ range); usable as a zero-shot baseline now **and** as a later fine-tuning candidate on the model-scale ladder (Assumptions).
+   - **Qwen3.8-27B** (`qwen/qwen3.8-27b` via OpenRouter, not local vLLM — dense VLM, 1M context, thinking `none`→`xhigh`); usable as a zero-shot baseline now **and** as a later fine-tuning candidate on the model-scale ladder (Assumptions).
    - **Llama-3.3-70B** (OpenRouter, provider pinned).
    - **Frontier, via GitHub Copilot models**: `claude-sonnet-5.5` (effort medium) and `gpt-6.1-terra`. (DictaLM-3.0 and older/generic GPT models are **not needed** for this baseline — drop them.)
 4. Score with the evaluator (§6). Expected outputs: the per-hard-case gap, plus a check that frontier ≥ 90% F1 on the pilot. If frontier can't reach that, the guidelines or GT are ambiguous: fix them before scaling.
@@ -253,7 +253,7 @@ Reusable local code in `D:\NLP\llm-fine-tune`: `sft_trainer.py`, `dpo_trainer.py
 - 8B GRPO + LoRA (vLLM colocate) ≈ 1–2 days per 500 steps.
 - 32B needs 2–4 GPUs (verl) — we have 4×A100 80GB, so **32B full SFT or LoRA is in budget directly**, not just via QLoRA.
 - 70B QLoRA fits on 1×80GB but is slow; only for the teacher. With 4 GPUs, 70B QLoRA (e.g. Llama-3.3-70B, as a same-scale comparison to the frontier gap in P0) becomes practical for a one-off run, not just inference.
-- **Model-scale ladder (run in this order, stop once the gap to frontier closes):** Qwen3-8B (reasoning on vs off, see §3) → Qwen3-14B → Qwen3-32B → Gemma-3-27B (different pretraining/architecture, useful if Qwen-family plateaus) → Llama-3.3-70B QLoRA (reference ceiling). Each rung reuses the same synthetic data, prompt format and scorer; only report a rung as "needed" if it beats the rung below by more than noise on the hard (H1–H12) tier.
+- **Model-scale ladder (run in this order, stop once the gap to frontier closes):** Qwen3-8B (reasoning on vs off, see §3) → **Qwen3.8-27B** (`qwen/qwen3.8-27b`, OpenRouter zero-shot first; local fine-tuning candidate if OpenRouter-only isn't sufficient) → Qwen3-32B → Gemma-3-27B (different pretraining/architecture, useful if the Qwen family plateaus) → Llama-3.3-70B QLoRA (reference ceiling). Each rung reuses the same synthetic data, prompt format and scorer; only report a rung as "needed" if it beats the rung below by more than noise on the hard (H1–H12) tier.
 
 **Gotchas:**
 - Run on Linux/WSL2, not native Windows, for vLLM/TRL.
