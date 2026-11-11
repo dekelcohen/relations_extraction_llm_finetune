@@ -12,7 +12,8 @@ Companion research: [../research/entity_relation_extraction.md](../research/enti
 | Output | JSON list of records: main entity + slots; null for absent slots; optional evidence spans. |
 | Prompt | Schema + guidelines + 1–3 few-shot examples, supplied by the user at inference time. Must stay generic (new entity types without retraining). |
 | Licenses | Prefer CC-BY-SA / ODC-By / CC0 sources. Non-commercial datasets go to eval only. |
-| Out of scope | The local `pn_summary` (fa) summarization dataset. The user said to ignore it. |
+| **Document length scope** | **First experiments (and likely beyond): 1–4 pages, ~2K–8K tokens** per document (plain text, HTML with tables, or email), not 30K+. Keep seq len ≤ 8k for Stage 1/2 training and eval; very-long-document extraction (MMUIE/DocUIE-style, 10K+ tokens) is explicitly **out of scope** until this range is solid. |
+| Out of scope | The local `pn_summary` (fa) summarization dataset. The user said to ignore it. Very-long-document (30K+ token) extraction — revisit only after the 2K–8K range works. |
 
 ---
 
@@ -77,7 +78,7 @@ All are converted by `re_synth/convert/*.py` into the same prompt+JSON format as
 | naab | — | ✓ | Large Persian corpus |
 | English Wikipedia / CC-News | en | en | Parallel versions and replay |
 
-Seed filter: 150–1,500 words, language-ID ≥ 0.9, dedup (MinHash), genre classifier for stratification (news, encyclopedic, business, forum, government notice).
+Seed filter: **1,500–6,000 words (~2K–8K tokens, 1–4 pages)**, language-ID ≥ 0.9, dedup (MinHash), genre classifier for stratification (news, encyclopedic, business, forum, government notice).
 
 ### 2.2 Steps
 
@@ -114,7 +115,7 @@ Seed filter: 150–1,500 words, language-ID ≥ 0.9, dedup (MinHash), genre clas
    - `ambiguous`: both wrong. Send to a second judge; fix GT or drop.
    - `weird`: Llama right, frontier wrong. Inspect.
 3. Analyze which H-cases drive `hard`. Re-weight the distractor planner toward them; iterate 2–3 rounds.
-4. Budget estimate: ~60k samples × 3 models × ~2k tokens ≈ 360M tokens. Use `llm_cache` and batch APIs. Start with 5k samples per round.
+4. Budget estimate: ~60k samples × 3 models × ~5k tokens (2K–8K-token doc scope) ≈ 900M tokens. Use `llm_cache` and batch APIs. Start with 5k samples per round.
 
 ### 2.4 Target mix (first SFT run, ~60k examples)
 | Slice | Share |
@@ -192,7 +193,7 @@ Full rationale and paper links in [research §8](../research/entity_relation_ext
 
 ### 4.1 Stage 1: SFT (LoRA)
 - Qwen3-8B, LoRA r=64, α=64–128, rsLoRA, **all linear layers**, dropout 0.05.
-- LR 1e-4 cosine, 1–2 epochs, seq len 8k (HTML/email up to 16k), packing off for long docs.
+- LR 1e-4 cosine, 1–2 epochs, seq len 8k is enough for the 2K–8K-token scope (Assumptions); packing off so docs aren't truncated mid-document. Revisit 16k+ only if/when the very-long-document scope is picked up.
 - Loss on assistant tokens only.
 - Variants to A/B (in priority order):
   0. **No-reasoning vs templated-reasoning vs native `enable_thinking=True`** (§3) — run this A/B *first*, since it changes completion length/format for everything downstream (GRPO reward, forgetting budget, serving cost).
@@ -246,8 +247,8 @@ Full rationale and paper links in [research §8](../research/entity_relation_ext
 
 Reusable local code in `D:\NLP\llm-fine-tune`: `sft_trainer.py`, `dpo_trainer.py`, `merge_peft_adapters.py`, `unsloth/unsloth_instruct_finetune.py`. Adapt these rather than rewrite.
 
-**GPU budget (rough, unverified):**
-- 8B LoRA SFT on 60k × ~3k tokens ≈ 6–10 h on 1×H100.
+**GPU budget (rough, unverified; assumes the 2K–8K-token document scope above, avg ~5k tokens/sample incl. prompt):**
+- 8B LoRA SFT on 60k × ~5k tokens ≈ 10–16 h on 1×H100 (scale down with the 2K-token end of the range; re-measure once real samples exist).
 - 8B GRPO + LoRA (vLLM colocate) ≈ 1–2 days per 500 steps.
 - 32B needs 2–4 GPUs (verl) — we have 4×A100 80GB, so **32B full SFT or LoRA is in budget directly**, not just via QLoRA.
 - 70B QLoRA fits on 1×80GB but is slow; only for the teacher. With 4 GPUs, 70B QLoRA (e.g. Llama-3.3-70B, as a same-scale comparison to the frontier gap in P0) becomes practical for a one-off run, not just inference.
