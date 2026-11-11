@@ -6,6 +6,7 @@ Fine-tune an open LLM (default: Qwen3-8B + LoRA) as a **generic, prompt-driven e
 - [Research survey](docs/research/entity_relation_extraction.md): top tables (training techniques, datasets, data-synthesis methods), hard cases H1–H12, ~45 paper summaries (2023–2026) with links, and anti-forgetting notes.
 - [Plan: synthetic dataset + fine-tuning](docs/plans/synth_dataset_and_finetune.md): pipeline, public data, distractor generation, adversarial mining (Llama-3.3-70B vs frontier), SFT → GRPO, frameworks (TRL/Unsloth/vLLM/verl), evaluation, milestones.
 - [Research tools](docs/research_tools/README.md): `paper_research.js` (arXiv/S2 helper).
+- [Status](docs/status.md): where things stand, the pilot-testset manual-review checklist, and the plan for making the testset harder.
 
 ## Repo layout
 | Path | What |
@@ -66,4 +67,4 @@ python train/merge.py --base Qwen/Qwen3-8B --adapter outputs/sft-qwen3-8b --out 
 Metrics: slot P/R/F1, record F1, null accuracy, decoy-hit rate (picked a distractor), hallucination rate (value not in text), JSON validity, exact-sample rate, grouped by language / format / hard case / tier.
 
 ## Status
-Pilot (300 synthetic he/fa/en samples, Llama-3.3-70B vs Claude Sonnet baselines, tiers, export, CPU smoke tests of all training scripts): see [plan §10](docs/plans/synth_dataset_and_finetune.md#10-execution-status-pilot-run-2026-11-10). Pilot data is in `data/pilot/`.
+Pilot (300 synthetic he/fa/en samples, Llama-3.3-70B vs Claude Sonnet baselines, tiers, export, CPU smoke tests of all training scripts): see [plan §10](docs/plans/synth_dataset_and_finetune.md#10-execution-status-pilot-run-2026-11-10). Pilot data is in `data/pilot/`. Current blocking step: manual review of the pilot testset for realism vs. private company docs, then hardening — see [docs/status.md](docs/status.md).
