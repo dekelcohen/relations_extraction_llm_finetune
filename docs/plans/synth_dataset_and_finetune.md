@@ -21,7 +21,7 @@ Companion research: [../research/entity_relation_extraction.md](../research/enti
 
 | Phase | Output | Main tools | Exit criterion |
 |---|---|---|---|
-| P0 Baselines | Zero-shot scores on a 300-sample pilot per language | `llm_providers` (OpenRouter), vLLM | Gap between Qwen3-8B, Llama-3.3-70B and frontier is measured |
+| P0 Baselines | Zero-shot scores on a 300-sample pilot per language | `llm_providers` (OpenRouter) + GitHub Copilot models API (`claude-sonnet-5.5`, `gpt-6.1-terra`), vLLM | Gap between Qwen3-8B (thinking on/off), Qwen3 ~27B-class, Llama-3.3-70B and the two Copilot frontier models is measured |
 | P1 Public data | English/multilingual IE mix (replay + schema diversity) | HF `datasets` | Converted to our JSON format with licenses logged |
 | P2 Synthetic he/fa/en | 30k–60k verified samples (text, HTML, email) with H1–H12 tags | Generator package (`re_synth/`), frontier/cheap LLM via `llm_providers`, vLLM | Verifier pass rate ≥ 90%; manual audit error < 3% |
 | P2b Adversarial mining | "Hard" subset where Llama-3.3-70B fails and frontier succeeds | `llm_providers` | ≥ 5k hard samples across H1–H12 |
@@ -60,9 +60,10 @@ All are converted by `re_synth/convert/*.py` into the same prompt+JSON format as
    - device, account, event, contract, …
 2. Build a **pilot of 300 samples per language** with a quick version of P2 (below), audited manually.
 3. Run zero-shot with the identical prompt:
-   - Qwen3-8B, Qwen3-14B and DictaLM-3.0 (vLLM).
-   - Llama-3.3-70B (OpenRouter, provider pinned).
-   - Two frontier models (e.g., GPT-4.1/5-class, Gemini-2.5-Pro, Claude-class).
+   - **Qwen3-8B**, both `enable_thinking=True` and `enable_thinking=False` (vLLM) — 2 runs, per the reasoning A/B (Assumptions).
+   - **Qwen3 ~27B-class** (vLLM) — exact checkpoint to confirm (e.g. Qwen3-32B or a Qwen3 variant in the 8–27B+ range); usable as a zero-shot baseline now **and** as a later fine-tuning candidate on the model-scale ladder (Assumptions).
+   - **Llama-3.3-70B** (OpenRouter, provider pinned).
+   - **Frontier, via GitHub Copilot models**: `claude-sonnet-5.5` (effort medium) and `gpt-6.1-terra`. (DictaLM-3.0 and older/generic GPT models are **not needed** for this baseline — drop them.)
 4. Score with the evaluator (§6). Expected outputs: the per-hard-case gap, plus a check that frontier ≥ 90% F1 on the pilot. If frontier can't reach that, the guidelines or GT are ambiguous: fix them before scaling.
 
 ## 2. Phase 2: synthetic pipeline (scrub → inject → render → GT by construction)
@@ -108,7 +109,7 @@ Seed filter: **1,500–6,000 words (~2K–8K tokens, 1–4 pages)**, language-ID
 - Mixed RTL/LTR plates and IDs; Persian ی/ي and ک/ك variants.
 
 ### 2.3 Adversarial mining (P2b)
-1. Run **Llama-3.3-70B** (pinned OpenRouter provider, T=0) and **frontier** (2 models) on every verified sample.
+1. Run **Llama-3.3-70B** (pinned OpenRouter provider, T=0) and **frontier** (`claude-sonnet-5.5` effort medium + `gpt-6.1-terra` via GitHub Copilot models, same pair as P0) on every verified sample.
 2. Tier each sample:
    - `easy`: both correct.
    - `hard`: Llama wrong, frontier correct. This is the **target tier**.
