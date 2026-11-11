@@ -6,8 +6,8 @@ Companion research: [../research/entity_relation_extraction.md](../research/enti
 
 | Item | Assumption |
 |---|---|
-| Base model | **Qwen3-8B** (instruct, thinking off). Qwen3-14B if quality is short. A/B **DictaLM-3.0-12B** for Hebrew. |
-| Compute | 1× 80GB GPU (A100/H100) on Linux/WSL2. Frontier and Llama-3.3-70B through `D:\NLP\llm_providers` (OpenRouter etc.). |
+| Base model | **Qwen3-8B**, thinking mode **A/B'd, not defaulted off** — user's own experience plus Distill-RE/ReasoningNER (+12 F1) indicate reasoning tokens help RE/RC directly, not just as an RL warm-up (§2b/Table 1). **Model-scale ladder** if 8B (either mode) underperforms: Qwen3-14B → Qwen3-32B → a ~27B-class alternative (e.g. Gemma-3-27B) for a differently-trained comparison point. A/B **DictaLM-3.0-12B** for Hebrew. |
+| Compute | **4× A100 80GB** (320GB total) on Linux/WSL2. Comfortably fits LoRA/QLoRA up to 32B full fine-tuning or 70B QLoRA; use for the model-scale ladder above. Frontier and Llama-3.3-70B through `D:\NLP\llm_providers` (OpenRouter etc.). |
 | Languages | Hebrew, Persian, English (en for replay and transfer). |
 | Output | JSON list of records: main entity + slots; null for absent slots; optional evidence spans. |
 | Prompt | Schema + guidelines + 1–3 few-shot examples, supplied by the user at inference time. Must stay generic (new entity types without retraining). |
@@ -169,7 +169,7 @@ Output:
   "evidence":{"location":"parked in Yehud","date":"pick it tomorrow on 12/2/26"}}]}
 ```
 - Keys follow the schema exactly. Values are verbatim surface strings (plus `*_norm` when requested). `evidence` is optional (on in 50% of training prompts, controlled by an instruction flag).
-- An optional `<reasoning>` block (MimicSFT template, ≤ 120 tokens) can be enabled by a flag for RL experiments. Default off at serving.
+- **Thinking/reasoning is a first-class A/B, not an RL-only flag.** A `<reasoning>` block (MimicSFT template, ≤ 120 tokens, or native Qwen3 `enable_thinking=True`) is tried at **Stage 1 SFT already** alongside the no-reasoning variant — user's own experience plus Distill-RE (reasoning-distilled classify+confirm students beat prior SOTA by +31.5 F1) and ReasoningNER (+12 F1 vs GPT-4 zero-shot) suggest CoT helps RE/RC directly, not only as an RL warm-up. Compare: no-reasoning SFT vs templated-reasoning SFT vs native-thinking SFT, each gated on record-F1 **and** the forgetting suite (longer completions can cost more KL). Keep whichever wins at serving; don't default thinking off a priori.
 - Augmentation (GoLLIE): paraphrase slot names and definitions, shuffle slot order, drop some definitions, vary the number of few-shot examples (0–3).
 
 ## 3b. Recommended inference architecture: extract → propose candidate pairs → verify
@@ -195,6 +195,7 @@ Full rationale and paper links in [research §8](../research/entity_relation_ext
 - LR 1e-4 cosine, 1–2 epochs, seq len 8k (HTML/email up to 16k), packing off for long docs.
 - Loss on assistant tokens only.
 - Variants to A/B (in priority order):
+  0. **No-reasoning vs templated-reasoning vs native `enable_thinking=True`** (§3) — run this A/B *first*, since it changes completion length/format for everything downstream (GRPO reward, forgetting budget, serving cost).
   1. Plain SFT.
   2. + **DFT** loss.
   3. + SDFT/SynthSelf-style rewriting of the *free-text* parts only (reasoning/evidence wording), never the JSON values.
@@ -248,12 +249,14 @@ Reusable local code in `D:\NLP\llm-fine-tune`: `sft_trainer.py`, `dpo_trainer.py
 **GPU budget (rough, unverified):**
 - 8B LoRA SFT on 60k × ~3k tokens ≈ 6–10 h on 1×H100.
 - 8B GRPO + LoRA (vLLM colocate) ≈ 1–2 days per 500 steps.
-- 32B needs 2–4 GPUs (verl). 70B QLoRA fits on 1×80GB but is slow; only for the teacher.
+- 32B needs 2–4 GPUs (verl) — we have 4×A100 80GB, so **32B full SFT or LoRA is in budget directly**, not just via QLoRA.
+- 70B QLoRA fits on 1×80GB but is slow; only for the teacher. With 4 GPUs, 70B QLoRA (e.g. Llama-3.3-70B, as a same-scale comparison to the frontier gap in P0) becomes practical for a one-off run, not just inference.
+- **Model-scale ladder (run in this order, stop once the gap to frontier closes):** Qwen3-8B (reasoning on vs off, see §3) → Qwen3-14B → Qwen3-32B → Gemma-3-27B (different pretraining/architecture, useful if Qwen-family plateaus) → Llama-3.3-70B QLoRA (reference ceiling). Each rung reuses the same synthetic data, prompt format and scorer; only report a rung as "needed" if it beats the rung below by more than noise on the hard (H1–H12) tier.
 
 **Gotchas:**
 - Run on Linux/WSL2, not native Windows, for vLLM/TRL.
 - Separate pinned venvs for generation (vLLM) and training (TRL).
-- **Same chat template** in training, vLLM and reward parsing; Qwen3 thinking off (`enable_thinking=False`).
+- **Same chat template** in training, vLLM and reward parsing. **Do not hardcode `enable_thinking=False`** — it is one of the Stage 1 A/B arms (§3), not a fixed default; whichever arm wins must be pinned consistently across training, vLLM serving and reward parsing.
 - Train with the same JSON format that constrained decoding enforces. Constrain keys, not values. Evaluate both constrained and unconstrained.
 
 ## 6. Evaluation
