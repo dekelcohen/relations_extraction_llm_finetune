@@ -1,0 +1,29 @@
+{
+ "excluded_seed_urls": 1420,
+ "train_samples": 1800,
+ "train_8grams": 399043,
+ "files": {
+  "he": {
+   "samples": 60,
+   "ok": 40,
+   "seed_url_in_training": 0,
+   "ngram_overlap_rejected": 0,
+   "max_ngram_overlap": 0.0116,
+   "mean_ngram_overlap": 0.0025,
+   "entity_name_reuse_rate": 0.908,
+   "name_and_id_reuse_rate": 0.0,
+   "entities_checked": 650
+  },
+  "fa": {
+   "samples": 48,
+   "ok": 40,
+   "seed_url_in_training": 0,
+   "ngram_overlap_rejected": 0,
+   "max_ngram_overlap": 0.0153,
+   "mean_ngram_overlap": 0.0062,
+   "entity_name_reuse_rate": 0.966,
+   "name_and_id_reuse_rate": 0.0,
+   "entities_checked": 639
+  }
+ }
+}

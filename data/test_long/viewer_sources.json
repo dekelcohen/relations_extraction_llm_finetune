@@ -1,0 +1,6 @@
+{
+ "preds": {
+  "sonnet-5.5": "data/test_long/preds_strong.jsonl",
+  "llama-3.3-70b": "data/test_long/preds_weak.jsonl"
+ }
+}

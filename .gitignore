@@ -227,6 +227,7 @@ data/*
 !data/pilot/
 !data/synth_hefa/
 !data/stage_2_RL_GRPO/
+!data/test_long/
 node_modules/
 
 # machine-specific docker settings
