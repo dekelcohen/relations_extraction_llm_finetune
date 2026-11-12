@@ -13,6 +13,7 @@ lm-eval[vllm]==0.4.13
 tensorboard
 wandb
 python-dotenv
+huggingface_hub  # scripts/hf_sync.py (adapters/checkpoints/large data -> private HF repos)
 requests
 pyyaml
 pytest
