@@ -10,6 +10,7 @@
 <div id="app">
   <aside id="sidebar">
     <h1>RE dataset viewer</h1>
+    <select id="dataset-select"></select>
     <input id="search" type="text" placeholder="Search id / genre / schema..." autocomplete="off">
     <div class="filter-group" id="lang-filters"></div>
     <div class="filter-group" id="format-filters"></div>
@@ -20,19 +21,28 @@
   </aside>
 
   <main id="main">
-    <div id="empty-state" class="muted">Select a sample on the left.</div>
+    <div id="empty-state" class="muted">Loading dataset...</div>
     <div id="sample-view" hidden>
       <header id="sample-header"></header>
 
-      <div id="controls">
-        <label><input type="checkbox" id="toggle-decoys" checked> Show distractors</label>
-        <label><input type="checkbox" id="toggle-preds"> Show weak/strong predictions</label>
-        <span id="legend"></span>
+      <nav id="view-tabs">
+        <button class="tab active" data-view="doc">Document</button>
+        <button class="tab" data-view="prompts">Prompt chain</button>
+      </nav>
+
+      <div id="doc-view">
+        <div id="controls">
+          <label><input type="checkbox" id="toggle-decoys" checked> Show distractors</label>
+          <span id="model-toggles" class="filter-group"></span>
+          <span id="legend"></span>
+        </div>
+
+        <div id="doc-container" class="doc-text"></div>
+
+        <section id="records-panel"></section>
       </div>
 
-      <div id="doc-container" class="doc-text"></div>
-
-      <section id="records-panel"></section>
+      <div id="prompts-view" hidden></div>
     </div>
   </main>
 </div>

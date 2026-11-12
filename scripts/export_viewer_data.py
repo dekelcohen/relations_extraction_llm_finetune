@@ -1,6 +1,9 @@
-"""Build viewer/data.js from a samples.jsonl (+ optional preds/tiers) directory for the HTML dataset viewer.
+"""Build the dataset-viewer payload (samples + schema metadata + prompt-chain previews) from a
+samples.jsonl (+ optional preds/tiers) directory.
 
-Usage:
+Used two ways:
+- As a library by `viewer/server.py` (dynamic mode: loads straight from disk on each request).
+- As a CLI that writes a static `viewer/data.js`, for opening the viewer with no server at all:
     python scripts/export_viewer_data.py --in data/pilot --out viewer/data.js
     python scripts/export_viewer_data.py --in data/synth/build --out viewer/data.js --limit 500
 """
@@ -14,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from re_synth.hardcases import HARD_CASES  # noqa: E402
+from re_synth.prompt_chain import build_prompt_chain  # noqa: E402
 from re_synth.schemas import SCHEMAS  # noqa: E402
 
 
@@ -70,6 +74,72 @@ def build_sample(s: dict, tiers: dict, preds_by_model: dict[str, dict]) -> dict:
     }
 
 
+def build_prompt_chains(samples_payload: list[dict]) -> dict:
+    """One illustrative prompt chain per schema actually present, grounded with a real example
+    sample (prefers an 'easy'-tier one so the fewshot/output example is a clean, uncontested case)."""
+    by_schema: dict[str, dict] = {}
+    for s in samples_payload:
+        sid = s["schema_id"]
+        if sid not in SCHEMAS:
+            continue
+        if sid not in by_schema or (s.get("tier") == "easy" and by_schema[sid].get("tier") != "easy"):
+            by_schema[sid] = s
+    return {sid: build_prompt_chain(SCHEMAS[sid], example) for sid, example in by_schema.items()}
+
+
+def build_dataset_payload(in_dir: Path, limit: int = 0) -> dict:
+    samples = read_jsonl(in_dir / "samples.jsonl")
+    if limit:
+        samples = samples[:limit]
+
+    tiers_path = in_dir / "tiers.json"
+    tiers = json.loads(tiers_path.read_text(encoding="utf-8")) if tiers_path.exists() else {}
+
+    # Auto-discover any preds_<model>.jsonl file (not just weak/strong), so new baselines / model
+    # runs (e.g. Phase 0's Qwen3-8B, Qwen3.8-27B, Llama-3.3-70B, frontier models) show up automatically.
+    preds_by_model = {}
+    for path in sorted(in_dir.glob("preds_*.jsonl")):
+        model = path.stem[len("preds_"):]
+        rows = read_jsonl(path)
+        if rows:
+            preds_by_model[model] = {r["id"]: r["raw"] for r in rows}
+
+    samples_payload = [build_sample(s, tiers, preds_by_model) for s in samples]
+    return {
+        "source": str(in_dir).replace("\\", "/"),
+        "hard_case_descriptions": HARD_CASES,
+        "schemas": build_schema_meta(),
+        "prompt_chains": build_prompt_chains(samples_payload),
+        "samples": samples_payload,
+    }
+
+
+def discover_datasets(root: Path, max_depth: int = 3) -> list[dict]:
+    """Find every directory under `root` that contains samples.jsonl (e.g. data/pilot,
+    data/synth/build), for the viewer's dataset-selector dropdown. data/pilot is labeled
+    "testset" and is the default."""
+    root = Path(root)
+    found = []
+    if not root.exists():
+        return found
+    base_depth = len(root.parts)
+    for path in sorted(root.rglob("samples.jsonl")):
+        d = path.parent
+        if len(d.parts) - base_depth > max_depth:
+            continue
+        rel = d.relative_to(root).as_posix()
+        is_default = rel == "pilot"
+        found.append({
+            "name": rel,
+            "path": str(d).replace("\\", "/"),
+            "label": "testset (pilot)" if is_default else rel,
+            "default": is_default,
+        })
+    if found and not any(d["default"] for d in found):
+        found[0]["default"] = True
+    return found
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="inp", default="data/pilot", help="directory with samples.jsonl (+ preds_*.jsonl, tiers.json)")
@@ -77,33 +147,14 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0, help="cap number of samples (0 = all)")
     args = ap.parse_args()
 
-    in_dir = Path(args.inp)
-    samples = read_jsonl(in_dir / "samples.jsonl")
-    if args.limit:
-        samples = samples[: args.limit]
-
-    tiers_path = in_dir / "tiers.json"
-    tiers = json.loads(tiers_path.read_text(encoding="utf-8")) if tiers_path.exists() else {}
-
-    preds_by_model = {}
-    for model in ("weak", "strong"):
-        rows = read_jsonl(in_dir / f"preds_{model}.jsonl")
-        if rows:
-            preds_by_model[model] = {r["id"]: r["raw"] for r in rows}
-
-    data = {
-        "source": str(in_dir).replace("\\", "/"),
-        "hard_case_descriptions": HARD_CASES,
-        "schemas": build_schema_meta(),
-        "samples": [build_sample(s, tiers, preds_by_model) for s in samples],
-    }
+    data = build_dataset_payload(Path(args.inp), args.limit)
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     # `var` (not `const`) so the global binding is a real property of `window`/`globalThis` in
     # every environment, including when the two scripts are `eval`'d separately (e.g. in tests).
     out_path.write_text("var DATASET = " + json.dumps(data, ensure_ascii=False) + ";\n", encoding="utf-8")
-    print(f"Wrote {len(data['samples'])} samples ({len(preds_by_model)} pred model(s)) to {out_path}")
+    print(f"Wrote {len(data['samples'])} samples ({len(data['prompt_chains'])} prompt chain(s)) to {out_path}")
 
 
 if __name__ == "__main__":

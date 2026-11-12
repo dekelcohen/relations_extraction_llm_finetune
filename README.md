@@ -17,7 +17,7 @@ Fine-tune an open LLM (default: Qwen3-8B + LoRA) as a **generic, prompt-driven e
 | `configs/` | `sft_qwen3_8b.yaml`, `grpo_qwen3_8b.yaml`, `accelerate/zero2.yaml`, `accelerate/zero3.yaml` |
 | `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh`, `export_viewer_data.py` |
 | `data/pilot/` | Pilot: seeds, ~300 generated samples, baseline predictions/scores, tiers, exported SFT/GRPO files |
-| `viewer/` | Static dataset viewer (open `viewer/index.html`): renders each sample's text/HTML/email with entities & relations highlighted |
+| `viewer/` | Dataset viewer: `server.py` (FastAPI/uvicorn, dynamic dataset selector) or static `index.html`/`data.js`; renders each sample's text/HTML/email with entities & relations highlighted, per-model prediction overlays, and a prompt-chain review tab |
 
 ## 1. Install (GPU server, 4×A100)
 ```bash
@@ -68,21 +68,47 @@ python train/merge.py --base Qwen/Qwen3-8B --adapter outputs/sft-qwen3-8b --out 
 Metrics: slot P/R/F1, record F1, null accuracy, decoy-hit rate (picked a distractor), hallucination rate (value not in text), JSON validity, exact-sample rate, grouped by language / format / hard case / tier.
 
 ## 5. Dataset viewer (manual review)
-A small static webapp (no build step, no server required) for the manual pilot-testset review in
-[`docs/status.md`](docs/status.md): shows each sample's raw text/HTML/email with its gold **main
-entities** (solid underline + tint, one color per record) and **relations/slots** (thin underline,
-same color as their record) highlighted directly in the text, plus an optional, separately toggled
-overlay for planted **distractors** (dashed gray) and for **weak/strong model predictions** (a
-compact gold-vs-predicted table per record, correct values in green / wrong in red) — kept minimal
-by default so the text stays readable.
-```bash
-python scripts/export_viewer_data.py --in data/pilot --out viewer/data.js   # regenerate after any data change
-```
-Then open `viewer/index.html` directly in a browser (or `python -m http.server --directory viewer 8000`
-and visit `http://localhost:8000`). Filter the sidebar by language/format/tier/hard-case or search by
-id/schema/genre. `viewer/data.js` is checked in (generated from `data/pilot/`) so the viewer works
-right after cloning. `viewer/smoke_test.js` (`npm install jsdom && node viewer/smoke_test.js`) is a
-headless regression test for the highlighting logic.
+A small webapp for the manual pilot-testset review in [`docs/status.md`](docs/status.md): shows
+each sample's raw text/HTML/email with its gold **main entities** (solid underline + tint, one
+color per record) and **relations/slots** (thin underline, same color as their record) highlighted
+directly in the text, plus an optional, separately toggled overlay for planted **distractors**
+(dashed gray). It has two run modes and two view tabs.
+
+**Run modes:**
+- **Dynamic (recommended)** — a small FastAPI/uvicorn server that reads straight from disk, so
+  switching datasets (e.g. `data/pilot` vs. a `data/synth/build` run) needs no rebuild step:
+  ```bash
+  pip install -r viewer/requirements.txt
+  python viewer/server.py --data-root data --port 8111   # then open http://127.0.0.1:8111
+  ```
+  The dataset-selector dropdown (top of the sidebar) lists every directory under `--data-root`
+  that has a `samples.jsonl`, defaulting to `data/pilot` ("testset (pilot)").
+- **Static fallback (no server)** — regenerate `viewer/data.js` and open `index.html` directly:
+  ```bash
+  python scripts/export_viewer_data.py --in data/pilot --out viewer/data.js   # regenerate after any data change
+  ```
+  Open `viewer/index.html` directly in a browser, or `python -m http.server --directory viewer 8000`.
+  `viewer/data.js` is checked in (generated from `data/pilot/`) so this mode works right after
+  cloning, with no dependencies. The webapp auto-detects whether the dynamic API is reachable and
+  falls back to this static dataset if not.
+
+**Document tab:** filter the sidebar by language/format/tier/hard-case or search by id/schema/genre.
+The **Predictions** chip row in the toolbar lists every model with a `preds_<model>.jsonl` file
+(e.g. weak/strong baselines, or future Phase-0 runs like Qwen3-8B/Qwen3.8-27B/Llama-3.3-70B);
+toggling a model on/off overlays small ✓/✗/∅ (correct / wrong / missing) badges directly next to
+each gold span, and a ⚠ badge on a distractor span if that model fell for it — multiple models can
+be toggled at once to compare them side by side. A full gold-vs-predicted table per record (all
+discovered models as columns, correct values in green / wrong in red) is always shown below the text.
+
+**Prompt chain tab:** an illustrative (review-only) rendering per schema of the domain background
+prompt (entity/relation descriptions + generated example surface forms) and the chained extraction
+prompts (e.g. a "kb_dict" stage that extracts only the ID, then a stage that extracts the rest for
+those same entities), grounded with a real sample from the loaded dataset. This is a design/review
+aid (`re_synth/prompt_chain.py`) and is *not* wired into the actual training/eval prompting in
+`re_synth/prompting.py`.
+
+`viewer/smoke_test.js` (`npm install jsdom && node viewer/smoke_test.js`) is a headless regression
+test for the highlighting, dataset fallback, per-model overlay, and prompt-chain logic.
 
 ## Status
 Pilot (300 synthetic he/fa/en samples, Llama-3.3-70B vs Claude Sonnet baselines, tiers, export, CPU smoke tests of all training scripts): see [plan §10](docs/plans/synth_dataset_and_finetune.md#10-execution-status-pilot-run-2026-11-10). Pilot data is in `data/pilot/`. Current blocking step: manual review of the pilot testset for realism vs. private company docs, then hardening — see [docs/status.md](docs/status.md).

@@ -37,6 +37,15 @@ body {
   margin: 0 0 4px;
 }
 
+#dataset-select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12.5px;
+  background: #fff;
+  color: var(--text);
+}
+
 #search {
   padding: 6px 8px;
   border: 1px solid var(--border);
@@ -103,6 +112,76 @@ body {
 }
 
 #empty-state { margin-top: 40px; text-align: center; }
+
+#view-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+#view-tabs .tab {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+#view-tabs .tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+#prompts-view {
+  max-width: 900px;
+}
+
+#prompts-view h2 {
+  font-size: 14px;
+  margin: 18px 0 8px;
+}
+
+#prompts-view h2:first-child { margin-top: 0; }
+
+.stage-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  background: var(--panel);
+}
+
+.stage-card h3 {
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+
+.stage-card details {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.stage-card summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+pre.prompt-block {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f4f5fa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 420px;
+  overflow-y: auto;
+}
 
 #sample-header {
   display: flex;
@@ -202,6 +281,24 @@ mark.ent-decoy {
 
 mark.pred-correct { outline: 2px solid #22a85e55; outline-offset: 1px; }
 mark.pred-wrong { outline: 2px solid #d1343455; outline-offset: 1px; }
+
+/* Per-model verdict badges, appended right after a highlighted span when that model's
+   predictions overlay is toggled on. Kept tiny/compact so multiple models can be compared
+   side-by-side on the same text without turning the document into a wall of markup. */
+sup.verdict {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 0 2px;
+  border-radius: 3px;
+  margin-inline-start: 1px;
+  cursor: help;
+  vertical-align: super;
+}
+
+sup.verdict-ok { background: #e3f3e6; color: #198754; }
+sup.verdict-wrong { background: #fde2e2; color: #c0392b; }
+sup.verdict-missing { background: #eef0f6; color: var(--muted); }
+sup.verdict-hit { background: #fff3d6; color: #8a6100; }
 
 #records-panel {
   margin-top: 18px;

@@ -19,11 +19,16 @@ needs a manual pass to check it's actually representative of the target domain**
 i.e. does synthetic text/formatting resemble the private company documents this
 model will run on in production, not just generic Wikipedia/news prose?
 
-Use the new **[dataset viewer](../viewer/index.html)** for this pass (README §5):
-open `viewer/index.html` in a browser, filter by language/format/hard-case in the
-sidebar, and read each sample with its gold entities/relations highlighted directly
-in context (decoys and weak/strong-model predictions are optional overlays, off by
-default, so the text stays readable while skimming many samples quickly).
+Use the **[dataset viewer](../viewer/index.html)** for this pass (README §5):
+`pip install -r viewer/requirements.txt && python viewer/server.py` and open
+`http://127.0.0.1:8000` (dataset-selector dropdown defaults to "testset (pilot)"), or
+open `viewer/index.html` directly with no server for the static fallback. Filter by
+language/format/hard-case in the sidebar and read each sample with its gold
+entities/relations highlighted directly in context (decoys and per-model prediction
+overlays are optional, off by default, so the text stays readable while skimming many
+samples quickly — toggle individual models on to see ✓/✗/∅ correctness badges and ⚠
+decoy-hit badges inline). The **Prompt chain** tab shows the background + chained
+extraction prompts used for review/design per schema.
 
 Review checklist (per sample, sampled across languages/formats/schemas):
 - [ ] **Format realism** — do the HTML tables, email headers and plain-text layouts
