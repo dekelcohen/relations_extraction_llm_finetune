@@ -25,7 +25,7 @@ document.getElementById('st').innerHTML=`step <b>${S.step}</b> / ${S.max_steps} 
  &middot; updated ${S.updated} &middot; ${S.done?'<b>DONE</b>':'running'}`;
 const charts=[["loss",["loss","eval_loss"]],["token accuracy",["mean_token_accuracy","eval_mean_token_accuracy"]],
  ["learning rate",["learning_rate"]],["grad norm",["grad_norm"]],["entropy",["entropy","eval_entropy"]],
- ["GRPO reward (mean over rollouts)",["reward","rewards/slot_f1_reward/mean","rewards/format_reward/mean","eval_reward"]],
+ ["GRPO reward (mean over rollouts)",["reward","rewards/slot_f1_reward/mean","rewards/extraction_reward/mean","rewards/format_reward/mean"]],
  ["GRPO reward std / zero-std groups",["reward_std","frac_reward_zero_std"]],
  ["completion length (tokens)",["completions/mean_length","completions/max_length"]],
  ["truncated completions",["completions/clipped_ratio"]],["KL",["kl"]]];

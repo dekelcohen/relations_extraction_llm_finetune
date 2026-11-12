@@ -210,3 +210,43 @@ def test_chunk_overlap_duplicates_removed():
         assert len(set(keys)) == len(keys) or len(gt["records"]) != len({norm(r["main_entity"]) for r in gt["records"]})
     finally:
         hardcases.FOCUS_LONG_P = old
+
+
+def test_split_grpo_by_source():
+    import sys
+    sys.path.insert(0, "scripts")
+    from split_grpo import oversample, source_id, split
+    docs = [{"id": f"he-{i}", "meta": {"lang": "he", "hard_cases": ["H19"] if i % 2 else ["H13"], "tier": "easy"}}
+            for i in range(20)] + [{"id": "he-bad", "meta": {"lang": "he", "hard_cases": ["H13"], "tier": "weird"}}]
+    rows = [{"id": f"{d['id']}#c{k}", "meta": d["meta"] | {"chunk": {"parent": d["id"]}}} for d in docs for k in range(2)]
+    train, dev = split(rows, docs, n_long=3, n_other=3)
+    dev_ids = {d["id"] for d in dev}
+    assert len(dev) == 6 and "he-bad" not in dev_ids
+    assert not {source_id(r) for r in train} & dev_ids and all(r["meta"]["tier"] != "weird" for r in train)
+    assert len(oversample([{"meta": {"tier": "hard"}}, {"meta": {"tier": "easy"}}])) == 3
+
+
+def test_strict_reward():
+    from re_synth.score import match_strength, reward_strict
+    st = {"id": "id", "owner": "text", "date": "date"}
+    gt = {"records": [{"main_entity": "Acme Ltd", "id": "AB-123", "owner": "Dan Cohen", "date": "2024-03-05"}]}
+    text = "Acme Ltd AB-123 Dan Cohen 2024-03-05 Rina Levi"
+    decoys = [{"type": "owner", "value": "Rina Levi"}]
+
+    def run(rec, strict):
+        m = score_sample([rec], True, gt, decoys, text, st, strict=strict)
+        return m, (reward_strict(m) if strict else reward_from_metrics(m))
+
+    exact = dict(gt["records"][0])
+    assert match_strength("Dan Cohen", "dan cohen", "text") == 1.0
+    assert match_strength("Dan", "Dan Cohen", "text") == 0.5 and match_strength("x", "Dan", "text") == 0.0
+    m, r_exact = run(exact, True)
+    assert r_exact == 1.0 and m["all_exact"] == 1.0
+    partial = exact | {"main_entity": "Acme"}
+    mp, r_part = run(partial, True)
+    assert r_part < r_exact and mp["all_exact"] == 0.0 and 0 < r_part < 1
+    # lenient reward is unchanged: partial name still matches there
+    assert run(partial, False)[1] == run(exact, False)[1]
+    _, r_decoy = run(exact | {"owner": "Rina Levi"}, True)
+    assert r_decoy < r_part
+    assert reward_strict(score_sample(None, False, gt, decoys, text, st, strict=True)) == 0.0

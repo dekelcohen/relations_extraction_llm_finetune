@@ -1,0 +1,29 @@
+{
+ "prompts": 240,
+ "kept_unique": 170,
+ "rows_after_oversample": 298,
+ "completion_tokens": {
+  "mean": 1052.171875,
+  "p50": 1004,
+  "p95": 2239,
+  "max": 3073
+ },
+ "mean_reward": 0.6510373095043679,
+ "by_tier": {
+  "hard": {
+   "n": 115,
+   "kept": 91,
+   "mean_reward": 0.6069014738099097
+  },
+  "frontier_hard": {
+   "n": 45,
+   "kept": 37,
+   "mean_reward": 0.4451994835604159
+  },
+  "easy": {
+   "n": 80,
+   "kept": 42,
+   "mean_reward": 0.8302663504086244
+  }
+ }
+}

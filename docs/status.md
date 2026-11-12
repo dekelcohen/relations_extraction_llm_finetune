@@ -33,8 +33,8 @@ which records them in `hf_artifacts.json`.
 |---|---|---|
 | M1 | Stage-2 synthetic generation: 600 he/fa samples (H13–H19 tables, long docs), chunked long-doc inference + dedup merge | ✅ done (this commit) |
 | M2 | Difficulty probe (Sonnet + Llama-70B, chunked) → `tiers.json`: easy 331 / hard 177 / **frontier_hard 84** / ambiguous 3 / weird 4. Slot-F1 Llama-70B 0.924 (he 0.893, fa 0.951), Sonnet 0.987 | ✅ |
-| M3 | Teacher reasoning (inspection only) → `cot_{he,fa}`; export `grpo_train` / `grpo_dev` (`--chunk`) | ⏳ |
-| M4 | vLLM pre-filter (SFT adapter, n=8) + `train/grpo_unsloth.py` smoke → pilot run (**commit before GRPO**) | ⏳ |
+| M3 | Teacher reasoning (inspection only) → `cot_{he,fa}` (kept 270 he / 265 fa); `grpo_train` 726 chunk rows (532 source docs) / `grpo_dev` 60 docs (24 H19, 16 frontier_hard); `scripts/split_grpo.py`; stage 2 in the viewer | ✅ |
+| M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2) + `train/grpo_unsloth.py`. SFT completion tokens p50 1004 / p95 2239, mean lenient reward 0.65. HF generate ≈ 330 s per 4-prompt step (G=4), so the full run is ~20 steps in 2 h | 🔄 (committed before GRPO) |
 | M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**; push the adapter + checkpoints with `hf_sync.py`) | ⏳ |
 
 ### Resume on another machine
@@ -58,6 +58,9 @@ which records them in `hf_artifacts.json`.
 - [ ] `export-eval --chunk` → split out `grpo_dev` (~60, stratified, H19-heavy) and `grpo_train`.
 - [ ] Pre-filter, write `train/grpo_unsloth.py`, smoke test, pilot run, ~2 h run; evaluate and
       add to the report.
+- **Training reward is STRICT** (user decision): exact slot = 1, lenient-only partial = 0.5 TP/FP/FN, main-entity name
+      scored as a slot, exact decoy check, +0.1 all-exact bonus; eval stays lenient + `exact_sample`. Table in
+      [`datasets/stage_2_RL_GRPO.md`](datasets/stage_2_RL_GRPO.md#reward-lenient-eval-vs-strict-training).
 - [ ] Update this file and the dataset doc with the actual counts and results.
 
 ### Open issues

@@ -158,7 +158,7 @@ separate bnb plugin for 4-bit LoRA, and the 8 GB GPU cannot hold vLLM plus train
 | `mask_truncated_completions` | False | Unsloth-documented NaN/zero-mask bug |
 | `num_iterations` | 1 | on-policy; ratio = 1, so clip and IS level don't matter |
 | batch | `per_device_train_batch_size`=G, `gradient_accumulation_steps`=4 → 4 prompts / step | 1 GPU |
-| rewards | `extraction_reward` (composite F1 + null + decoy/halluc penalties) w=1.0, `format_reward` w=0.2; `slot_f1_reward` logged with w=0 | dense reward; low format weight avoids format gaming |
+| rewards | **`strict_extraction_reward`** w=1.0, `format_reward` w=0.1; lenient `extraction_reward` and `slot_f1_reward` logged with w=0 | strict credit pushes the policy toward exact values ([reward table](#reward-lenient-eval-vs-strict-training)); low format weight avoids format gaming |
 
 Protocol:
 1. **Pre-filter** (vLLM, fast): the SFT model does n=8 rollouts per prompt at T=1.0. Drop prompts
@@ -173,3 +173,34 @@ Protocol:
 
 Monitoring: `outputs/grpo-qwen3-4b/progress/charts.html` (reward, reward std / zero-std groups,
 completion length, truncation, KL, grad norm, LR).
+
+## Reward: lenient (eval) vs strict (training)
+
+Eval keeps the lenient scorer (`match`, `score_sample`, `reward_from_metrics`) plus `exact_sample`.
+Training uses a strict variant (`score_sample(..., strict=True)` + `reward_strict`, wrapped as
+`train/rewards.py::strict_extraction_reward`). `match_strength` gives 1.0 for an exact value (same normalized
+string, same tokens up to a Hebrew prefix, same compact ID, same parsed date), 0.5 when only the lenient rules hold
+(substring ≥ 0.6, token subset ≥ 1/3, ID containment ≥ 0.7), else 0. List values: mean over gold and predicted values
+of the best counterpart's strength.
+
+| Component | Lenient (`reward_from_metrics`, eval) | Strict (`reward_strict`, training) |
+|---|---|---|
+| Record alignment | greedy by name/ID/slot similarity (≥ 0.3) | same (lenient), so records still pair on a fuzzy name |
+| Exact slot | 1 TP | 1 TP |
+| Partial slot (lenient-only match) | 1 TP | 0.5 TP + 0.5 FP + 0.5 FN |
+| Wrong value | 1 FP + 1 FN | 1 FP + 1 FN |
+| Missed gold value | 1 FN | 1 FN |
+| Extra value (gold is null, or unaligned record) | 1 FP | 1 FP |
+| Main-entity name | not a slot (only the `main_ok` metric) | one more slot, same rules (partial name = 0.5) |
+| Slot F1 weight | 0.6 | 0.6 × 0.9 |
+| Record F1 (aligned / extra / missed records) | 0.15 | 0.15 × 0.9 |
+| Null accuracy (gold-null slots left null) | 0.15 | 0.15 × 0.9 |
+| Hallucination (value absent from the text) | 0.1 × (1 − rate) | 0.1 × (1 − rate) × 0.9 |
+| Decoy (wrong value equals a decoy) | −0.2 × min(1, hits / n_decoys), fuzzy match | same, but the decoy must match **exactly** |
+| All-exact bonus | none | +0.1 if every gold record found, every slot exact, no extra records/values |
+| Invalid JSON, or every gold record missed | 0 | 0 |
+| Range | [0, 1] | [0, 1] (0.9 · base + 0.1 · bonus) |
+| `format_reward` (separate function) | – | 1 if the answer parses as JSON; weight 0.1 |
+
+The pre-filter statistics (`prefilter_stats.json`) were computed with the lenient reward. Only the zero-variance
+selection was kept: the per-completion outputs were not stored, so they were not re-scored.

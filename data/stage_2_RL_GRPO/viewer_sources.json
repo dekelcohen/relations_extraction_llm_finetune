@@ -1,0 +1,5 @@
+{
+ "preds": {
+  "sonnet-cot": ["data/stage_2_RL_GRPO/cot_he/teacher_raw.jsonl", "data/stage_2_RL_GRPO/cot_fa/teacher_raw.jsonl"]
+ }
+}

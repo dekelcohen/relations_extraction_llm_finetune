@@ -9,7 +9,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from re_synth.score import parse_prediction, reward_from_metrics, sample_f1, score_sample  # noqa: E402
+from re_synth.score import parse_prediction, reward_from_metrics, reward_strict, sample_f1, score_sample  # noqa: E402
 
 
 def _j(x):
@@ -31,6 +31,18 @@ def extraction_reward(completions, gt, decoys, text, slot_types, **kwargs) -> li
             m = score_sample(recs, ok, _j(g), _j(d), t, _j(st))
             out.append(float(reward_from_metrics(m)))
         except Exception:  # never crash training on a weird sample
+            out.append(0.0)
+    return out
+
+
+def strict_extraction_reward(completions, gt, decoys, text, slot_types, **kwargs) -> list[float]:
+    """Training reward: exact slots count fully, lenient-only matches half, all-exact bonus (score.reward_strict)."""
+    out = []
+    for c, g, d, t, st in zip(completions, gt, decoys, text, slot_types):
+        try:
+            recs, ok = parse_prediction(_completion_text(c))
+            out.append(float(reward_strict(score_sample(recs, ok, _j(g), _j(d), t, _j(st), strict=True))))
+        except Exception:
             out.append(0.0)
     return out
 

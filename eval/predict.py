@@ -39,7 +39,7 @@ def gen_vllm(a, prompts):
             from vllm.sampling_params import GuidedDecodingParams
             kw["guided_decoding"] = GuidedDecodingParams(json=OUT_SCHEMA)
     sp = SamplingParams(temperature=a.temperature, top_p=a.top_p, top_k=a.top_k, max_tokens=a.max_tokens, seed=a.seed,
-                        **kw)
+                        n=getattr(a, "n", 1), **kw)
     extra = {k: v for k, v in {"quantization": a.quantization, "kv_cache_dtype": a.kv_cache_dtype,
                                "max_num_seqs": a.max_num_seqs, "enforce_eager": a.enforce_eager}.items() if v}
     llm = LLM(model=a.model, tensor_parallel_size=a.tp, max_model_len=a.max_model_len, enable_lora=bool(a.lora),
@@ -49,6 +49,8 @@ def gen_vllm(a, prompts):
         from vllm.lora.request import LoRARequest
         lreq = LoRARequest("adapter", 1, a.lora)
     outs = llm.generate(prompts, sp, lora_request=lreq)
+    if getattr(a, "n", 1) > 1:  # prefilter: all n samples per prompt
+        return [[c.text for c in o.outputs] for o in outs]
     return [o.outputs[0].text for o in outs]
 
 

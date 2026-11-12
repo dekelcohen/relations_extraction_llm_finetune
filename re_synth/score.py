@@ -135,6 +135,39 @@ def match(pred, gold, typ: str = "text") -> bool:
     return len(ts) / len(tl) >= 0.33 and all(any(_tok_eq(a, b) for b in tl) for a in ts)
 
 
+def _exact_scalar(pred: str, gold: str, typ: str) -> bool:
+    if typ == "id":
+        return bool(compact(pred)) and compact(pred) == compact(gold)
+    if typ == "date":
+        dp, dg = parse_date(pred), parse_date(gold)
+        if dp and dg:
+            return dp == dg
+    np_, ng = norm(pred), norm(gold)
+    if not np_ or not ng:
+        return False
+    tp, tg = np_.split(), ng.split()
+    return np_ == ng or (len(tp) == len(tg) and all(_tok_eq(a, b) for a, b in zip(tp, tg)))
+
+
+def match_strength(pred, gold, typ: str = "text") -> float:
+    """1.0 exact (same normalized value / compact id / parsed date / same tokens up to a Hebrew prefix),
+    0.5 if only the lenient rules of match() hold (substring, token subset, id containment), else 0.
+    Lists: mean over gold and pred values of their best counterpart's strength (0 if pred has no values)."""
+    if pred is None or gold is None:
+        return float(pred is None and gold is None)
+    if isinstance(pred, list) or isinstance(gold, list):
+        pl = [x for x in (pred if isinstance(pred, list) else [pred]) if x is not None]
+        gl = [x for x in (gold if isinstance(gold, list) else [gold]) if x is not None]
+        if not pl or not gl:
+            return 0.0
+        tot = sum(max(match_strength(p, g, typ) for p in pl) for g in gl) + \
+            sum(max(match_strength(p, g, typ) for g in gl) for p in pl)
+        return tot / (len(gl) + len(pl))
+    if _exact_scalar(str(pred), str(gold), typ):
+        return 1.0
+    return 0.5 if match(pred, gold, typ) else 0.0
+
+
 def in_text(val, text_norm: str, text_compact: str) -> bool:
     if val is None:
         return True
@@ -267,11 +300,18 @@ def align(preds: list[dict], gold: list[dict], slot_types: dict) -> list[tuple[i
 
 
 def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys: list[dict], text: str,
-                 slot_types: dict) -> dict:
+                 slot_types: dict, strict: bool = False) -> dict:
+    """strict=True (training reward only): a slot with match_strength s counts s TP + (1-s) FP + (1-s) FN, the main
+    entity name is scored as one more slot, decoy hits need an exact match, and `inexact` counts every slot that
+    is not exact (wrong, missed or extra). Record alignment stays lenient."""
+    if strict:
+        slot_types = {"main_entity": "text"} | slot_types
     gold = gt.get("records", [])
     m = defaultdict(float)
     m["valid_json"] = float(valid)
     m["n_gold_values"] = sum(1 for g in gold for k in slot_types if g.get(k) is not None)
+    if strict:
+        m["n_gold_values"] -= sum(1 for g in gold if g.get("main_entity") is not None)
     preds = pred_records or []
     tn, tc = norm(text), compact(text)
     pairs = align(preds, gold, slot_types)
@@ -281,6 +321,8 @@ def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys:
     m["rec_fn"] = len(gold) - len(pairs)
 
     def is_decoy(val, typ):
+        if strict:
+            return any(d.get("type") == typ and match_strength(val, d.get("value"), typ) == 1.0 for d in decoys)
         return any(d.get("type") == typ and match(val, d.get("value"), typ) for d in decoys)
 
     for i, j in pairs:
@@ -288,7 +330,15 @@ def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys:
         m["main_ok"] += float(match(p.get("main_entity"), g.get("main_entity"), "text"))
         for k, typ in slot_types.items():
             gv, pv = g.get(k), p.get(k)
-            if gv is not None and pv is not None:
+            if gv is not None and pv is not None and strict:
+                st = match_strength(pv, gv, typ)
+                m["tp"] += st
+                m["fp"] += 1 - st
+                m["fn"] += 1 - st
+                if st < 1:
+                    m["inexact"] += 1
+                    m["decoy_hits"] += float(is_decoy(pv, typ))
+            elif gv is not None and pv is not None:
                 if match(pv, gv, typ):
                     m["tp"] += 1
                 else:
@@ -297,8 +347,10 @@ def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys:
                     m["decoy_hits"] += float(is_decoy(pv, typ))
             elif gv is not None:
                 m["fn"] += 1
+                m["inexact"] += 1
             elif pv is not None:
                 m["fp"] += 1
+                m["inexact"] += 1
                 m["null_total"] += 1
                 m["decoy_hits"] += float(is_decoy(pv, typ))
             else:
@@ -313,12 +365,18 @@ def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys:
         for k, typ in slot_types.items():
             if p.get(k) is not None:
                 m["fp"] += 1
+                m["inexact"] += 1
                 m["pred_values"] += 1
                 m["halluc"] += float(not in_text(p.get(k), tn, tc))
     for j, g in enumerate(gold):
         if j not in used_g:
             m["fn"] += sum(1 for k in slot_types if g.get(k) is not None)
+            m["inexact"] += sum(1 for k in slot_types if g.get(k) is not None)
     m["n_decoys"] = len(decoys)
+    if not strict:
+        m.pop("inexact", None)  # only meaningful (and complete) in strict mode
+    else:
+        m["all_exact"] = float(bool(valid) and m["rec_fp"] == 0 and m["rec_fn"] == 0 and m["inexact"] == 0)
     return dict(m)
 
 
@@ -345,6 +403,15 @@ def reward_from_metrics(m: dict) -> float:
     decoy = min(1.0, m.get("decoy_hits", 0) / max(1, m.get("n_decoys", 0))) if m.get("n_decoys") else 0.0
     r = 0.6 * slot_f1 + 0.15 * rec_f1 + 0.15 * null_acc + 0.1 * (1 - halluc) - 0.2 * decoy
     return max(0.0, min(1.0, r))
+
+
+def reward_strict(m: dict) -> float:
+    """Training reward on score_sample(..., strict=True) metrics: 0.9 * (lenient-style composite on fractional
+    counts) + 0.1 * all-exact bonus. In [0, 1]; 0 for invalid JSON or when every gold record was missed."""
+    if not m.get("valid_json") or (m.get("rec_tp", 0) == 0 and m.get("rec_fn", 0) > 0):
+        return 0.0
+    base = reward_from_metrics(m)
+    return 0.9 * base + 0.1 * float(m.get("all_exact", 0.0))
 
 
 def aggregate(rows: list[dict]) -> dict:
