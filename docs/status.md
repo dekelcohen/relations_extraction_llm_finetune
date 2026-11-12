@@ -36,6 +36,7 @@ which records them in `hf_artifacts.json`.
 | M3 | Teacher reasoning (inspection only) → `cot_{he,fa}` (kept 270 he / 265 fa); `grpo_train` 726 chunk rows (532 source docs) / `grpo_dev` 60 docs (24 H19, 16 frontier_hard); `scripts/split_grpo.py`; stage 2 in the viewer | ✅ |
 | M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2) + `train/grpo_unsloth.py`. SFT completion tokens p50 1004 / p95 2239, mean lenient reward 0.65. HF generate ≈ 330 s per 4-prompt step (G=4), so the full run is ~20 steps in 2 h | 🔄 (committed before GRPO) |
 | M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**; push the adapter + checkpoints with `hf_sync.py`) | ⏳ |
+| T1 | Test set: realistic long docs (H20) → `data/test_long/` (40 he + 40 fa, TEST ONLY, [doc](datasets/test_long.md)). Slot-F1 Llama-70B ~0.974 (he 0.978, fa 0.969), Sonnet ~0.988 (he 0.992, fa 0.984). Open: per-case breakdown, harder v2 constructs | ✅ |
 
 ### Resume on another machine
 1. `git pull`. All code, docs and stage-1/2 data (`data/pilot`, `data/synth_hefa`,

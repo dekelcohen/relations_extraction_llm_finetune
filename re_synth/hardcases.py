@@ -26,6 +26,8 @@ HARD_CASES = {
     "H17": "transposed table: entities are columns, attributes (incl. distractor attributes) are rows",
     "H18": "plain-text (pipe) table inside text / email instead of HTML",
     "H19": "long document: 10-30 distinct entities in 2-4 sections (tables / lists / org-headed lists / cards)",
+    "H20": "realistic long document (test set): 4-7 sections mixing LLM prose and structured blocks, 10-20 entities, "
+           "cross-section entities (prose + later table / status update) merged into one record",
 }
 TABLE_CASES = ("H13", "H14", "H15", "H16", "H17", "H18")
 BLOCK_CASES = ("H6", "H7", "H13", "H19")
@@ -142,6 +144,46 @@ def _plan_table(schema: Schema, cases: list[str], records: list[dict], rng: rand
     return cfg, decoys
 
 
+def _plan_section(schema: Schema, rng: random.Random, lang: str, fmt: str, records: list[dict], st: int, en: int,
+                  kind: str, used_orgs: set, si: int, safe: bool = False) -> tuple[dict, set, list[dict]]:
+    """One structured section over records[st:en] (mutates their slots for list_org / H14 / H16).
+    safe=True: no H14/H16 (used when a row only holds part of an entity's slots). Returns (section, cases, decoys)."""
+    sub = records[st:en]
+    cases, decoys = set(), []
+    sec = {"kind": kind, "start": st, "end": en, "org": None, "table": None, "sub_cases": [], "dist": []}
+    if kind == "list_org":  # container org stated only in the section heading
+        o = gen_value(schema, schema.slot(schema.container_slot), rng, lang)
+        while o["value"] in used_orgs:
+            o = gen_value(schema, schema.slot(schema.container_slot), rng, lang)
+        used_orgs.add(o["value"])
+        sec["org"] = o["value"]
+        for r in sub:
+            r["slots"][schema.container_slot] = dict(o)
+        cases.add("H6")
+    if kind == "table":
+        pool = ["H15"] if safe else ["H14", "H15", "H16"]
+        sc = ["H13"] + rng.sample(pool, k=rng.choice([0, 1] if safe else [0, 1, 2])) + (["H18"] if fmt != "html" else [])
+        if len(sub) < 4 and "H14" in sc:
+            sc.remove("H14")
+        cfg, td = _plan_table(schema, sc, sub, rng, lang)
+        sec["table"], sec["sub_cases"] = cfg, sc
+        cases.update(sc)
+        for d in td:
+            decoys.append({**d, "record": d["record"] + st, "col": f"s{si}:{d['col']}"})
+    if kind == "cards":  # 1-2 labelled distractor lines per card
+        pool = [x for x in schema.slots if x.type in DIST_TYPES]
+        sec["dist"] = [x.name for x in rng.sample(pool, k=min(len(pool), rng.choice([1, 2])))]
+        vals = {v["value"] for r in records for v in r["slots"].values() if v}
+        for i, r in enumerate(sub):
+            for name in sec["dist"]:
+                sl = schema.slot(name)
+                own = {r["slots"][name]["value"]} if r["slots"].get(name) else set()
+                decoys.append({"slot": name, "type": sl.type, "record": st + i, "placement": "card",
+                               "role": f"card distractor line for {name}", "col": f"s{si}:dist:{name}",
+                               "value": _gen_decoy(schema, sl, rng, lang, own if sl.type == "status" else vals | own, own)})
+    return sec, cases, decoys
+
+
 def _plan_long(schema: Schema, rng: random.Random, lang: str, fmt: str) -> dict:
     """H19: 10-30 distinct entities split into 2-4 sections, each rendered as table / list / org-headed list / cards."""
     n = rng.randint(10, 30)
@@ -168,37 +210,9 @@ def _plan_long(schema: Schema, rng: random.Random, lang: str, fmt: str) -> dict:
     cases, decoys, sections = {"H19"}, [], []
     used_orgs: set = set()
     for (st, en), kind in zip(bounds, kinds):
-        sub = records[st:en]
-        sec = {"kind": kind, "start": st, "end": en, "org": None, "table": None, "sub_cases": [], "dist": []}
-        if kind == "list_org":  # container org stated only in the section heading
-            o = gen_value(schema, schema.slot(schema.container_slot), rng, lang)
-            while o["value"] in used_orgs:
-                o = gen_value(schema, schema.slot(schema.container_slot), rng, lang)
-            used_orgs.add(o["value"])
-            sec["org"] = o["value"]
-            for r in sub:
-                r["slots"][schema.container_slot] = dict(o)
-            cases.add("H6")
-        if kind == "table":
-            sc = ["H13"] + rng.sample(["H14", "H15", "H16"], k=rng.choice([0, 1, 2])) + (["H18"] if fmt != "html" else [])
-            if len(sub) < 4 and "H14" in sc:
-                sc.remove("H14")
-            cfg, td = _plan_table(schema, sc, sub, rng, lang)
-            sec["table"], sec["sub_cases"] = cfg, sc
-            cases.update(sc)
-            for d in td:
-                decoys.append({**d, "record": d["record"] + st, "col": f"s{len(sections)}:{d['col']}"})
-        if kind == "cards":  # 1-2 labelled distractor lines per card
-            pool = [x for x in schema.slots if x.type in DIST_TYPES]
-            sec["dist"] = [x.name for x in rng.sample(pool, k=min(len(pool), rng.choice([1, 2])))]
-            vals = {v["value"] for r in records for v in r["slots"].values() if v}
-            for i, r in enumerate(sub):
-                for name in sec["dist"]:
-                    sl = schema.slot(name)
-                    own = {r["slots"][name]["value"]} if r["slots"].get(name) else set()
-                    decoys.append({"slot": name, "type": sl.type, "record": st + i, "placement": "card",
-                                   "role": f"card distractor line for {name}", "col": f"s{len(sections)}:dist:{name}",
-                                   "value": _gen_decoy(schema, sl, rng, lang, own if sl.type == "status" else vals | own, own)})
+        sec, c, d = _plan_section(schema, rng, lang, fmt, records, st, en, kind, used_orgs, len(sections))
+        cases |= c
+        decoys += d
         sections.append(sec)
     if any(v is None for r in records for v in r["slots"].values()):
         cases.add("H9")

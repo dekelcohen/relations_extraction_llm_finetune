@@ -25,7 +25,8 @@ SYSTEM = ("You generate realistic synthetic documents for training information-e
           "You follow the marking rules exactly and output only the requested <title>/<body> tags.")
 
 
-def build_prompt(plan: dict, seed: dict, genre: str, block: bool) -> str:
+def build_prompt(plan: dict, seed: dict, genre: str, block: bool, section: dict | None = None) -> str:
+    """section (H20): {"k", "n", "later": bool} -> write ONE prose section of a long document; <title> = its heading."""
     schema = SCHEMAS[plan["schema_id"]]
     lang = LANG_NAME[plan["lang"]]
     lines = []
@@ -53,6 +54,15 @@ def build_prompt(plan: dict, seed: dict, genre: str, block: bool) -> str:
         "ב/ל/מ/ה/ו/ש/כ, Persian را) go OUTSIDE the markers.",
         f"Do not mention any other {schema.main_type} besides the given records.",
     ] + directives(plan)
+    if section:
+        rules[0] = (f"Write section {section['k']} of {section['n']} of a long {genre} in {lang}: 1-3 paragraphs "
+                    "(120-250 words) of continuous prose. Take only the register/sector from the seed; do NOT discuss the "
+                    "seed's own subject matter (people, songs, events, stories): the document is an organizational "
+                    "report that stays on the topic of the records. <title> is a short heading of this section. No "
+                    "document title, greeting, bullet list or table; do not summarize the whole document.")
+        if section.get("later"):
+            rules.append("Some records have NOT STATED slots: their remaining details are given in a table/list later "
+                         "in the document - you may say so briefly, but never state those values.")
     if block:
         rules = rules[:2] + [
             f"Include a line containing only [[BLOCK]] where a list/table of {layout.PLURAL[schema.id]['en']} will be "

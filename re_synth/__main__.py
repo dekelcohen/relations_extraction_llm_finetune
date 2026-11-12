@@ -63,6 +63,8 @@ def main(argv=None):
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--focus", action="store_true", help="oversample hard cases of the FT model's errors (see hardcases.py)")
     p.add_argument("--long_p", type=float, default=None, help="--focus: share of H19 long documents (default 0.2)")
+    p.add_argument("--realistic_long", action="store_true",
+                   help="H20 realistic long documents (test set): ids <lang>-t<seed>-NNNNN, see docs/datasets/test_long.md")
 
     p = sub.add_parser("predict")
     p.add_argument("--samples", type=Path, required=True)
@@ -134,7 +136,11 @@ def main(argv=None):
         if a.long_p is not None:
             from . import hardcases
             hardcases.FOCUS_LONG_P = a.long_p
-        build(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema, a.focus)
+        if a.realistic_long:
+            from .realistic import build_realistic
+            build_realistic(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema)
+        else:
+            build(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema, a.focus)
         log.info("LLM usage: %s", usage_totals())
     elif a.cmd == "predict":
         from .build import load_samples

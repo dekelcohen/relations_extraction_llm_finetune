@@ -250,3 +250,92 @@ def test_strict_reward():
     _, r_decoy = run(exact | {"owner": "Rina Levi"}, True)
     assert r_decoy < r_part
     assert reward_strict(score_sample(None, False, gt, decoys, text, st, strict=True)) == 0.0
+
+
+def _fake_h20_chat(lang):
+    """Offline stand-in for the generator LLM: echoes the plan facts of each prompt with the requested markers."""
+    import re
+    filler = {"he": "זהו משפט רקע כללי שנועד להאריך את המסמך ולדמות דוח ארוך עם הרבה טקסט שאינו קשור לישויות. ",
+              "fa": "این یک جمله عمومی برای طولانی‌تر کردن سند و شبیه‌سازی گزارشی بلند با متن بسیار است. "}[lang] * 12
+
+    def chat(messages, model, **kw):
+        p = messages[-1]["content"]
+        if "Return exactly:\n<title>" in p:
+            sec = sorted({int(i) for i in re.findall(r"<s(\d+)>", p)})
+            return "<title>Doc title</title>" + "".join(f"<s{i}>Heading {i}</s{i}><l{i}>Lead {i}</l{i}>" for i in sec)
+        paras = []
+        for m in re.finditer(r"Record r(\d+): \[\[r\d+\.main\]\] = (.*)", p):
+            i = m.group(1)
+            facts = [f"[[r{i}.{k}]]{v}[[/]]" for k, v in re.findall(rf"\[\[r{i}\.(?!main)(\w+)\]\] = (.*?)    #", p)
+                     if not v.startswith("NOT STATED")]
+            paras.append(f"[[r{i}.main]]{m.group(2)}[[/]] " + " ; ".join(facts) + ".")
+        paras += [f"[[x{j}]]{v}[[/]] decoy." for j, v in re.findall(r"Distractor \[\[x(\d+)\]\] = (.*?)  ->", p)]
+        return "<title>Section</title><body>" + "\n\n".join(paras) + "\n\n" + filler + "\n\n" + filler + "</body>"
+    return chat
+
+
+def _h20_samples(n=6):
+    from re_synth import realistic
+    out = []
+    for i in range(n):
+        lang, fmt = [("he", "text"), ("fa", "html"), ("he", "email"), ("fa", "text")][i % 4]
+        rng = random.Random(f"h20-{i}")
+        plan = realistic.plan_realistic(rng, lang, fmt, "person_employment" if i < 4 else None)
+        old, realistic.chat = realistic.chat, _fake_h20_chat(lang)
+        try:
+            s = realistic.generate_realistic(plan, {"text": "x", "title": "t"}, rng, "fake", f"{lang}-t3-{i}")
+        finally:
+            realistic.chat = old
+        out.append(s)
+    return out
+
+
+def test_h20_cross_section_merge():
+    """A cross-section entity is ONE gold record: slots stated in prose + the remaining slots / updated status from
+    the later table; short (surname) form only in the table; every gold value is in the text."""
+    samples = _h20_samples()
+    n_cross = n_short = n_update = 0
+    for s in samples:
+        assert s["qc"]["status"] == "ok", s["qc"]
+        assert "H20" in s["hard_cases"]
+        plan, gold = s["plan"], s["gt"]["records"]
+        assert len(gold) == len(plan["records"]) == len({r["main_entity"] for r in gold})
+        for c in plan["realistic"]["cross"]:
+            n_cross += 1
+            g, rec = gold[c["ent"]], plan["records"][c["ent"]]
+            assert g["main_entity"] in s["text"] and g["main_entity"] == rec["main_entity"]
+            assert all(v is not None for v in g.values())  # prose + table halves are merged
+            assert {k: v["value"] for k, v in rec["slots"].items()} == {k: g[k] for k in rec["slots"]}
+            n_short += bool(c["short"])
+            n_update += c["variant"] == "update"
+            if c["short"]:
+                assert s["text"].count(c["short"]) >= 2  # surname also in the table row; the full name is earlier
+            if c["variant"] == "update":
+                assert any(d["value"] == c["old_status"] and d["slot"] == "status" for d in s["decoys"])
+                assert g["status"] != c["old_status"]
+    assert n_cross >= 6 and n_short >= 1
+
+
+def test_h20_chunked_oracle_roundtrip():
+    """split -> chunk_gold -> merge on H20 docs (incl. cross-section entities whose slots span chunks)."""
+    from re_synth import chunking
+    from re_synth.score import sample_f1, slot_types_for
+    for s in _h20_samples():
+        st = slot_types_for(s["schema_id"])
+        parts = chunking.split(s["text"])
+        assert len(parts) >= 2
+        # chunk_gold finds entities by their full name; a table row with only the surname is an extra oracle record
+        short = {c["short"]: s["gt"]["records"][c["ent"]]["main_entity"] for c in s["plan"]["realistic"]["cross"]
+                 if c["short"]}
+        alias = {"records": [{**r, "main_entity": next((k for k, v in short.items() if v == r["main_entity"]), None)
+                              or r["main_entity"]} for r in s["gt"]["records"]]}
+        golds = []
+        for c in parts:
+            g = chunking.chunk_gold(s["gt"], s["decoys"], c)[0]
+            have = {r["main_entity"] for r in g["records"]}
+            g["records"] += [r for r in chunking.chunk_gold(alias, [], c)[0]["records"]
+                             if r["main_entity"] in short and short[r["main_entity"]] not in have]
+            golds.append(json.dumps(g, ensure_ascii=False))
+        merged = json.loads(chunking.merge_raws(golds, st, s["text"]))["records"]
+        m = score_sample(merged, True, s["gt"], s["decoys"], s["text"], st)
+        assert sample_f1(m) == 1.0, (s["id"], m)
