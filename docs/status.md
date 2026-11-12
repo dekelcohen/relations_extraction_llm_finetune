@@ -24,7 +24,9 @@ GRPO hyperparameter research is in
 
 **Convention:** commit and push at every milestone (after synthetic generation, before GRPO,
 after GRPO), including the data under `data/stage_2_RL_GRPO/`, so work can continue on
-another machine from the same point.
+another machine from the same point. Artifacts over GitHub's 100 MB file limit (adapters,
+checkpoints, large datasets) go to **private HF Hub repos** with `scripts/hf_sync.py push`,
+which records them in `hf_artifacts.json`.
 
 ### Milestones
 | # | Milestone | State |
@@ -33,17 +35,19 @@ another machine from the same point.
 | M2 | Difficulty probe (Sonnet + Llama-70B, chunked) → `tiers.json`, `frontier_hard` count | ⏳ next |
 | M3 | Teacher reasoning (inspection only) → `cot_{he,fa}`; export `grpo_train` / `grpo_dev` (`--chunk`) | ⏳ |
 | M4 | vLLM pre-filter (SFT adapter, n=8) + `train/grpo_unsloth.py` smoke → pilot run (**commit before GRPO**) | ⏳ |
-| M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**) | ⏳ |
+| M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**; push the adapter + checkpoints with `hf_sync.py`) | ⏳ |
 
 ### Resume on another machine
 1. `git pull`. All code, docs and stage-1/2 data (`data/pilot`, `data/synth_hefa`,
    `data/stage_2_RL_GRPO`) are in the repo.
-2. Create `.env` in the repo root with `OPENROUTER_API_KEY=…`. It is git-ignored; never
-   commit it. Pass it with `RE_ENV_FILE=$PWD/.env`.
+2. Create `.env` in the repo root with `OPENROUTER_API_KEY=…` and `HF_TOKEN=…` (HF account
+   `Shani123`). It is git-ignored; never commit it. Pass it with `RE_ENV_FILE=$PWD/.env`.
 3. Clone `llm_providers` next to this repo and run with `PYTHONPATH=../llm_providers`. Copilot
    models (`copilot-<model id>`) need the Copilot CLI to be logged in.
-4. **The SFT adapter `outputs/sft-cot-qwen3-4b` (253 MB) is NOT in git** (GitHub's limit is
-   100 MB per file); see the open issues below.
+4. `python scripts/hf_sync.py pull` downloads every artifact listed in `hf_artifacts.json`. For
+   example, the SFT adapter (+ `checkpoint-64`) comes from the private
+   `Shani123/re-qwen3-4b-sft-cot` into `outputs/sft-cot-qwen3-4b`. It needs `huggingface_hub`,
+   which is in the container env `/data/envs/re`.
 
 ### Next items
 - [ ] Re-run the Llama-70B probe with chunking. The first unchunked run (`preds_weak.jsonl`,
@@ -60,8 +64,6 @@ another machine from the same point.
 - [ ] Update this file and the dataset doc with the actual counts and results.
 
 ### Open issues
-- **SFT adapter transfer:** it needs Git LFS, an HF Hub (private) repo, or a manual copy.
-  Not decided yet.
 - **Probe fairness:** the H13 "date" column is label-ambiguous when a distractor date column
   exists. The H15 "previous supplier" vs current one may also be too subtle. Review these
   in the viewer before trusting `frontier_hard` labels.

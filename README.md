@@ -15,7 +15,7 @@ Fine-tune an open LLM (default: Qwen3-8B + LoRA) as a **generic, prompt-driven e
 | `train/` | `sft.py` (TRL SFT + LoRA), `grpo.py` (TRL GRPO + vLLM), `rewards.py`, `merge.py` (merge / WiSE-scale LoRA), `sft_unsloth.py` (optional 1-GPU) |
 | `eval/` | `predict.py` (vLLM/HF batch inference + scoring by lang/format/hard-case/tier), `forgetting.sh` (lm-eval general benchmarks) |
 | `configs/` | `sft_qwen3_8b.yaml`, `grpo_qwen3_8b.yaml`, `accelerate/zero2.yaml`, `accelerate/zero3.yaml` |
-| `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh`, `viewer_data.py` (viewer payload builder) |
+| `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh`, `viewer_data.py` (viewer payload builder), `hf_sync.py` (push/pull adapters, checkpoints and large data to private HF Hub repos listed in `hf_artifacts.json`) |
 | `data/pilot/` | Pilot: seeds, ~300 generated samples, baseline predictions/scores, tiers, exported SFT/GRPO files |
 | `data/synth_hefa/`, `data/stage_2_RL_GRPO/` | Stage-1 SFT data (he/fa + teacher CoT) and stage-2 GRPO hard-case samples ([doc](docs/datasets/stage_2_RL_GRPO.md)) |
 | `viewer/` | Dataset viewer: `server.py` (FastAPI/uvicorn, dynamic dataset selector, reads source files directly); renders each sample's text/HTML/email with entities & relations highlighted, per-model prediction overlays, and a prompt-chain review tab |

@@ -1,0 +1,6 @@
+{
+ "outputs/sft-cot-qwen3-4b": {
+  "repo": "Shani123/re-qwen3-4b-sft-cot",
+  "type": "model"
+ }
+}
