@@ -225,3 +225,4 @@ outputs/
 wandb/
 data/*
 !data/pilot/
+node_modules/

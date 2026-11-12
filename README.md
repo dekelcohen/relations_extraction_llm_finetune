@@ -15,8 +15,9 @@ Fine-tune an open LLM (default: Qwen3-8B + LoRA) as a **generic, prompt-driven e
 | `train/` | `sft.py` (TRL SFT + LoRA), `grpo.py` (TRL GRPO + vLLM), `rewards.py`, `merge.py` (merge / WiSE-scale LoRA), `sft_unsloth.py` (optional 1-GPU) |
 | `eval/` | `predict.py` (vLLM/HF batch inference + scoring by lang/format/hard-case/tier), `forgetting.sh` (lm-eval general benchmarks) |
 | `configs/` | `sft_qwen3_8b.yaml`, `grpo_qwen3_8b.yaml`, `accelerate/zero2.yaml`, `accelerate/zero3.yaml` |
-| `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh` |
+| `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh`, `export_viewer_data.py` |
 | `data/pilot/` | Pilot: seeds, ~300 generated samples, baseline predictions/scores, tiers, exported SFT/GRPO files |
+| `viewer/` | Static dataset viewer (open `viewer/index.html`): renders each sample's text/HTML/email with entities & relations highlighted |
 
 ## 1. Install (GPU server, 4×A100)
 ```bash
@@ -65,6 +66,23 @@ bash eval/forgetting.sh Qwen/Qwen3-8B && bash eval/forgetting.sh outputs/grpo-qw
 python train/merge.py --base Qwen/Qwen3-8B --adapter outputs/sft-qwen3-8b --out outputs/sft-wise08 --scale 0.8  # WiSE trade-off
 ```
 Metrics: slot P/R/F1, record F1, null accuracy, decoy-hit rate (picked a distractor), hallucination rate (value not in text), JSON validity, exact-sample rate, grouped by language / format / hard case / tier.
+
+## 5. Dataset viewer (manual review)
+A small static webapp (no build step, no server required) for the manual pilot-testset review in
+[`docs/status.md`](docs/status.md): shows each sample's raw text/HTML/email with its gold **main
+entities** (solid underline + tint, one color per record) and **relations/slots** (thin underline,
+same color as their record) highlighted directly in the text, plus an optional, separately toggled
+overlay for planted **distractors** (dashed gray) and for **weak/strong model predictions** (a
+compact gold-vs-predicted table per record, correct values in green / wrong in red) — kept minimal
+by default so the text stays readable.
+```bash
+python scripts/export_viewer_data.py --in data/pilot --out viewer/data.js   # regenerate after any data change
+```
+Then open `viewer/index.html` directly in a browser (or `python -m http.server --directory viewer 8000`
+and visit `http://localhost:8000`). Filter the sidebar by language/format/tier/hard-case or search by
+id/schema/genre. `viewer/data.js` is checked in (generated from `data/pilot/`) so the viewer works
+right after cloning. `viewer/smoke_test.js` (`npm install jsdom && node viewer/smoke_test.js`) is a
+headless regression test for the highlighting logic.
 
 ## Status
 Pilot (300 synthetic he/fa/en samples, Llama-3.3-70B vs Claude Sonnet baselines, tiers, export, CPU smoke tests of all training scripts): see [plan §10](docs/plans/synth_dataset_and_finetune.md#10-execution-status-pilot-run-2026-11-10). Pilot data is in `data/pilot/`. Current blocking step: manual review of the pilot testset for realism vs. private company docs, then hardening — see [docs/status.md](docs/status.md).

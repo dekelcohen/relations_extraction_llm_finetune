@@ -19,6 +19,12 @@ needs a manual pass to check it's actually representative of the target domain**
 i.e. does synthetic text/formatting resemble the private company documents this
 model will run on in production, not just generic Wikipedia/news prose?
 
+Use the new **[dataset viewer](../viewer/index.html)** for this pass (README §5):
+open `viewer/index.html` in a browser, filter by language/format/hard-case in the
+sidebar, and read each sample with its gold entities/relations highlighted directly
+in context (decoys and weak/strong-model predictions are optional overlays, off by
+default, so the text stays readable while skimming many samples quickly).
+
 Review checklist (per sample, sampled across languages/formats/schemas):
 - [ ] **Format realism** — do the HTML tables, email headers and plain-text layouts
       look like real internal docs (invoices, shipment notices, HR records, asset

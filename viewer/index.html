@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RE dataset viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>RE dataset viewer</h1>
+    <input id="search" type="text" placeholder="Search id / genre / schema..." autocomplete="off">
+    <div class="filter-group" id="lang-filters"></div>
+    <div class="filter-group" id="format-filters"></div>
+    <div class="filter-group" id="tier-filters"></div>
+    <div class="filter-group" id="hardcase-filters"></div>
+    <div id="sample-count" class="muted"></div>
+    <ul id="sample-list"></ul>
+  </aside>
+
+  <main id="main">
+    <div id="empty-state" class="muted">Select a sample on the left.</div>
+    <div id="sample-view" hidden>
+      <header id="sample-header"></header>
+
+      <div id="controls">
+        <label><input type="checkbox" id="toggle-decoys" checked> Show distractors</label>
+        <label><input type="checkbox" id="toggle-preds"> Show weak/strong predictions</label>
+        <span id="legend"></span>
+      </div>
+
+      <div id="doc-container" class="doc-text"></div>
+
+      <section id="records-panel"></section>
+    </div>
+  </main>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
