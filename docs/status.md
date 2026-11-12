@@ -32,7 +32,7 @@ which records them in `hf_artifacts.json`.
 | # | Milestone | State |
 |---|---|---|
 | M1 | Stage-2 synthetic generation: 600 he/fa samples (H13–H19 tables, long docs), chunked long-doc inference + dedup merge | ✅ done (this commit) |
-| M2 | Difficulty probe (Sonnet + Llama-70B, chunked) → `tiers.json`, `frontier_hard` count | ⏳ next |
+| M2 | Difficulty probe (Sonnet + Llama-70B, chunked) → `tiers.json`: easy 331 / hard 177 / **frontier_hard 84** / ambiguous 3 / weird 4. Slot-F1 Llama-70B 0.924 (he 0.893, fa 0.951), Sonnet 0.987 | ✅ |
 | M3 | Teacher reasoning (inspection only) → `cot_{he,fa}`; export `grpo_train` / `grpo_dev` (`--chunk`) | ⏳ |
 | M4 | vLLM pre-filter (SFT adapter, n=8) + `train/grpo_unsloth.py` smoke → pilot run (**commit before GRPO**) | ⏳ |
 | M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**; push the adapter + checkpoints with `hf_sync.py`) | ⏳ |
@@ -50,11 +50,8 @@ which records them in `hf_artifacts.json`.
    which is in the container env `/data/envs/re`.
 
 ### Next items
-- [ ] Re-run the Llama-70B probe with chunking. The first unchunked run (`preds_weak.jsonl`,
-      226 rows) hit the provider's **4096-token context limit** on long docs; delete those rows
-      and re-predict.
-- [ ] Sonnet probe on all 600 samples; run `mine` → tiers. If `frontier_hard` is too small,
-      add harder constructs: footnote overrides, in-cell changes (`<del>old</del> new`),
+- [x] Probe done (M2). 84 `frontier_hard` samples is enough, so no harder constructs for now.
+      Candidates for a later round: footnote overrides, in-cell changes (`<del>old</del> new`),
       rowspan-merged cells, cross-table ID joins.
 - [ ] Teacher-CoT pass (inspection only); optionally add stage 2 to the viewer manifest
       (`viewer_sources.json`).

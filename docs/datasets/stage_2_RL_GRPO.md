@@ -113,6 +113,15 @@ Tiers (`re_synth/mine.py`): `easy`, `hard` (Sonnet right, Llama wrong), `weird`,
 `frontier_hard` = Sonnet wrong while the gold is deterministic (H6/H7/H13/H19 block). These samples
 are kept and up-weighted.
 
+Probe result (M2, 599 scored; chunked inference):
+
+| model | slot-F1 all | he | fa | weakest hard cases |
+|---|---|---|---|---|
+| Llama-3.3-70B | 0.924 | 0.893 | 0.951 | H16 0.885, H15 0.895, H14 0.904, H18 0.911, H13 0.916 |
+| Sonnet 5.5 (copilot) | 0.987 | 0.986 | 0.987 | H16 0.968, H15 0.973, H14 0.981 |
+
+Tiers: easy 331, hard 177, **frontier_hard 84**, ambiguous 3, weird 4.
+
 Teacher reasoning: `cot_*/teacher_raw.jsonl` stores Sonnet's full reasoning for every sample,
 including failures, so we can study how a strong model handles the new cases.
 It is shown in the viewer as a prediction column.

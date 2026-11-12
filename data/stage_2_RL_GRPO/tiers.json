@@ -1,0 +1,2997 @@
+{
+ "he-2-00006": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00004": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00005": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00002": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00000": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00003": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.8524590163934426
+ },
+ "he-2-00001": {
+  "tier": "hard",
+  "weak_f1": 0.7222222222222222,
+  "strong_f1": 1.0
+ },
+ "he-2-00007": {
+  "tier": "hard",
+  "weak_f1": 0.9,
+  "strong_f1": 1.0
+ },
+ "he-2-00010": {
+  "tier": "hard",
+  "weak_f1": 0.9473684210526316,
+  "strong_f1": 1.0
+ },
+ "he-2-00009": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00008": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00011": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00015": {
+  "tier": "hard",
+  "weak_f1": 0.9846153846153847,
+  "strong_f1": 1.0
+ },
+ "he-2-00013": {
+  "tier": "hard",
+  "weak_f1": 0.8648648648648649,
+  "strong_f1": 1.0
+ },
+ "he-2-00012": {
+  "tier": "hard",
+  "weak_f1": 0.7199999999999999,
+  "strong_f1": 1.0
+ },
+ "he-2-00014": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00016": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00017": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00018": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00022": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00019": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00021": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00023": {
+  "tier": "hard",
+  "weak_f1": 0.9747899159663865,
+  "strong_f1": 1.0
+ },
+ "he-2-00024": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00027": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00026": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00025": {
+  "tier": "hard",
+  "weak_f1": 0.9655172413793104,
+  "strong_f1": 1.0
+ },
+ "he-2-00029": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00028": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00030": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.875,
+  "strong_f1": 0.875
+ },
+ "he-2-00031": {
+  "tier": "hard",
+  "weak_f1": 0.9090909090909091,
+  "strong_f1": 1.0
+ },
+ "he-2-00032": {
+  "tier": "hard",
+  "weak_f1": 0.8444444444444444,
+  "strong_f1": 1.0
+ },
+ "he-2-00033": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9411764705882354,
+  "strong_f1": 0.9696969696969697
+ },
+ "he-2-00036": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8860759493670886,
+  "strong_f1": 0.9268292682926829
+ },
+ "he-2-00035": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9444444444444444,
+  "strong_f1": 0.9444444444444444
+ },
+ "he-2-00037": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00038": {
+  "tier": "ambiguous",
+  "weak_f1": 0.9411764705882353,
+  "strong_f1": 0.9411764705882353
+ },
+ "he-2-00034": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00039": {
+  "tier": "hard",
+  "weak_f1": 0.9375,
+  "strong_f1": 1.0
+ },
+ "he-2-00041": {
+  "tier": "hard",
+  "weak_f1": 0.9,
+  "strong_f1": 1.0
+ },
+ "he-2-00044": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00040": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00042": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00043": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00045": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00047": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00046": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9714285714285714
+ },
+ "he-2-00048": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00049": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00051": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9714285714285714,
+  "strong_f1": 0.9444444444444444
+ },
+ "he-2-00052": {
+  "tier": "hard",
+  "weak_f1": 0.9859154929577464,
+  "strong_f1": 1.0
+ },
+ "he-2-00053": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00054": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00050": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8918918918918919,
+  "strong_f1": 0.8918918918918919
+ },
+ "he-2-00055": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00056": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00057": {
+  "tier": "hard",
+  "weak_f1": 0.6944444444444444,
+  "strong_f1": 1.0
+ },
+ "he-2-00059": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00058": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00060": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00062": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00061": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00063": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00064": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00067": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00066": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00065": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9761904761904762,
+  "strong_f1": 0.9879518072289156
+ },
+ "he-2-00068": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9347826086956522,
+  "strong_f1": 0.9347826086956522
+ },
+ "he-2-00070": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00069": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.0,
+  "strong_f1": 0.9009009009009009
+ },
+ "he-2-00071": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00072": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00073": {
+  "tier": "hard",
+  "weak_f1": 0.9047619047619048,
+  "strong_f1": 1.0
+ },
+ "he-2-00075": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00074": {
+  "tier": "hard",
+  "weak_f1": 0.9696969696969697,
+  "strong_f1": 1.0
+ },
+ "he-2-00076": {
+  "tier": "hard",
+  "weak_f1": 0.9411764705882353,
+  "strong_f1": 1.0
+ },
+ "he-2-00077": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00078": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00079": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00080": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00081": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00082": {
+  "tier": "weird",
+  "weak_f1": 1.0,
+  "strong_f1": 0.0
+ },
+ "he-2-00083": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00084": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00085": {
+  "tier": "hard",
+  "weak_f1": 0.8571428571428571,
+  "strong_f1": 1.0
+ },
+ "he-2-00086": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 0.9333333333333333
+ },
+ "he-2-00088": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00087": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00090": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00089": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00091": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00092": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00094": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00093": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00095": {
+  "tier": "hard",
+  "weak_f1": 0.825,
+  "strong_f1": 1.0
+ },
+ "he-2-00096": {
+  "tier": "hard",
+  "weak_f1": 0.972972972972973,
+  "strong_f1": 1.0
+ },
+ "he-2-00098": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9444444444444444,
+  "strong_f1": 0.9444444444444444
+ },
+ "he-2-00097": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.7741935483870968,
+  "strong_f1": 0.7741935483870968
+ },
+ "he-2-00099": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00100": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00101": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00102": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00104": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00103": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00106": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00105": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.0,
+  "strong_f1": 0.8666666666666667
+ },
+ "he-2-00107": {
+  "tier": "hard",
+  "weak_f1": 0.7956989247311829,
+  "strong_f1": 1.0
+ },
+ "he-2-00108": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00109": {
+  "tier": "hard",
+  "weak_f1": 0.8,
+  "strong_f1": 1.0
+ },
+ "he-2-00110": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.29729729729729726,
+  "strong_f1": 0.9333333333333333
+ },
+ "he-2-00111": {
+  "tier": "hard",
+  "weak_f1": 0.6363636363636364,
+  "strong_f1": 1.0
+ },
+ "he-2-00112": {
+  "tier": "hard",
+  "weak_f1": 0.9787234042553191,
+  "strong_f1": 1.0
+ },
+ "he-2-00113": {
+  "tier": "hard",
+  "weak_f1": 0.9090909090909091,
+  "strong_f1": 1.0
+ },
+ "he-2-00114": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00115": {
+  "tier": "hard",
+  "weak_f1": 0.8000000000000002,
+  "strong_f1": 1.0
+ },
+ "he-2-00117": {
+  "tier": "weird",
+  "weak_f1": 1.0,
+  "strong_f1": 0.888888888888889
+ },
+ "he-2-00116": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00118": {
+  "tier": "hard",
+  "weak_f1": 0.975,
+  "strong_f1": 1.0
+ },
+ "he-2-00119": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00120": {
+  "tier": "hard",
+  "weak_f1": 0.8823529411764706,
+  "strong_f1": 1.0
+ },
+ "he-2-00121": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00125": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00124": {
+  "tier": "hard",
+  "weak_f1": 0.888888888888889,
+  "strong_f1": 1.0
+ },
+ "he-2-00123": {
+  "tier": "hard",
+  "weak_f1": 0.8333333333333334,
+  "strong_f1": 1.0
+ },
+ "he-2-00122": {
+  "tier": "hard",
+  "weak_f1": 0.6666666666666666,
+  "strong_f1": 1.0
+ },
+ "he-2-00126": {
+  "tier": "hard",
+  "weak_f1": 0.8260869565217391,
+  "strong_f1": 1.0
+ },
+ "he-2-00127": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00129": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9484536082474228,
+  "strong_f1": 0.9896907216494846
+ },
+ "he-2-00128": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00130": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9142857142857143,
+  "strong_f1": 0.9428571428571428
+ },
+ "he-2-00131": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00132": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00133": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00134": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00135": {
+  "tier": "hard",
+  "weak_f1": 0.9696969696969697,
+  "strong_f1": 1.0
+ },
+ "he-2-00139": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00136": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00138": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9428571428571428,
+  "strong_f1": 0.9428571428571428
+ },
+ "he-2-00137": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00141": {
+  "tier": "hard",
+  "weak_f1": 0.9111111111111111,
+  "strong_f1": 1.0
+ },
+ "he-2-00140": {
+  "tier": "hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 1.0
+ },
+ "he-2-00142": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.0,
+  "strong_f1": 0.8823529411764706
+ },
+ "he-2-00143": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00145": {
+  "tier": "hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 1.0
+ },
+ "he-2-00144": {
+  "tier": "hard",
+  "weak_f1": 0.92,
+  "strong_f1": 1.0
+ },
+ "he-2-00147": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00148": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00146": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00150": {
+  "tier": "hard",
+  "weak_f1": 0.8333333333333334,
+  "strong_f1": 1.0
+ },
+ "he-2-00152": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00151": {
+  "tier": "hard",
+  "weak_f1": 0.8333333333333334,
+  "strong_f1": 1.0
+ },
+ "he-2-00149": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.7419354838709677,
+  "strong_f1": 0.9841269841269841
+ },
+ "he-2-00154": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00153": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00156": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00155": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00157": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00158": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00160": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00159": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.4857142857142857,
+  "strong_f1": 0.9428571428571428
+ },
+ "he-2-00161": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00162": {
+  "tier": "hard",
+  "weak_f1": 0.888888888888889,
+  "strong_f1": 1.0
+ },
+ "he-2-00164": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00163": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8351648351648351,
+  "strong_f1": 0.9777777777777777
+ },
+ "he-2-00165": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00167": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00166": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00168": {
+  "tier": "hard",
+  "weak_f1": 0.888888888888889,
+  "strong_f1": 1.0
+ },
+ "he-2-00170": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00169": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9655172413793104,
+  "strong_f1": 0.9777777777777777
+ },
+ "he-2-00172": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00171": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00173": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00174": {
+  "tier": "hard",
+  "weak_f1": 0.7272727272727272,
+  "strong_f1": 1.0
+ },
+ "he-2-00175": {
+  "tier": "hard",
+  "weak_f1": 0.6666666666666666,
+  "strong_f1": 1.0
+ },
+ "he-2-00177": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.5
+ },
+ "he-2-00176": {
+  "tier": "hard",
+  "weak_f1": 0.7719298245614035,
+  "strong_f1": 1.0
+ },
+ "he-2-00178": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00180": {
+  "tier": "hard",
+  "weak_f1": 0.5,
+  "strong_f1": 1.0
+ },
+ "he-2-00179": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9655172413793104
+ },
+ "he-2-00181": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00182": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.6666666666666666,
+  "strong_f1": 0.5
+ },
+ "he-2-00183": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00184": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00185": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00186": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00188": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00187": {
+  "tier": "hard",
+  "weak_f1": 0.9166666666666666,
+  "strong_f1": 1.0
+ },
+ "he-2-00189": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00190": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00191": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00196": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00194": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00195": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00193": {
+  "tier": "hard",
+  "weak_f1": 0.8000000000000002,
+  "strong_f1": 1.0
+ },
+ "he-2-00192": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00197": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00198": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00199": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00202": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00200": {
+  "tier": "hard",
+  "weak_f1": 0.888888888888889,
+  "strong_f1": 1.0
+ },
+ "he-2-00201": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00203": {
+  "tier": "hard",
+  "weak_f1": 0.968421052631579,
+  "strong_f1": 1.0
+ },
+ "he-2-00204": {
+  "tier": "hard",
+  "weak_f1": 0.9090909090909091,
+  "strong_f1": 1.0
+ },
+ "he-2-00206": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00205": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8000000000000002,
+  "strong_f1": 0.8000000000000002
+ },
+ "he-2-00207": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00208": {
+  "tier": "hard",
+  "weak_f1": 0.9803921568627451,
+  "strong_f1": 1.0
+ },
+ "he-2-00209": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00210": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00211": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00212": {
+  "tier": "hard",
+  "weak_f1": 0.9454545454545454,
+  "strong_f1": 1.0
+ },
+ "he-2-00213": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00215": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00214": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00216": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00217": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00219": {
+  "tier": "hard",
+  "weak_f1": 0.9,
+  "strong_f1": 1.0
+ },
+ "he-2-00218": {
+  "tier": "hard",
+  "weak_f1": 0.9411764705882353,
+  "strong_f1": 1.0
+ },
+ "he-2-00221": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00220": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8656716417910447,
+  "strong_f1": 0.8955223880597014
+ },
+ "he-2-00222": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00223": {
+  "tier": "hard",
+  "weak_f1": 0.9295774647887323,
+  "strong_f1": 1.0
+ },
+ "he-2-00226": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.509090909090909,
+  "strong_f1": 0.9454545454545454
+ },
+ "he-2-00225": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00224": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9425287356321839,
+  "strong_f1": 0.9425287356321839
+ },
+ "he-2-00227": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9777777777777777
+ },
+ "he-2-00228": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00229": {
+  "tier": "hard",
+  "weak_f1": 0.9534883720930233,
+  "strong_f1": 1.0
+ },
+ "he-2-00231": {
+  "tier": "hard",
+  "weak_f1": 0.9534883720930233,
+  "strong_f1": 1.0
+ },
+ "he-2-00232": {
+  "tier": "hard",
+  "weak_f1": 0.9494163424124513,
+  "strong_f1": 1.0
+ },
+ "he-2-00230": {
+  "tier": "easy",
+  "weak_f1": 0.9938271604938271,
+  "strong_f1": 1.0
+ },
+ "he-2-00233": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00234": {
+  "tier": "hard",
+  "weak_f1": 0.8620689655172413,
+  "strong_f1": 1.0
+ },
+ "he-2-00235": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00236": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00237": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8461538461538461,
+  "strong_f1": 0.9615384615384616
+ },
+ "he-2-00238": {
+  "tier": "hard",
+  "weak_f1": 0.9465648854961832,
+  "strong_f1": 0.9928057553956835
+ },
+ "he-2-00239": {
+  "tier": "hard",
+  "weak_f1": 0.9683257918552036,
+  "strong_f1": 1.0
+ },
+ "he-2-00240": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.5135135135135136,
+  "strong_f1": 0.8529411764705882
+ },
+ "he-2-00241": {
+  "tier": "hard",
+  "weak_f1": 0.8794788273615635,
+  "strong_f1": 1.0
+ },
+ "he-2-00242": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00244": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00243": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00245": {
+  "tier": "easy",
+  "weak_f1": 0.9920634920634921,
+  "strong_f1": 1.0
+ },
+ "he-2-00246": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00247": {
+  "tier": "ambiguous",
+  "weak_f1": 0.9523809523809523,
+  "strong_f1": 0.9523809523809523
+ },
+ "he-2-00248": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00249": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00250": {
+  "tier": "hard",
+  "weak_f1": 0.9428571428571428,
+  "strong_f1": 1.0
+ },
+ "he-2-00251": {
+  "tier": "hard",
+  "weak_f1": 0.9523809523809523,
+  "strong_f1": 1.0
+ },
+ "he-2-00252": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00253": {
+  "tier": "hard",
+  "weak_f1": 0.8888888888888888,
+  "strong_f1": 1.0
+ },
+ "he-2-00255": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00254": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00256": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00257": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9655172413793104,
+  "strong_f1": 0.9655172413793104
+ },
+ "he-2-00258": {
+  "tier": "hard",
+  "weak_f1": 0.9436619718309859,
+  "strong_f1": 1.0
+ },
+ "he-2-00259": {
+  "tier": "easy",
+  "weak_f1": 0.9934640522875817,
+  "strong_f1": 1.0
+ },
+ "he-2-00260": {
+  "tier": "hard",
+  "weak_f1": 0.8787878787878788,
+  "strong_f1": 1.0
+ },
+ "he-2-00261": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00263": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.0,
+  "strong_f1": 0.0
+ },
+ "he-2-00262": {
+  "tier": "hard",
+  "weak_f1": 0.985781990521327,
+  "strong_f1": 1.0
+ },
+ "he-2-00264": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00265": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00266": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00267": {
+  "tier": "hard",
+  "weak_f1": 0.9634551495016611,
+  "strong_f1": 1.0
+ },
+ "he-2-00269": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00268": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00270": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00271": {
+  "tier": "hard",
+  "weak_f1": 0.4736842105263158,
+  "strong_f1": 1.0
+ },
+ "he-2-00272": {
+  "tier": "hard",
+  "weak_f1": 0.6203703703703703,
+  "strong_f1": 1.0
+ },
+ "he-2-00273": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00275": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00274": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00276": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00277": {
+  "tier": "hard",
+  "weak_f1": 0.9818181818181818,
+  "strong_f1": 1.0
+ },
+ "he-2-00278": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00279": {
+  "tier": "hard",
+  "weak_f1": 0.9777777777777777,
+  "strong_f1": 1.0
+ },
+ "he-2-00281": {
+  "tier": "hard",
+  "weak_f1": 0.7333333333333334,
+  "strong_f1": 1.0
+ },
+ "he-2-00280": {
+  "tier": "hard",
+  "weak_f1": 0.9758454106280194,
+  "strong_f1": 1.0
+ },
+ "he-2-00282": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00283": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00284": {
+  "tier": "hard",
+  "weak_f1": 0.8993288590604027,
+  "strong_f1": 1.0
+ },
+ "he-2-00285": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00286": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00289": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00288": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00287": {
+  "tier": "hard",
+  "weak_f1": 0.6666666666666666,
+  "strong_f1": 1.0
+ },
+ "he-2-00290": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00291": {
+  "tier": "hard",
+  "weak_f1": 0.9887640449438202,
+  "strong_f1": 1.0
+ },
+ "he-2-00292": {
+  "tier": "hard",
+  "weak_f1": 0.6666666666666666,
+  "strong_f1": 1.0
+ },
+ "he-2-00293": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00294": {
+  "tier": "hard",
+  "weak_f1": 0.9322709163346613,
+  "strong_f1": 1.0
+ },
+ "he-2-00295": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00297": {
+  "tier": "hard",
+  "weak_f1": 0.8433734939759037,
+  "strong_f1": 1.0
+ },
+ "he-2-00296": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "he-2-00298": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9555555555555556,
+  "strong_f1": 0.0
+ },
+ "he-2-00299": {
+  "tier": "hard",
+  "weak_f1": 0.9294117647058824,
+  "strong_f1": 1.0
+ },
+ "fa-2-00000": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00002": {
+  "tier": "weird",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9411764705882353
+ },
+ "fa-2-00003": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9374999999999999,
+  "strong_f1": 0.967741935483871
+ },
+ "fa-2-00001": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9444444444444444
+ },
+ "fa-2-00005": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9,
+  "strong_f1": 0.9473684210526316
+ },
+ "fa-2-00004": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00006": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00007": {
+  "tier": "hard",
+  "weak_f1": 0.9795918367346939,
+  "strong_f1": 1.0
+ },
+ "fa-2-00008": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00009": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8888888888888888,
+  "strong_f1": 0.90625
+ },
+ "fa-2-00010": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00011": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00012": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00014": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00015": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00013": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8222222222222223,
+  "strong_f1": 0.967032967032967
+ },
+ "fa-2-00017": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00016": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00018": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00021": {
+  "tier": "hard",
+  "weak_f1": 0.84375,
+  "strong_f1": 1.0
+ },
+ "fa-2-00020": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9767441860465116,
+  "strong_f1": 0.9767441860465116
+ },
+ "fa-2-00019": {
+  "tier": "easy",
+  "weak_f1": 0.9944134078212291,
+  "strong_f1": 1.0
+ },
+ "fa-2-00022": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00023": {
+  "tier": "hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 1.0
+ },
+ "fa-2-00024": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00025": {
+  "tier": "hard",
+  "weak_f1": 0.9736842105263158,
+  "strong_f1": 1.0
+ },
+ "fa-2-00026": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00027": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8666666666666667,
+  "strong_f1": 0.8666666666666667
+ },
+ "fa-2-00028": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00029": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00030": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.7692307692307692,
+  "strong_f1": 0.8571428571428571
+ },
+ "fa-2-00031": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00032": {
+  "tier": "hard",
+  "weak_f1": 0.9577464788732395,
+  "strong_f1": 1.0
+ },
+ "fa-2-00035": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00034": {
+  "tier": "ambiguous",
+  "weak_f1": 0.8888888888888888,
+  "strong_f1": 0.8888888888888888
+ },
+ "fa-2-00033": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00037": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00036": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00038": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8571428571428571,
+  "strong_f1": 0.9375
+ },
+ "fa-2-00040": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00039": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00041": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00042": {
+  "tier": "hard",
+  "weak_f1": 0.9523809523809523,
+  "strong_f1": 1.0
+ },
+ "fa-2-00043": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8541666666666666,
+  "strong_f1": 0.8958333333333334
+ },
+ "fa-2-00044": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.983050847457627,
+  "strong_f1": 0.983050847457627
+ },
+ "fa-2-00046": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00045": {
+  "tier": "hard",
+  "weak_f1": 0.9655172413793104,
+  "strong_f1": 1.0
+ },
+ "fa-2-00047": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00048": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00049": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00050": {
+  "tier": "hard",
+  "weak_f1": 0.9411764705882353,
+  "strong_f1": 1.0
+ },
+ "fa-2-00052": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00051": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00053": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00054": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00055": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.925,
+  "strong_f1": 0.9500000000000001
+ },
+ "fa-2-00057": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00056": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00058": {
+  "tier": "hard",
+  "weak_f1": 0.8372093023255814,
+  "strong_f1": 1.0
+ },
+ "fa-2-00060": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00059": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00061": {
+  "tier": "hard",
+  "weak_f1": 0.8169014084507044,
+  "strong_f1": 1.0
+ },
+ "fa-2-00063": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00064": {
+  "tier": "hard",
+  "weak_f1": 0.9887640449438202,
+  "strong_f1": 1.0
+ },
+ "fa-2-00062": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00066": {
+  "tier": "hard",
+  "weak_f1": 0.9523809523809523,
+  "strong_f1": 1.0
+ },
+ "fa-2-00065": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00067": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8863636363636365,
+  "strong_f1": 0.9285714285714286
+ },
+ "fa-2-00068": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00069": {
+  "tier": "hard",
+  "weak_f1": 0.9541284403669724,
+  "strong_f1": 1.0
+ },
+ "fa-2-00070": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00071": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00073": {
+  "tier": "hard",
+  "weak_f1": 0.9814814814814815,
+  "strong_f1": 1.0
+ },
+ "fa-2-00072": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9875,
+  "strong_f1": 0.9875
+ },
+ "fa-2-00074": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00075": {
+  "tier": "hard",
+  "weak_f1": 0.9,
+  "strong_f1": 1.0
+ },
+ "fa-2-00076": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00077": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00078": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00079": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00080": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00082": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00081": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9500000000000001,
+  "strong_f1": 0.9523809523809523
+ },
+ "fa-2-00083": {
+  "tier": "hard",
+  "weak_f1": 0.888888888888889,
+  "strong_f1": 1.0
+ },
+ "fa-2-00084": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00085": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00086": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00087": {
+  "tier": "hard",
+  "weak_f1": 0.8214285714285715,
+  "strong_f1": 1.0
+ },
+ "fa-2-00089": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.7586206896551724
+ },
+ "fa-2-00088": {
+  "tier": "hard",
+  "weak_f1": 0.9436619718309859,
+  "strong_f1": 1.0
+ },
+ "fa-2-00090": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9473684210526316
+ },
+ "fa-2-00091": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00092": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00093": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00095": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00094": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00096": {
+  "tier": "hard",
+  "weak_f1": 0.9772727272727273,
+  "strong_f1": 1.0
+ },
+ "fa-2-00097": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00098": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00099": {
+  "tier": "hard",
+  "weak_f1": 0.9761904761904763,
+  "strong_f1": 1.0
+ },
+ "fa-2-00100": {
+  "tier": "hard",
+  "weak_f1": 0.9565217391304348,
+  "strong_f1": 1.0
+ },
+ "fa-2-00101": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9306930693069307
+ },
+ "fa-2-00102": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00103": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00104": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00105": {
+  "tier": "hard",
+  "weak_f1": 0.9761904761904762,
+  "strong_f1": 1.0
+ },
+ "fa-2-00106": {
+  "tier": "hard",
+  "weak_f1": 0.9032258064516129,
+  "strong_f1": 1.0
+ },
+ "fa-2-00107": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00108": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00109": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00110": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.847457627118644,
+  "strong_f1": 0.8620689655172413
+ },
+ "fa-2-00111": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00112": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00113": {
+  "tier": "hard",
+  "weak_f1": 0.9310344827586207,
+  "strong_f1": 1.0
+ },
+ "fa-2-00114": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00115": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00116": {
+  "tier": "hard",
+  "weak_f1": 0.9850746268656716,
+  "strong_f1": 1.0
+ },
+ "fa-2-00117": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00118": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00119": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00120": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00121": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00122": {
+  "tier": "hard",
+  "weak_f1": 0.975609756097561,
+  "strong_f1": 1.0
+ },
+ "fa-2-00123": {
+  "tier": "hard",
+  "weak_f1": 0.7294117647058822,
+  "strong_f1": 1.0
+ },
+ "fa-2-00124": {
+  "tier": "hard",
+  "weak_f1": 0.6666666666666666,
+  "strong_f1": 1.0
+ },
+ "fa-2-00125": {
+  "tier": "hard",
+  "weak_f1": 0.888888888888889,
+  "strong_f1": 1.0
+ },
+ "fa-2-00126": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00127": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00128": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00129": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00131": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00130": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00132": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00133": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00134": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8108108108108107,
+  "strong_f1": 0.8737864077669903
+ },
+ "fa-2-00135": {
+  "tier": "hard",
+  "weak_f1": 0.9588014981273407,
+  "strong_f1": 1.0
+ },
+ "fa-2-00136": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00137": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00138": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00139": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.92,
+  "strong_f1": 0.9361702127659575
+ },
+ "fa-2-00140": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9894736842105264,
+  "strong_f1": 0.0
+ },
+ "fa-2-00141": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9148936170212766,
+  "strong_f1": 0.9148936170212766
+ },
+ "fa-2-00142": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00143": {
+  "tier": "hard",
+  "weak_f1": 0.9883720930232558,
+  "strong_f1": 1.0
+ },
+ "fa-2-00144": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00145": {
+  "tier": "hard",
+  "weak_f1": 0.74,
+  "strong_f1": 1.0
+ },
+ "fa-2-00146": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00147": {
+  "tier": "hard",
+  "weak_f1": 0.8417508417508417,
+  "strong_f1": 1.0
+ },
+ "fa-2-00148": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00149": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00150": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00151": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00152": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00153": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00155": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00154": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 0.9655172413793104
+ },
+ "fa-2-00156": {
+  "tier": "hard",
+  "weak_f1": 0.9722222222222222,
+  "strong_f1": 1.0
+ },
+ "fa-2-00157": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00158": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00159": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9292035398230089,
+  "strong_f1": 0.9819819819819819
+ },
+ "fa-2-00161": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00160": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00162": {
+  "tier": "hard",
+  "weak_f1": 0.9888888888888888,
+  "strong_f1": 1.0
+ },
+ "fa-2-00163": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00164": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00165": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8125,
+  "strong_f1": 0.967741935483871
+ },
+ "fa-2-00166": {
+  "tier": "hard",
+  "weak_f1": 0.988235294117647,
+  "strong_f1": 1.0
+ },
+ "fa-2-00167": {
+  "tier": "hard",
+  "weak_f1": 0.9510489510489509,
+  "strong_f1": 1.0
+ },
+ "fa-2-00168": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00169": {
+  "tier": "easy",
+  "weak_f1": 0.9923076923076923,
+  "strong_f1": 1.0
+ },
+ "fa-2-00170": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00171": {
+  "tier": "hard",
+  "weak_f1": 0.912280701754386,
+  "strong_f1": 1.0
+ },
+ "fa-2-00172": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00173": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00175": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8607594936708862,
+  "strong_f1": 0.9885057471264368
+ },
+ "fa-2-00174": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00176": {
+  "tier": "hard",
+  "weak_f1": 0.9354838709677419,
+  "strong_f1": 1.0
+ },
+ "fa-2-00177": {
+  "tier": "easy",
+  "weak_f1": 0.996389891696751,
+  "strong_f1": 1.0
+ },
+ "fa-2-00178": {
+  "tier": "hard",
+  "weak_f1": 0.9666666666666667,
+  "strong_f1": 1.0
+ },
+ "fa-2-00179": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00180": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00181": {
+  "tier": "hard",
+  "weak_f1": 0.9565217391304348,
+  "strong_f1": 1.0
+ },
+ "fa-2-00182": {
+  "tier": "hard",
+  "weak_f1": 0.9655172413793104,
+  "strong_f1": 1.0
+ },
+ "fa-2-00183": {
+  "tier": "hard",
+  "weak_f1": 0.5373134328358209,
+  "strong_f1": 1.0
+ },
+ "fa-2-00184": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00185": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00186": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00187": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00188": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8333333333333333,
+  "strong_f1": 0.945945945945946
+ },
+ "fa-2-00189": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00190": {
+  "tier": "hard",
+  "weak_f1": 0.8333333333333334,
+  "strong_f1": 1.0
+ },
+ "fa-2-00191": {
+  "tier": "hard",
+  "weak_f1": 0.96875,
+  "strong_f1": 1.0
+ },
+ "fa-2-00192": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00194": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9473684210526316,
+  "strong_f1": 0.9473684210526316
+ },
+ "fa-2-00193": {
+  "tier": "hard",
+  "weak_f1": 0.9855072463768115,
+  "strong_f1": 1.0
+ },
+ "fa-2-00195": {
+  "tier": "hard",
+  "weak_f1": 0.7333333333333333,
+  "strong_f1": 1.0
+ },
+ "fa-2-00196": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00197": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00198": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00199": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00200": {
+  "tier": "hard",
+  "weak_f1": 0.5641025641025642,
+  "strong_f1": 1.0
+ },
+ "fa-2-00201": {
+  "tier": "hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 1.0
+ },
+ "fa-2-00202": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00203": {
+  "tier": "hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 1.0
+ },
+ "fa-2-00204": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00206": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00205": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00207": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9350649350649352,
+  "strong_f1": 0.9557522123893806
+ },
+ "fa-2-00208": {
+  "tier": "hard",
+  "weak_f1": 0.9583333333333334,
+  "strong_f1": 1.0
+ },
+ "fa-2-00209": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00210": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00212": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00211": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00213": {
+  "tier": "hard",
+  "weak_f1": 0.9285714285714286,
+  "strong_f1": 1.0
+ },
+ "fa-2-00214": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00215": {
+  "tier": "hard",
+  "weak_f1": 0.7272727272727273,
+  "strong_f1": 1.0
+ },
+ "fa-2-00216": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9761904761904762,
+  "strong_f1": 0.9285714285714286
+ },
+ "fa-2-00217": {
+  "tier": "hard",
+  "weak_f1": 0.8,
+  "strong_f1": 1.0
+ },
+ "fa-2-00218": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9361702127659575,
+  "strong_f1": 0.9361702127659575
+ },
+ "fa-2-00219": {
+  "tier": "hard",
+  "weak_f1": 0.9736842105263158,
+  "strong_f1": 1.0
+ },
+ "fa-2-00220": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00221": {
+  "tier": "hard",
+  "weak_f1": 0.9615384615384616,
+  "strong_f1": 1.0
+ },
+ "fa-2-00224": {
+  "tier": "hard",
+  "weak_f1": 0.6888888888888889,
+  "strong_f1": 1.0
+ },
+ "fa-2-00222": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00223": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8846153846153846,
+  "strong_f1": 0.9791666666666666
+ },
+ "fa-2-00225": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00226": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00227": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00229": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9166666666666666,
+  "strong_f1": 0.9166666666666666
+ },
+ "fa-2-00228": {
+  "tier": "hard",
+  "weak_f1": 0.6111111111111112,
+  "strong_f1": 1.0
+ },
+ "fa-2-00230": {
+  "tier": "hard",
+  "weak_f1": 0.9090909090909091,
+  "strong_f1": 1.0
+ },
+ "fa-2-00231": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00232": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00233": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9358974358974359,
+  "strong_f1": 0.9423076923076923
+ },
+ "fa-2-00235": {
+  "tier": "hard",
+  "weak_f1": 0.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00234": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00236": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.0,
+  "strong_f1": 0.9836065573770492
+ },
+ "fa-2-00237": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.7692307692307693,
+  "strong_f1": 0.9487179487179489
+ },
+ "fa-2-00238": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9108910891089109,
+  "strong_f1": 0.92
+ },
+ "fa-2-00239": {
+  "tier": "hard",
+  "weak_f1": 0.9824561403508771,
+  "strong_f1": 1.0
+ },
+ "fa-2-00241": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00240": {
+  "tier": "hard",
+  "weak_f1": 0.9523809523809524,
+  "strong_f1": 1.0
+ },
+ "fa-2-00242": {
+  "tier": "hard",
+  "weak_f1": 0.82,
+  "strong_f1": 1.0
+ },
+ "fa-2-00243": {
+  "tier": "easy",
+  "weak_f1": 0.9929078014184397,
+  "strong_f1": 1.0
+ },
+ "fa-2-00244": {
+  "tier": "hard",
+  "weak_f1": 0.7619047619047619,
+  "strong_f1": 1.0
+ },
+ "fa-2-00245": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9156626506024096,
+  "strong_f1": 0.9523809523809523
+ },
+ "fa-2-00246": {
+  "tier": "hard",
+  "weak_f1": 0.9523809523809523,
+  "strong_f1": 1.0
+ },
+ "fa-2-00247": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00248": {
+  "tier": "hard",
+  "weak_f1": 0.9675090252707581,
+  "strong_f1": 1.0
+ },
+ "fa-2-00250": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00249": {
+  "tier": "hard",
+  "weak_f1": 0.8067226890756303,
+  "strong_f1": 1.0
+ },
+ "fa-2-00251": {
+  "tier": "hard",
+  "weak_f1": 0.9605263157894737,
+  "strong_f1": 1.0
+ },
+ "fa-2-00252": {
+  "tier": "hard",
+  "weak_f1": 0.8571428571428571,
+  "strong_f1": 1.0
+ },
+ "fa-2-00253": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00254": {
+  "tier": "hard",
+  "weak_f1": 0.9333333333333333,
+  "strong_f1": 1.0
+ },
+ "fa-2-00255": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9259259259259259,
+  "strong_f1": 0.9259259259259259
+ },
+ "fa-2-00256": {
+  "tier": "hard",
+  "weak_f1": 0.9270833333333334,
+  "strong_f1": 1.0
+ },
+ "fa-2-00257": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00258": {
+  "tier": "hard",
+  "weak_f1": 0.9620253164556962,
+  "strong_f1": 1.0
+ },
+ "fa-2-00259": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00260": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00261": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.870967741935484,
+  "strong_f1": 0.96875
+ },
+ "fa-2-00262": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00263": {
+  "tier": "hard",
+  "weak_f1": 0.925,
+  "strong_f1": 1.0
+ },
+ "fa-2-00264": {
+  "tier": "hard",
+  "weak_f1": 0.9714285714285714,
+  "strong_f1": 1.0
+ },
+ "fa-2-00265": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00266": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8266666666666667,
+  "strong_f1": 0.9600000000000001
+ },
+ "fa-2-00267": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00268": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00269": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00270": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00271": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00272": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00273": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00274": {
+  "tier": "hard",
+  "weak_f1": 0.9707602339181286,
+  "strong_f1": 1.0
+ },
+ "fa-2-00275": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8400000000000001,
+  "strong_f1": 0.8571428571428572
+ },
+ "fa-2-00276": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00277": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00278": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00279": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00280": {
+  "tier": "hard",
+  "weak_f1": 0.9523809523809523,
+  "strong_f1": 1.0
+ },
+ "fa-2-00281": {
+  "tier": "weird",
+  "weak_f1": 1.0,
+  "strong_f1": 0.8000000000000002
+ },
+ "fa-2-00282": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00284": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00285": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00283": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.8915662650602411,
+  "strong_f1": 0.9487179487179488
+ },
+ "fa-2-00286": {
+  "tier": "hard",
+  "weak_f1": 0.8421052631578948,
+  "strong_f1": 1.0
+ },
+ "fa-2-00287": {
+  "tier": "frontier_hard",
+  "weak_f1": 1.0,
+  "strong_f1": 0.9090909090909091
+ },
+ "fa-2-00288": {
+  "tier": "hard",
+  "weak_f1": 0.8888888888888888,
+  "strong_f1": 1.0
+ },
+ "fa-2-00290": {
+  "tier": "hard",
+  "weak_f1": 0.9724770642201834,
+  "strong_f1": 1.0
+ },
+ "fa-2-00289": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.9072164948453607,
+  "strong_f1": 0.9894736842105264
+ },
+ "fa-2-00291": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00292": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00293": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00294": {
+  "tier": "hard",
+  "weak_f1": 0.8928571428571429,
+  "strong_f1": 1.0
+ },
+ "fa-2-00295": {
+  "tier": "frontier_hard",
+  "weak_f1": 0.7272727272727273,
+  "strong_f1": 0.9473684210526316
+ },
+ "fa-2-00296": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00297": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ },
+ "fa-2-00298": {
+  "tier": "hard",
+  "weak_f1": 0.8367346938775511,
+  "strong_f1": 1.0
+ },
+ "fa-2-00299": {
+  "tier": "easy",
+  "weak_f1": 1.0,
+  "strong_f1": 1.0
+ }
+}
