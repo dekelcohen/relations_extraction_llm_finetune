@@ -34,8 +34,8 @@ which records them in `hf_artifacts.json`.
 | M1 | Stage-2 synthetic generation: 600 he/fa samples (H13–H19 tables, long docs), chunked long-doc inference + dedup merge | ✅ done (this commit) |
 | M2 | Difficulty probe (Sonnet + Llama-70B, chunked) → `tiers.json`: easy 331 / hard 177 / **frontier_hard 84** / ambiguous 3 / weird 4. Slot-F1 Llama-70B 0.924 (he 0.893, fa 0.951), Sonnet 0.987 | ✅ |
 | M3 | Teacher reasoning (inspection only) → `cot_{he,fa}` (kept 270 he / 265 fa); `grpo_train` 726 chunk rows (532 source docs) / `grpo_dev` 60 docs (24 H19, 16 frontier_hard); `scripts/split_grpo.py`; stage 2 in the viewer | ✅ |
-| M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2) + `train/grpo_unsloth.py`. SFT completion tokens p50 1004 / p95 2239, mean lenient reward 0.65. HF generate ≈ 330 s per 4-prompt step (G=4), so the full run is ~20 steps in 2 h | 🔄 (committed before GRPO) |
-| M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**; push the adapter + checkpoints with `hf_sync.py`) | ⏳ |
+| M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2). SFT completion tokens p50 1004 / p95 2239. `train/grpo_unsloth.py`, `scripts/grpo_retry.sh` (auto-resume after OOM) | ✅ |
+| M5 | GRPO run: **20 steps** (2 prompts × G=4 per step, lr 1e-5, β=0, dr_grpo, strict reward, max completion 1024, ~2.5 min/step, ~50 min). Final adapter = best on grpo_dev. Pilot slot-F1 SFT 0.9584 → GRPO **0.9591** (exact 0.722 → 0.725); grpo_dev 0.853 → 0.852; test_long 0.847 → **0.858**. Adapter on HF `Shani123/re-qwen3-4b-grpo`; report sections appended | ✅ (small effect) |
 | T1 | Test set: realistic long docs (H20) → `data/test_long/` (40 he + 40 fa, TEST ONLY, [doc](datasets/test_long.md)). Slot-F1 Llama-70B ~0.974 (he 0.978, fa 0.969), Sonnet ~0.988 (he 0.992, fa 0.984). Open: per-case breakdown, harder v2 constructs | ✅ |
 
 ### Resume on another machine
@@ -50,6 +50,24 @@ which records them in `hf_artifacts.json`.
    `Shani123/re-qwen3-4b-sft-cot` into `outputs/sft-cot-qwen3-4b`. It needs `huggingface_hub`,
    which is in the container env `/data/envs/re`.
 
+### Stage-2 results (lenient slot-F1, same thinking settings; `outputs/report/pilot_compare.html`, last two sections)
+| set | n | SFT (`qwen3-4b-ft`) | GRPO (20 steps) | ckpt-10 | Llama-70B | Sonnet 5.5 |
+|---|---|---|---|---|---|---|
+| pilot (all) | 298 | 0.958 | **0.959** | – | 0.963* | 0.984 |
+| grpo_dev (all) | 60 | 0.853 | 0.852 | 0.826 | 0.937 | 0.989 |
+| grpo_dev he / fa | 30/30 | 0.871 / 0.836 | 0.880 / 0.825 | 0.861 / 0.792 | 0.924 / 0.948 | 0.994 / 0.984 |
+| grpo_dev H13 / H18 / H19 | 33/20/24 | 0.823 / 0.816 / 0.876 | 0.826 / 0.812 / 0.866 | – | 0.922 / 0.929 / 0.948 | 0.987 / 0.986 / 0.993 |
+| grpo_dev frontier_hard | 16 | 0.782 | 0.795 | 0.768 | 0.923 | 0.960 |
+| test_long (all) | 80 | 0.847 | **0.858** | – | 0.974 | 0.988 |
+| test_long he / fa | 40/40 | 0.892 / 0.797 | 0.888 / 0.825 | – | 0.978 / 0.969 | 0.992 / 0.984 |
+| test_long H13 / H15 / H18 | 34/19/18 | 0.791 / 0.765 / 0.748 | 0.822 / 0.808 / 0.757 | – | 0.964 / 0.952 / 0.952 | 0.980 / 0.970 / 0.968 |
+(*Llama-70B pilot figure is the lenient one from the report.) GRPO's null accuracy on grpo_dev rose 0.456 → 0.623 and the
+decoy hit rate fell 0.186 → 0.146; exact_sample 0.317 → 0.350. JSON validity 0.983 → 0.967 on dev (truncation at 1024 tokens).
+**Verdict:** no regression on the pilot and a small gain on test_long (+0.011, mostly fa tables), but 20 steps are far too
+few to close the gap to Llama-70B / Sonnet on big tables (SFT 4B ≈ 0.82 vs 0.92–0.99). Keep the SFT adapter as the default;
+GRPO is optional (+0.01). Training curves: reward is noisy (0.12–0.99 per step with only 8 completions/step); 25–87% of
+completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std` 0–1.
+
 ### Next items
 - [x] Probe done (M2). 84 `frontier_hard` samples is enough, so no harder constructs for now.
       Candidates for a later round: footnote overrides, in-cell changes (`<del>old</del> new`),
@@ -57,8 +75,13 @@ which records them in `hf_artifacts.json`.
 - [ ] Teacher-CoT pass (inspection only); optionally add stage 2 to the viewer manifest
       (`viewer_sources.json`).
 - [ ] `export-eval --chunk` → split out `grpo_dev` (~60, stratified, H19-heavy) and `grpo_train`.
-- [ ] Pre-filter, write `train/grpo_unsloth.py`, smoke test, pilot run, ~2 h run; evaluate and
-      add to the report.
+- [x] Pre-filter, GRPO script, run, eval, report (see results above).
+- [ ] **Longer GRPO**: ≥100 steps need faster rollouts (HF generate costs ~2.5 min per 2 prompts on the 3070). Options: vLLM
+      colocate with a bnb plugin, a bigger GPU, shorter thinking (SFT p50 is 1000 tokens), or GRPO on a no-think SFT.
+- [ ] Raise `max_completion` (1024 clipped many rollouts) once rollouts are cheaper; log per-completion lengths in the pre-filter.
+- [ ] Weakest area for the 4B model: big tables with ditto marks / two-level headers / pipe tables (H15, H16, H18) and fa.
+- [ ] Not done: re-scoring the pre-filter with the strict reward (completions were not stored); the first 2 launches OOM'd
+      (G=4, 1536 tokens), so the pre-filter's length cut (≤1300 tokens) and the final 1024/1900 caps differ.
 - **Training reward is STRICT** (user decision): exact slot = 1, lenient-only partial = 0.5 TP/FP/FN, main-entity name
       scored as a slot, exact decoy check, +0.1 all-exact bonus; eval stays lenient + `exact_sample`. Table in
       [`datasets/stage_2_RL_GRPO.md`](datasets/stage_2_RL_GRPO.md#reward-lenient-eval-vs-strict-training).

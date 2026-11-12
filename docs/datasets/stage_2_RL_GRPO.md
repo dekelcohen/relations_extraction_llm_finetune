@@ -17,9 +17,10 @@ This dataset supplies the stage-2 prompts. It is weighted toward:
 Languages: **he and fa only** (no en in stage 2). Location: `data/stage_2_RL_GRPO/`
 (**committed to git**, so work can continue on another machine).
 
-**Status (2026-11-12):** 600 samples built (300 he + 300 fa, 600/600 passed QC). This includes
-93 H19 long documents and 343 H13 tables. Difficulty probe, teacher reasoning, export and
-GRPO are still to do. See [status](../status.md).
+**Status (2026-11-12):** 600 samples built (300 he + 300 fa, 600/600 passed QC), including 93 H19 long documents and
+343 H13 tables. Probe, teacher reasoning (inspection only), split, pre-filter, GRPO run and eval are done: `grpo_train` 726
+chunk rows (532 source docs), `grpo_dev` 60 docs, `grpo_train_filtered` 191 rows (111 unique). Results are in
+[status](../status.md#stage-2-results-lenient-slot-f1-same-thinking-settings-outputsreportpilot_comparehtml-last-two-sections). See [status](../status.md).
 
 ## Hard-case mix (`build --focus`)
 
