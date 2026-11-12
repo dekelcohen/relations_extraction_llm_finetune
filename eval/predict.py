@@ -4,6 +4,8 @@ vLLM (GPU):   python eval/predict.py --model outputs/sft-merged --data data/synt
                   --out outputs/eval/sft.preds.jsonl [--lora outputs/grpo-lora] [--tp 1] [--guided_json]
 HF (CPU/dbg): python eval/predict.py --backend hf --model <path> --data ... --limit 5
 Then scores: writes <out>.metrics.json and prints a markdown table grouped by lang/format/hard-case/tier.
+Long documents (> --chunk_min chars) are predicted per overlapping chunk and merged (re_synth/chunking.py);
+--no_chunk disables this. Output rows of chunked docs also keep the per-chunk raw outputs ("chunks").
 """
 from __future__ import annotations
 
@@ -18,6 +20,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "train"))
 
 from data import read_jsonl, render_prompt  # noqa: E402
+from re_synth import chunking  # noqa: E402
 from re_synth.score import aggregate, parse_prediction, score_sample  # noqa: E402
 
 log = logging.getLogger("predict")
@@ -35,9 +38,12 @@ def gen_vllm(a, prompts):
         except ImportError:
             from vllm.sampling_params import GuidedDecodingParams
             kw["guided_decoding"] = GuidedDecodingParams(json=OUT_SCHEMA)
-    sp = SamplingParams(temperature=a.temperature, max_tokens=a.max_tokens, **kw)
+    sp = SamplingParams(temperature=a.temperature, top_p=a.top_p, top_k=a.top_k, max_tokens=a.max_tokens, seed=a.seed,
+                        **kw)
+    extra = {k: v for k, v in {"quantization": a.quantization, "kv_cache_dtype": a.kv_cache_dtype,
+                               "max_num_seqs": a.max_num_seqs, "enforce_eager": a.enforce_eager}.items() if v}
     llm = LLM(model=a.model, tensor_parallel_size=a.tp, max_model_len=a.max_model_len, enable_lora=bool(a.lora),
-              max_lora_rank=a.max_lora_rank, gpu_memory_utilization=a.gpu_mem)
+              max_lora_rank=a.max_lora_rank, gpu_memory_utilization=a.gpu_mem, **extra)
     lreq = None
     if a.lora:
         from vllm.lora.request import LoRARequest
@@ -59,6 +65,17 @@ def gen_hf(a, prompts, tok):
         out = model.generate(**ids, max_new_tokens=a.max_tokens, do_sample=False)
         res.append(tok.decode(out[0, ids["input_ids"].shape[1]:], skip_special_tokens=True))
     return res
+
+
+def chunk_prompt(r: dict, chunk: str | None) -> list[dict]:
+    """The row's prompt with the document replaced by one chunk of it."""
+    if chunk is None:
+        return r["prompt"]
+    doc = "<<<\n" + r["text"] + "\n>>>"
+    msgs = [dict(m) for m in r["prompt"]]
+    assert doc in msgs[-1]["content"], f"{r['id']}: document not found in prompt"
+    msgs[-1]["content"] = msgs[-1]["content"].replace(doc, "<<<\n" + chunk + "\n>>>")
+    return msgs
 
 
 def score_rows(rows, preds):
@@ -96,21 +113,42 @@ def main():
     ap.add_argument("--max_lora_rank", type=int, default=64)
     ap.add_argument("--gpu_mem", type=float, default=0.9)
     ap.add_argument("--temperature", type=float, default=0.0)
+    ap.add_argument("--top_p", type=float, default=1.0)
+    ap.add_argument("--top_k", type=int, default=-1)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--quantization", default=None, help="e.g. bitsandbytes (pre-quantized bnb-4bit checkpoints)")
+    ap.add_argument("--kv_cache_dtype", default=None, help="e.g. fp8 to fit longer contexts on small GPUs")
+    ap.add_argument("--max_num_seqs", type=int, default=None)
+    ap.add_argument("--enforce_eager", action="store_true", help="skip CUDA graphs (saves VRAM on small GPUs)")
     ap.add_argument("--guided_json", action="store_true")
     ap.add_argument("--enable_thinking", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--no_chunk", action="store_true", help="never split long documents")
+    ap.add_argument("--chunk_chars", type=int, default=chunking.CHUNK_CHARS)
+    ap.add_argument("--chunk_overlap", type=int, default=chunking.CHUNK_OVERLAP)
+    ap.add_argument("--chunk_min", type=int, default=chunking.CHUNK_MIN)
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(a.lora or a.model)
     rows = read_jsonl(a.data)[: a.limit]
-    prompts = [render_prompt(tok, r["prompt"], a.enable_thinking) for r in rows]
-    log.info("generating %d prompts with %s (%s)", len(prompts), a.model, a.backend)
-    texts = gen_vllm(a, prompts) if a.backend == "vllm" else gen_hf(a, prompts, tok)
+    prompts, owner = [], []          # one prompt per document, or one per chunk of a long document
+    for i, r in enumerate(rows):
+        parts = [] if a.no_chunk else chunking.split(r["text"], a.chunk_chars, a.chunk_overlap, a.chunk_min)
+        for c in parts or [None]:
+            prompts.append(render_prompt(tok, chunk_prompt(r, c), a.enable_thinking))
+            owner.append(i)
+    log.info("generating %d prompts for %d docs with %s (%s)", len(prompts), len(rows), a.model, a.backend)
+    outs = gen_vllm(a, prompts) if a.backend == "vllm" else gen_hf(a, prompts, tok)
+    per_doc = [[] for _ in rows]
+    for i, t in zip(owner, outs):
+        per_doc[i].append(t)
+    texts = [o[0] if len(o) == 1 else chunking.merge_raws(o, json.loads(r["slot_types"]), r["text"]) for r, o in zip(rows, per_doc)]
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
-        for r, t in zip(rows, texts):
-            f.write(json.dumps({"id": r["id"], "model": a.model, "lora": a.lora, "raw": t}, ensure_ascii=False) + "\n")
+        for r, t, o in zip(rows, texts, per_doc):
+            row = {"id": r["id"], "model": a.model, "lora": a.lora, "raw": t} | ({"chunks": o} if len(o) > 1 else {})
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
     per, rep = score_rows(rows, {r["id"]: t for r, t in zip(rows, texts)})
     with open(a.out + ".metrics.json", "w", encoding="utf-8") as f:
         json.dump({"report": rep, "per_sample": per}, f, indent=1)

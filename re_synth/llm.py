@@ -1,4 +1,4 @@
-"""LLM access via D:/NLP/llm_providers (OpenRouter) with an on-disk cache.
+"""LLM access via D:/NLP/llm_providers (OpenRouter, or the Copilot CLI for `copilot-<model>`) with an on-disk cache.
 
 Env: RE_ENV_FILE=<path to .env containing OPENROUTER_API_KEY> (optional; plain env vars also work).
      PYTHONPATH must include the llm_providers repo (or `pip install -e <llm_providers>`).
@@ -52,13 +52,18 @@ def chat(messages: list[dict], model: str, temperature: float = 0.0, max_tokens:
          reasoning_effort: str | None = None) -> str:
     """`salt` differentiates cache keys for repeated sampling (e.g. different seeds)."""
     _ensure_env()
-    from llm_providers.openrouter import call_openrouter
     model = MODELS.get(model, model)
     rf = {"type": "json_object"} if json_mode else None
 
-    def producer():
-        return call_openrouter(messages, model, max_tokens=max_tokens, temperature=temperature, response_format=rf,
-                               reasoning_effort=reasoning_effort)
+    if model.startswith("copilot-"):  # GitHub Copilot CLI (no temperature / json_mode / max_tokens flags)
+        def producer():
+            from llm_providers.copilot_cli import call_copilot
+            return call_copilot(messages, model[len("copilot-"):], reasoning_effort=reasoning_effort)
+    else:
+        def producer():
+            from llm_providers.openrouter import call_openrouter
+            return call_openrouter(messages, model, max_tokens=max_tokens, temperature=temperature,
+                                   response_format=rf, reasoning_effort=reasoning_effort)
 
     if not use_cache:
         return producer()

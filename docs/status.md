@@ -13,6 +13,72 @@ Llama-3.3-70B (weak) vs Claude Sonnet 5.5 (strong) baselines — see
 for the full table. Headline: weak/strong slot-F1 gap is real but small (0.958 vs
 0.984); most pilot samples are "easy" (only 42/298 mined as hard).
 
+## Current stage: stage 2 — GRPO on hard he/fa cases (updated 2026-11-12)
+
+Stage 1 is done. Qwen3-4B was QLoRA-SFT'd on Sonnet teacher reasoning plus the gold JSON
+(`data/synth_hefa`, adapter `outputs/sft-cot-qwen3-4b`), reaching pilot slot-F1 0.958. The
+report is at `outputs/report/pilot_compare.html`. Stage 2 continues that adapter with GRPO. The
+dataset is described in [`datasets/stage_2_RL_GRPO.md`](datasets/stage_2_RL_GRPO.md); the
+GRPO hyperparameter research is in
+[`research/grpo_hyperparameters.md`](research/grpo_hyperparameters.md).
+
+**Convention:** commit and push at every milestone (after synthetic generation, before GRPO,
+after GRPO), including the data under `data/stage_2_RL_GRPO/`, so work can continue on
+another machine from the same point.
+
+### Milestones
+| # | Milestone | State |
+|---|---|---|
+| M1 | Stage-2 synthetic generation: 600 he/fa samples (H13–H19 tables, long docs), chunked long-doc inference + dedup merge | ✅ done (this commit) |
+| M2 | Difficulty probe (Sonnet + Llama-70B, chunked) → `tiers.json`, `frontier_hard` count | ⏳ next |
+| M3 | Teacher reasoning (inspection only) → `cot_{he,fa}`; export `grpo_train` / `grpo_dev` (`--chunk`) | ⏳ |
+| M4 | vLLM pre-filter (SFT adapter, n=8) + `train/grpo_unsloth.py` smoke → pilot run (**commit before GRPO**) | ⏳ |
+| M5 | ~2 h GRPO run, checkpoint eval on pilot + `grpo_dev`, `qwen3-4b-grpo` added at the end of the report (**commit after GRPO**) | ⏳ |
+
+### Resume on another machine
+1. `git pull`. All code, docs and stage-1/2 data (`data/pilot`, `data/synth_hefa`,
+   `data/stage_2_RL_GRPO`) are in the repo.
+2. Create `.env` in the repo root with `OPENROUTER_API_KEY=…`. It is git-ignored; never
+   commit it. Pass it with `RE_ENV_FILE=$PWD/.env`.
+3. Clone `llm_providers` next to this repo and run with `PYTHONPATH=../llm_providers`. Copilot
+   models (`copilot-<model id>`) need the Copilot CLI to be logged in.
+4. **The SFT adapter `outputs/sft-cot-qwen3-4b` (253 MB) is NOT in git** (GitHub's limit is
+   100 MB per file); see the open issues below.
+
+### Next items
+- [ ] Re-run the Llama-70B probe with chunking. The first unchunked run (`preds_weak.jsonl`,
+      226 rows) hit the provider's **4096-token context limit** on long docs; delete those rows
+      and re-predict.
+- [ ] Sonnet probe on all 600 samples; run `mine` → tiers. If `frontier_hard` is too small,
+      add harder constructs: footnote overrides, in-cell changes (`<del>old</del> new`),
+      rowspan-merged cells, cross-table ID joins.
+- [ ] Teacher-CoT pass (inspection only); optionally add stage 2 to the viewer manifest
+      (`viewer_sources.json`).
+- [ ] `export-eval --chunk` → split out `grpo_dev` (~60, stratified, H19-heavy) and `grpo_train`.
+- [ ] Pre-filter, write `train/grpo_unsloth.py`, smoke test, pilot run, ~2 h run; evaluate and
+      add to the report.
+- [ ] Update this file and the dataset doc with the actual counts and results.
+
+### Open issues
+- **SFT adapter transfer:** it needs Git LFS, an HF Hub (private) repo, or a manual copy.
+  Not decided yet.
+- **Probe fairness:** the H13 "date" column is label-ambiguous when a distractor date column
+  exists. The H15 "previous supplier" vs current one may also be too subtle. Review these
+  in the viewer before trusting `frontier_hard` labels.
+- **Tables are not hard enough for Sonnet yet:** on an early 24-table probe Sonnet scored
+  mean sample-F1 0.982. Its errors were ditto marks copied literally, previous/current
+  columns confused, and distractor columns. Llama-70B results on stage 2 are still pending.
+- **H19 token budget for GRPO on 8 GB:** whole H19 docs need about 4.5k input + 2.5k output
+  tokens. GRPO therefore trains on clean **chunks** (`export --chunk`), while dev/eval stay
+  doc-level with chunked inference.
+- **Chunk-merge edge cases:** a chunk can mangle an entity name, as when Sonnet wrote the type
+  `bank_account` instead of the name. These records are merged only if they share an ID slot;
+  schemas without an ID slot can still produce duplicates in that case.
+- **Generator model:** Sonnet passed QC on 600/600 samples. Fallbacks if it degrades:
+  `copilot-gpt-6.1-terra`, `-sol`, or Opus 5.5 with effort medium.
+- **E3.2 (future):** parse tables with the `excel_table_parsing` repo (`xlparse`) as a
+  preprocessing step before extraction (plan §4.6).
+
 ## Immediate next step: manual review of the pilot testset
 **Before scaling the build (3000/lang) or hardening further, the 300-sample pilot
 needs a manual pass to check it's actually representative of the target domain** —

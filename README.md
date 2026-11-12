@@ -11,13 +11,14 @@ Fine-tune an open LLM (default: Qwen3-8B + LoRA) as a **generic, prompt-driven e
 ## Repo layout
 | Path | What |
 |---|---|
-| `re_synth/` | Synthetic data pipeline: `lexicon` (he/fa/en values, Jalali/Hebrew dates), `schemas` (8 schemas), `hardcases` (H1–H12 plans + decoys), `source` (Wikipedia/FineWeb-2 seeds via HF datasets-server), `inject` (LLM scrub+inject with `[[r0.slot]]` markers + verification), `layout` (text/HTML/email, H6 lists, H7 tables), `score` (normalized matching, metrics, GRPO reward), `mine` (weak vs strong tiers), `export` (SFT/GRPO jsonl), `convert/redocred` |
+| `re_synth/` | Synthetic data pipeline: `lexicon` (he/fa/en values, Jalali/Hebrew dates), `schemas` (8 schemas), `hardcases` (H1–H19 plans + decoys; H13–H18 big tables, H19 long docs), `source` (Wikipedia/FineWeb-2 seeds via HF datasets-server), `inject` (LLM scrub+inject with `[[r0.slot]]` markers + verification), `layout` (text/HTML/email, H6 lists, H7 tables), `score` (normalized matching, metrics, GRPO reward), `mine` (weak vs strong tiers), `export` (SFT/GRPO jsonl), `chunking` (overlapping chunks of long docs + dedup merge of chunk outputs), `convert/redocred` |
 | `train/` | `sft.py` (TRL SFT + LoRA), `grpo.py` (TRL GRPO + vLLM), `rewards.py`, `merge.py` (merge / WiSE-scale LoRA), `sft_unsloth.py` (optional 1-GPU) |
 | `eval/` | `predict.py` (vLLM/HF batch inference + scoring by lang/format/hard-case/tier), `forgetting.sh` (lm-eval general benchmarks) |
 | `configs/` | `sft_qwen3_8b.yaml`, `grpo_qwen3_8b.yaml`, `accelerate/zero2.yaml`, `accelerate/zero3.yaml` |
-| `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh`, `export_viewer_data.py` |
+| `scripts/` | `gen_data.sh`, `run_sft_4xa100.sh`, `run_grpo_4xa100.sh`, `run_eval.sh`, `viewer_data.py` (viewer payload builder) |
 | `data/pilot/` | Pilot: seeds, ~300 generated samples, baseline predictions/scores, tiers, exported SFT/GRPO files |
-| `viewer/` | Dataset viewer: `server.py` (FastAPI/uvicorn, dynamic dataset selector) or static `index.html`/`data.js`; renders each sample's text/HTML/email with entities & relations highlighted, per-model prediction overlays, and a prompt-chain review tab |
+| `data/synth_hefa/`, `data/stage_2_RL_GRPO/` | Stage-1 SFT data (he/fa + teacher CoT) and stage-2 GRPO hard-case samples ([doc](docs/datasets/stage_2_RL_GRPO.md)) |
+| `viewer/` | Dataset viewer: `server.py` (FastAPI/uvicorn, dynamic dataset selector, reads source files directly); renders each sample's text/HTML/email with entities & relations highlighted, per-model prediction overlays, and a prompt-chain review tab |
 
 ## 1. Install (GPU server, 4×A100)
 ```bash
@@ -65,6 +66,8 @@ bash scripts/run_eval.sh outputs/grpo-qwen3-8b-merged data/synth/export/grpo_tes
 bash eval/forgetting.sh Qwen/Qwen3-8B && bash eval/forgetting.sh outputs/grpo-qwen3-8b-merged   # general-skill regression
 python train/merge.py --base Qwen/Qwen3-8B --adapter outputs/sft-qwen3-8b --out outputs/sft-wise08 --scale 0.8  # WiSE trade-off
 ```
+Long documents (> 4,000 chars) are split into overlapping chunks with repeated context: title, section heading, and table header plus group row. The per-chunk outputs are then merged and de-duplicated (`re_synth/chunking.py`). This is on by default in `eval/predict.py` and `re_synth predict`; `--no_chunk` disables it.
+
 Metrics: slot P/R/F1, record F1, null accuracy, decoy-hit rate (picked a distractor), hallucination rate (value not in text), JSON validity, exact-sample rate, grouped by language / format / hard case / tier.
 
 ## 5. Dataset viewer (manual review)
@@ -83,14 +86,9 @@ directly in the text, plus an optional, separately toggled overlay for planted *
   ```
   The dataset-selector dropdown (top of the sidebar) lists every directory under `--data-root`
   that has a `samples.jsonl`, defaulting to `data/pilot` ("testset (pilot)").
-- **Static fallback (no server)** — regenerate `viewer/data.js` and open `index.html` directly:
-  ```bash
-  python scripts/export_viewer_data.py --in data/pilot --out viewer/data.js   # regenerate after any data change
-  ```
-  Open `viewer/index.html` directly in a browser, or `python -m http.server --directory viewer 8000`.
-  `viewer/data.js` is checked in (generated from `data/pilot/`) so this mode works right after
-  cloning, with no dependencies. The webapp auto-detects whether the dynamic API is reachable and
-  falls back to this static dataset if not.
+  The viewer reads the source files directly on every request (no exported/copied data): a dataset dir's
+  `samples.jsonl`, `tiers.json`, `preds_<model>.jsonl`, plus predictions/flags stored elsewhere that are
+  referenced by `viewer_sources.json` (written by `eval/compare_report.py --viewer_dir`).
 
 **Document tab:** filter the sidebar by language/format/tier/hard-case or search by id/schema/genre.
 The **Predictions** chip row in the toolbar lists every model with a `preds_<model>.jsonl` file

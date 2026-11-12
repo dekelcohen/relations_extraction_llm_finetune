@@ -232,6 +232,42 @@ Full rationale and paper links in [research §8](../research/entity_relation_ext
 - What's specific to *this* stage is only the **data source**: relabel the existing synthetic corpus (no new generation) as pairwise (main entity, slot, candidate value) examples — positive when the candidate matches the injected GT, negative when it's a planted decoy, a same-row/paragraph distractor, or any other nearby non-GT value.
 - **Reward/eval:** decoy-rejection precision/recall on the H1–H12 hard tier, separate from the extractor's record-F1 so regressions are attributable to the right stage.
 
+### 4.6 Experiment matrix (planned)
+
+All rows use the same synthetic data and the same eval (§6). Reasoning = **with**: think/CoT before the JSON (Qwen3 thinking mode, or SFT on teacher CoT then GRPO). **Without**: direct JSON / classification. Encoder rows have no reasoning column (n/a). **Sizes are approximate.** At each size, use the latest open model from each family (e.g. ~27–31B = Gemma-4-31B / Qwen3.8-27B). The model names below are examples, not fixed choices.
+
+**E1. Fine-tune for entity + relation extraction**
+
+| ID | Family | Model(s) | Size | Reasoning | Notes |
+|---|---|---|---|---|---|
+| E1.1 | Encoder | DeBERTa-v3-large / mDeBERTa-v3 (span NER + pair RE head) | ~0.3–0.4B | n/a | Cheapest baseline; he/fa needs the multilingual variant |
+| E1.2 | Encoder | GLiNER-2.5 (`fastino/gliner2.5-multi-v1`, `gliner2.5-base-v1`) | ~0.2–0.5B | n/a | Schema-prompted NER + relations; fine-tune on our schemas |
+| E1.3 | Encoder | GLiNER-Relex (`knowledgator/gliner-relex-multi-v1.0`, `-large-v1.0`) | ~0.3–0.5B | n/a | Joint entity + relation extraction |
+| E1.4 | Decoder | Qwen3-4B | ~4B | without / with | Smallest LLM |
+| E1.5 | Decoder | Qwen3-8B (default, §4.1–4.2) / Llama-3.1-8B | ~8B | without / with | Main track |
+| E1.6 | Decoder | Gemma-4-31B / Qwen3.8-27B | ~27–31B | without / with | Also the GKD teacher (§4.4) |
+| E1.7 | Decoder | Llama-3.3-70B / Qwen2.5-72B | ~70B | without / with | Upper bound; LoRA/QLoRA only on 4×A100 |
+| E1.8 | Decoder | *Maybe:* Mistral-Small-24B, Phi-4 (14B), DictaLM (he) | varies | without / with | Only if E1.4–E1.7 show a size/language gap |
+
+**E2. Fine-tune to verify extractions** (Stage-C verifier, §4.5. Input: doc + candidate (entity, slot, value). Output: accept/reject.)
+
+| ID | Family | Model(s) | Size | Reasoning | Notes |
+|---|---|---|---|---|---|
+| E2.1 | Encoder | DeBERTa-v3-large / mDeBERTa-v3 (cross-encoder classifier) | ~0.3–0.4B | n/a | Fast verifier; NLI-style pair classification |
+| E2.2 | Decoder | Qwen3-8B / Llama-3.1-8B | ~8B | without / with | Without = classification head or 1-token answer. With = CoT then verdict |
+| E2.3 | Decoder | Llama-3.3-70B / Qwen2.5-72B | ~70B | without / with | Upper bound; can distill into E2.1/E2.2 |
+
+**E3. Preprocess documents before extraction** (long docs and big tables; stage-2 hard cases H13–H19. Each row is evaluated with the best E1 extractor, against the same doc-level gold.)
+
+| ID | Preprocessing | Input to the extractor | Reasoning | Notes |
+|---|---|---|---|---|
+| E3.0 | None (whole document) | Raw text/HTML/email | without / with | Baseline; fails on context length (Llama-70B provider limit 4k tokens) and on attention over 10–30 entities |
+| E3.1 | Overlapping chunks + merge (`re_synth/chunking.py`, **implemented**) | ~2.5k-char chunks. Repeated context: title, section heading, table header + group row. Duplicate records merged | without / with | Default for inference on docs > 4k chars. Oracle round-trip F1 = 1.0 on stage-2 docs |
+| E3.2 | **Table parsing with the `excel_table_parsing` repo (`xlparse`, `D:\NLP\Tables\excel_table_parsing`) → preprocess** | Each table normalized to records: multi-level headers flattened ("current data / date"), ditto (〃/כנ״ל/همان) and merged/rowspan cells resolved, transposed tables (H17) re-oriented, group/section rows propagated as a column. Tables are rendered as one record per line (`header: value; …`), and surrounding text is kept | without / with | Targets H13–H17 errors (far headers, ditto, previous-vs-current columns). Measure parse errors separately from extraction errors |
+| E3.3 | E3.2 + E3.1 | Parsed tables, then chunked by records | without / with | Long docs with many tables (H19) |
+
+**Metrics:** E1: record-F1 / relation-F1 + the forgetting suite (§6.3). E2: decoy-rejection P/R on the H1–H12 tier, plus end-to-end F1 when it is paired with the best E1 extractor. Also log latency and tokens per document for every row. This tells us whether the "with reasoning" variants are worth their cost.
+
 ## 5. Frameworks (efficient runs)
 
 | Need | Primary | Fallback | Notes |

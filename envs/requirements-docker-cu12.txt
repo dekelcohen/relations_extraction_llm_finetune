@@ -1,0 +1,15 @@
+# Single-GPU dev env (docker/, micromamba env at /data/envs/re) for hosts with an older driver (535 / CUDA 12.2).
+# vLLM >= 0.33 and torch 2.14 default wheels are CUDA 13 (driver >= 580); pin the CUDA 12.9 builds instead
+# (CUDA minor-version compatibility lets cu129 run on driver >= 525). Same vLLM/torch pins as requirements-train.txt.
+#   pip install -r envs/requirements-docker-cu12.txt
+--extra-index-url https://wheels.vllm.ai/0.32.0/cu129
+--extra-index-url https://download.pytorch.org/whl/cu129
+torch==2.13.0+cu129
+torchvision==0.28.0+cu129
+vllm==0.32.0
+unsloth
+transformers>=5.16.1,<5.20
+python-dotenv
+requests
+pyyaml
+huggingface_hub

@@ -77,6 +77,17 @@ def test_reward_invalid_json_never_raises():
         assert reward_from_metrics(score_sample(recs, ok, _gt(), [], TEXT, TYPES)) <= 0.2
 
 
+def test_lenient_parse_repairs_formatting_only():
+    from re_synth.score import parse_prediction_lenient
+    raw = '<think>x</think>\n{"records": [{"main_entity": "a", "org": "אורן בע"מ", "date": "כ"א בטבת"}]}'
+    assert not parse_prediction(raw)[1]
+    recs, ok, tag = parse_prediction_lenient(raw)
+    assert ok and tag == "inner_quotes" and recs[0]["org"] == 'אורן בע"מ' and recs[0]["date"] == 'כ"א בטבת'
+    assert parse_prediction_lenient('{"records": [{"main_entity": "a"}]}}')[1:] == (True, "trailing_data")
+    assert parse_prediction_lenient("<think>never ends")[1:] == (False, "unclosed_think")
+    assert parse_prediction_lenient(json.dumps(_gt()))[2] == ""
+
+
 def test_marker_verify():
     rng = random.Random(3)
     plan = plan_sample(rng, "en", "text", "vehicle", force_cases=["H1"])
@@ -120,3 +131,82 @@ def test_rewards_accept_json_string_columns():
               slot_types=[json.dumps(st)] * 2)
     assert extraction_reward(completions=[json.dumps(gt), "oops"], **kw) == [1.0, 0.0]
     assert format_reward(completions=[json.dumps(gt), "oops"]) == [1.0, 0.0]
+
+
+def test_chunking_roundtrip_long_doc():
+    """split -> per-chunk gold -> merge recovers the full gold of a deterministic H19 long document."""
+    from re_synth import chunking, hardcases, layout
+    from re_synth.schemas import SCHEMAS
+    from re_synth.score import sample_f1, slot_types_for
+    old, hardcases.FOCUS_LONG_P = hardcases.FOCUS_LONG_P, 1.0
+    try:
+        for lang, fmt in (("he", "text"), ("fa", "html")):
+            rng = random.Random(f"chunk-{lang}")
+            p = plan_sample(rng, lang, fmt, focus=True)
+            assert "H19" in p["hard_cases"]
+            s = SCHEMAS[p["schema_id"]]
+            text = "Title\n\n" + layout.long_doc(s, p, lang, rng, fmt != "html") * 1
+            gt = {"records": [{"main_entity": r["main_entity"],
+                               **{k: (v or {}).get("value") for k, v in r["slots"].items()}} for r in p["records"]]}
+            parts = chunking.split(text, max_chars=1500, overlap=300, min_chars=1000)
+            assert len(parts) >= 2 and all(len(c) <= 1600 for c in parts)
+            st = slot_types_for(p["schema_id"])
+            golds = [json.dumps(chunking.chunk_gold(gt, [], c)[0], ensure_ascii=False) for c in parts]
+            merged = json.loads(chunking.merge_raws(golds, st))["records"]
+            m = score_sample(merged, True, gt, [], text, st)
+            assert sample_f1(m) == 1.0, (lang, m)
+    finally:
+        hardcases.FOCUS_LONG_P = old
+
+
+def test_chunk_merge_rules():
+    from re_synth.chunking import merge_records
+    st = {"plate": "id", "location": "location"}
+    a = {"main_entity": "Ford", "plate": "11-222-33", "location": None}
+    a2 = {"main_entity": "Ford", "plate": "11-222-33", "location": "Haifa"}   # same entity seen in the overlap
+    b = {"main_entity": "Ford", "plate": "99-888-77", "location": "Eilat"}    # same name, different id
+    out = merge_records([[a, b], [a2]], st)
+    assert len(out) == 2 and {r["location"] for r in out} == {"Haifa", "Eilat"}
+    # two same-name records in ONE chunk are never merged
+    assert len(merge_records([[a, dict(a)]], st)) == 2
+
+
+def test_chunk_overlap_duplicates_removed():
+    """Records repeated in chunk overlaps (with surface noise) are extracted twice but merged into one."""
+    from re_synth import chunking, hardcases, layout
+    from re_synth.schemas import SCHEMAS
+    from re_synth.score import norm, score_sample, slot_types_for
+    old, hardcases.FOCUS_LONG_P = hardcases.FOCUS_LONG_P, 1.0
+    try:
+        rng = random.Random("dups-he")
+        p = plan_sample(rng, "he", "text", focus=True)
+        s = SCHEMAS[p["schema_id"]]
+        text = "Title\n\n" + layout.long_doc(s, p, "he", rng, True)
+        gt = {"records": [{"main_entity": r["main_entity"],
+                           **{k: (v or {}).get("value") for k, v in r["slots"].items()}} for r in p["records"]]}
+        st = slot_types_for(p["schema_id"])
+        parts = chunking.split(text, max_chars=1200, overlap=400, min_chars=1000)
+        per_chunk, seen = [], set()
+        for ci, c in enumerate(parts):
+            recs = chunking.chunk_gold(gt, [], c)[0]["records"]
+            out = []
+            for r in recs:
+                r = dict(r)
+                if r["main_entity"] in seen:            # overlap copy: noisy surface form, a slot left out
+                    r["main_entity"] = ("ה" + r["main_entity"]) if ci % 2 else f'"{r["main_entity"]}"'
+                    k = next((k for k in st if r.get(k) is not None and st[k] != "id"), None)
+                    if k:
+                        r[k] = None
+                out.append(dict(reversed(list(r.items()))))
+            seen |= {r["main_entity"] for r in recs}
+            per_chunk.append(out)
+        n_raw = sum(len(x) for x in per_chunk)
+        assert n_raw > len(gt["records"]), "test doc must have records repeated in overlaps"
+        merged = chunking.merge_records(per_chunk, st)
+        keys = [norm(r["main_entity"]).strip('"') for r in merged]
+        assert len(merged) == len(gt["records"]), (n_raw, len(merged), len(gt["records"]))
+        m = score_sample(merged, True, gt, [], text, st)
+        assert m["rec_fp"] == 0 and m["rec_fn"] == 0 and m["tp"] == m["n_gold_values"], m
+        assert len(set(keys)) == len(keys) or len(gt["records"]) != len({norm(r["main_entity"]) for r in gt["records"]})
+    finally:
+        hardcases.FOCUS_LONG_P = old

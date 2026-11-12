@@ -1,21 +1,20 @@
 /* Small vanilla-JS dataset viewer.
-   Dynamic mode: served by viewer/server.py (FastAPI) -- fetches /api/datasets + /api/dataset/<name>,
-   so the dataset selector dropdown loads straight from disk and switching datasets needs no rebuild.
-   Static fallback: if no server is reachable (e.g. index.html opened directly from disk), falls back
-   to the `DATASET` global pre-baked into data.js by scripts/export_viewer_data.py. */
+   Served by viewer/server.py (FastAPI): fetches /api/datasets + /api/dataset/<name>, which read the
+   source files on every request (single source of truth -- no exported/copied data). */
 
 const RECORD_HUES = [217, 142, 32, 4, 262, 190, 330, 83]; // blue, green, amber, red, violet, cyan, pink, lime
 const VERDICT_SYMBOL = { ok: "\u2713", wrong: "\u2717", missing: "\u2205", hit: "\u26a0" };
 
-// `var` (not `const`/`let`) for `state` and `MODEL_CODES`, same reason as data.js's `var DATASET`:
-// these need to be real properties of `window`/`globalThis` so they're reachable when app.js is
-// `eval`'d separately from a test harness (see smoke_test.js).
+// `var` (not `const`/`let`) for `DATASET`, `state` and `MODEL_CODES`: these need to be real properties
+// of `window`/`globalThis` so they're reachable when app.js is `eval`'d from a test harness (see smoke_test.js).
+var DATASET = { samples: [] };
 var state = {
   query: "",
   langs: new Set(),
   formats: new Set(),
   tiers: new Set(),
   hardCases: new Set(),
+  flags: new Set(),
   activeModels: new Set(), // which model(s)' predictions are overlaid on the document text
   selectedId: null,
   view: "doc", // "doc" | "prompts"
@@ -39,7 +38,7 @@ function norm(s) {
   return (s || "").toString().trim().toLowerCase().replace(/[\s\u200f\u200e"'`\u05f3\u05f4.,]/g, "");
 }
 
-// ---------- dataset loading (dynamic server, or static data.js fallback) ----------
+// ---------- dataset loading (from viewer/server.py) ----------
 
 async function fetchJson(url) {
   const r = await fetch(url);
@@ -62,7 +61,9 @@ function afterDatasetLoaded() {
   document.getElementById("sample-view").hidden = true;
   document.getElementById("empty-state").hidden = DATASET.samples.length !== 0;
   document.getElementById("empty-state").textContent = "Select a sample on the left.";
-  if (DATASET.samples.length) selectSample(DATASET.samples[0].id);
+  const hashId = decodeURIComponent((window.location.hash || "").slice(1));
+  if (hashId && DATASET.samples.some((s) => s.id === hashId)) selectSample(hashId);
+  else if (DATASET.samples.length) selectSample(DATASET.samples[0].id);
 }
 
 async function initDatasetSelector() {
@@ -77,11 +78,10 @@ async function initDatasetSelector() {
     select.addEventListener("change", () => loadDataset(select.value));
     await loadDataset(dflt.name);
   } catch (e) {
-    // Static fallback: use the pre-baked DATASET global from data.js, if present.
-    console.warn("Dynamic dataset API unavailable, falling back to static data.js:", e);
-    select.innerHTML = "";
-    select.appendChild(el("option", { value: "static", text: `${DATASET.source || "dataset"} (static data.js)` }));
-    afterDatasetLoaded();
+    console.error("dataset API unavailable:", e);
+    const empty = document.getElementById("empty-state");
+    empty.hidden = false;
+    empty.textContent = `Could not load data from the viewer server (${e.message}). Run: python viewer/server.py --data-root data`;
   }
 }
 
@@ -113,6 +113,7 @@ function initFilters() {
   state.formats.clear();
   state.tiers.clear();
   state.hardCases.clear();
+  state.flags.clear();
   buildChipGroup("lang-filters", uniqueSorted(DATASET.samples.map((s) => s.lang)), state.langs);
   buildChipGroup("format-filters", uniqueSorted(DATASET.samples.map((s) => s.format)), state.formats);
   buildChipGroup("tier-filters", uniqueSorted(DATASET.samples.map((s) => s.tier)), state.tiers);
@@ -121,6 +122,7 @@ function initFilters() {
     uniqueSorted(DATASET.samples.flatMap((s) => s.hard_cases)),
     state.hardCases
   );
+  buildChipGroup("flag-filters", uniqueSorted(DATASET.samples.flatMap((s) => s.flags || [])), state.flags);
 }
 
 document.getElementById("search").addEventListener("input", (e) => {
@@ -133,6 +135,7 @@ function sampleMatches(s) {
   if (state.formats.size && !state.formats.has(s.format)) return false;
   if (state.tiers.size && !state.tiers.has(s.tier)) return false;
   if (state.hardCases.size && ![...state.hardCases].every((hc) => s.hard_cases.includes(hc))) return false;
+  if (state.flags.size && ![...state.flags].some((f) => (s.flags || []).includes(f))) return false;
   if (state.query) {
     const hay = `${s.id} ${s.genre || ""} ${s.schema_id}`.toLowerCase();
     if (!hay.includes(state.query)) return false;
@@ -152,6 +155,7 @@ function renderList() {
       [
         el("span", { class: "sid", text: `${s.id}` }),
         s.tier ? el("span", { class: `tier-tag tier-${s.tier}`, text: s.tier }) : null,
+        (s.flags || []).length ? el("span", { class: "flag-tag", title: s.flags.join(", "), text: "\u2605" }) : null,
       ]
     );
     list.appendChild(li);
@@ -203,9 +207,17 @@ function renderModelToggles() {
 }
 
 /** Gold-slot verdict for one model: {verdict, predValue?} | null (nothing to say, or no gold value). */
+/** Scorer verdict (export-time: same record alignment + partial-span matching as slot_f1), if available. */
+function scorerVerdict(sample, model, recordIdx, slot) {
+  const vs = sample.preds[model] && sample.preds[model].verdicts;
+  return vs && vs[recordIdx] ? vs[recordIdx][slot] : undefined;
+}
+
 function slotVerdict(sample, model, recordIdx, slot, gold) {
   const predRecords = sample.preds[model] && sample.preds[model].records;
   if (!predRecords || !gold) return null;
+  const sv = scorerVerdict(sample, model, recordIdx, slot);
+  if (sv) return sv.v === "ok" || sv.v === "wrong" ? { verdict: sv.v, predValue: sv.pred } : { verdict: "missing" };
   const predRec = predRecords[recordIdx];
   const pv = predRec ? predRec[slot] : undefined;
   if (pv === undefined || pv === null || pv === "") return { verdict: "missing" };
@@ -216,7 +228,8 @@ function slotVerdict(sample, model, recordIdx, slot, gold) {
 function decoyVerdict(sample, model, decoy) {
   const predRecords = sample.preds[model] && sample.preds[model].records;
   const predRec = predRecords && predRecords[decoy.record];
-  const pv = predRec ? predRec[decoy.slot] : undefined;
+  const sv = scorerVerdict(sample, model, decoy.record, decoy.slot);
+  const pv = sv ? sv.pred : predRec ? predRec[decoy.slot] : undefined;
   if (pv && norm(pv) === norm(decoy.value)) return { verdict: "hit", predValue: pv };
   return null;
 }
@@ -401,6 +414,14 @@ function renderRecordsPanel(sample) {
       ]);
       for (const model of models) {
         const predRecords = sample.preds[model] && sample.preds[model].records;
+        const sv = scorerVerdict(sample, model, ri, slot);
+        if (sv) {
+          const ok = sv.v === "ok" || sv.v === "null_ok";
+          const title = { ok: "correct (scorer match, incl. partial span)", null_ok: "correctly null",
+            wrong: "wrong value", missing: "missed (gold has a value)", spurious: "should be null" }[sv.v];
+          row.appendChild(el("td", { class: ok ? "pred-ok" : "pred-bad", title, text: sv.pred == null ? "null" : String(sv.pred) }));
+          continue;
+        }
         const pv = predValueFor(predRecords, ri, slot);
         if (pv === undefined) row.appendChild(el("td", { class: "pred-missing", text: "\u2014" }));
         else if (pv === null || pv === "") row.appendChild(el("td", { class: gold ? "pred-bad" : "pred-ok", text: "null" }));
@@ -424,6 +445,24 @@ function renderHeader(sample) {
   for (const hc of sample.hard_cases || []) {
     const desc = DATASET.hard_case_descriptions[hc] || DATASET.hard_case_descriptions[hc.replace(/c$/, "")] || "";
     header.appendChild(el("span", { class: "badge hc", title: desc, text: hc }));
+  }
+  for (const f of sample.flags || []) header.appendChild(el("span", { class: "badge flag", text: `\u2605 ${f}` }));
+  for (const [model, p] of Object.entries(sample.preds || {}).sort()) {
+    if (p.f1 == null) continue;
+    const cls = p.f1 >= 0.99 ? "f1-ok" : p.f1 >= 0.7 ? "f1-mid" : "f1-bad";
+    header.appendChild(el("span", { class: `badge ${cls}`, title: "sample slot F1", text: `${model}: ${p.f1.toFixed(2)}` }));
+  }
+}
+
+function renderReasoningPanel(sample) {
+  const panel = document.getElementById("reasoning-panel");
+  panel.innerHTML = "";
+  for (const [model, p] of Object.entries(sample.preds || {}).sort()) {
+    const d = el("details");
+    d.appendChild(el("summary", { text: `${model}: ${p.reasoning ? "reasoning + " : ""}raw output` }));
+    if (p.reasoning) d.appendChild(el("pre", { class: "prompt-block", text: p.reasoning }));
+    d.appendChild(el("pre", { class: "prompt-block", text: (p.raw || "").replace(/<think>[\s\S]*?(<\/think>|$)/, "").trim() }));
+    panel.appendChild(d);
   }
 }
 
@@ -478,8 +517,10 @@ function selectSample(id) {
   renderDoc(sample);
   renderLegend(sample);
   renderRecordsPanel(sample);
+  renderReasoningPanel(sample);
   renderPromptsView(sample);
   setView(state.view);
+  if (window.history && window.history.replaceState) window.history.replaceState(null, "", `#${encodeURIComponent(id)}`);
 }
 
 function refreshCurrent() {

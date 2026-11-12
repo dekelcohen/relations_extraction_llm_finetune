@@ -13,10 +13,11 @@ from .source import load_seeds
 
 log = logging.getLogger(__name__)
 FORMAT_W = {"text": 0.45, "html": 0.3, "email": 0.25}
+FOCUS_FORMAT_W = {"text": 0.3, "html": 0.4, "email": 0.3}  # --focus: more tables / email threads
 
 
 def build(seeds_path: Path, out_path: Path, langs: list[str], n_per_lang: int, model: str = "gen", seed: int = 0,
-          workers: int = 8, schema_id: str | None = None) -> dict:
+          workers: int = 8, schema_id: str | None = None, focus: bool = False) -> dict:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if out_path.exists():
@@ -32,8 +33,9 @@ def build(seeds_path: Path, out_path: Path, langs: list[str], n_per_lang: int, m
             if sid in done:
                 continue
             rng = random.Random(sid)
-            fmt = rng.choices(list(FORMAT_W), list(FORMAT_W.values()))[0]
-            plan = plan_sample(rng, lang, fmt, schema_id)
+            fw = FOCUS_FORMAT_W if focus else FORMAT_W
+            fmt = rng.choices(list(fw), list(fw.values()))[0]
+            plan = plan_sample(rng, lang, fmt, schema_id, focus=focus)
             jobs.append((sid, plan, seeds[i % len(seeds)], rng))
     log.info("build: %d jobs (%d already done) -> %s", len(jobs), len(done), out_path)
     stats = {"ok": 0, "fail": 0, "error": 0}

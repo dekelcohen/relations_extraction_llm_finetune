@@ -12,7 +12,7 @@ import logging
 import random
 from pathlib import Path
 
-from . import prompting
+from . import chunking, prompting
 from .schemas import schema_of
 
 log = logging.getLogger(__name__)
@@ -47,19 +47,42 @@ def _variant(s: dict, rng: random.Random, pool: list[dict], augment: bool) -> tu
     return msgs, gt, slot_types
 
 
+def expand_chunks(s: dict, chunk: dict | None) -> list[dict]:
+    """Long doc -> pseudo-samples, one per CLEAN chunk (gold/decoys restricted to the chunk; see chunking.chunk_gold).
+    Short docs (or chunk=None) -> [s]."""
+    parts = chunking.split(s["text"], **chunk) if chunk is not None else []
+    if not parts:
+        return [s]
+    out = []
+    for k, c in enumerate(parts):
+        gt, dec, clean = chunking.chunk_gold(s["gt"], s.get("decoys", []), c)
+        if clean:
+            out.append({**s, "id": f"{s['id']}#c{k}", "text": c, "gt": gt, "decoys": dec,
+                        "chunk": {"parent": s["id"], "k": k, "n": len(parts)}})
+    return out
+
+
+def _meta(s: dict, t: str) -> dict:
+    m = {k: s[k] for k in ("lang", "format", "schema_id", "hard_cases")} | {"tier": t}
+    return m | ({"chunk": s["chunk"]} if "chunk" in s else {})
+
+
 def export(samples: list[dict], out_dir: Path, tiers: dict[str, dict] | None = None, seed: int = 0,
-           n_aug: int = 1, hard_dup: int = 2) -> dict:
+           n_aug: int = 1, hard_dup: int = 2, chunk: dict | None = None) -> dict:
+    """chunk: chunking.split kwargs -> train-split long docs become their clean chunk rows (val/test stay whole;
+    evaluate them with chunked inference)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     rng = random.Random(seed)
     counts = {}
     files = {(kind, sp): (out_dir / f"{kind}_{sp}.jsonl").open("w", encoding="utf-8")
              for kind in ("sft", "grpo") for sp in ("train", "val", "test")}
     train_pool = [s for s in samples if split_of(s["id"]) == "train"]
+    rows = [(c, split_of(s["id"]), s["id"]) for s in samples
+            for c in (expand_chunks(s, chunk) if split_of(s["id"]) == "train" else [s])]
     try:
-        for s in samples:
-            sp = split_of(s["id"])
-            t = (tiers or {}).get(s["id"], {}).get("tier", "unknown")
-            meta = {k: s[k] for k in ("lang", "format", "schema_id", "hard_cases")} | {"tier": t}
+        for s, sp, pid in rows:
+            t = (tiers or {}).get(pid, {}).get("tier", "unknown")
+            meta = _meta(s, t)
             # GRPO: all tiers except ambiguous (no trustworthy reward); one canonical variant per sample
             if t != "ambiguous" or sp != "train":
                 msgs, gt, st = _variant(s, rng, train_pool, augment=False)
@@ -84,3 +107,20 @@ def export(samples: list[dict], out_dir: Path, tiers: dict[str, dict] | None = N
     out = {f"{k}_{sp}": v for (k, sp), v in sorted(counts.items())}
     log.info("export -> %s: %s", out_dir, out)
     return out
+
+
+def export_eval(samples: list[dict], out_path: Path, tiers: dict[str, dict] | None = None,
+                chunk: dict | None = None) -> int:
+    """Every sample (no split hashing, no augmentation) as one grpo-row file, e.g. the full pilot testset.
+    chunk: long docs -> their clean chunk rows (GRPO training on chunks); omit for doc-level eval files."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(0)
+    rows = [(c, s["id"]) for s in samples for c in expand_chunks(s, chunk)]
+    with out_path.open("w", encoding="utf-8") as f:
+        for s, pid in rows:
+            msgs, gt, st = _variant(s, rng, [], augment=False)
+            meta = _meta(s, (tiers or {}).get(pid, {}).get("tier", "unknown"))
+            f.write(json.dumps({"id": s["id"], "prompt": msgs, "gt": json.dumps(gt, ensure_ascii=False),
+                                "decoys": json.dumps(s.get("decoys", []), ensure_ascii=False), "text": s["text"],
+                                "slot_types": json.dumps(st), "meta": meta}, ensure_ascii=False) + "\n")
+    return len(rows)

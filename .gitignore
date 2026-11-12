@@ -225,4 +225,10 @@ outputs/
 wandb/
 data/*
 !data/pilot/
+!data/synth_hefa/
+!data/stage_2_RL_GRPO/
 node_modules/
+
+# machine-specific docker settings
+docker/.env
+unsloth_compiled_cache/

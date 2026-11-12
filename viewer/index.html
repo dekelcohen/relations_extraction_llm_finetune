@@ -10,12 +10,14 @@
 <div id="app">
   <aside id="sidebar">
     <h1>RE dataset viewer</h1>
+    <p class="report-link"><a id="report-link" href="http://10.45.93.247:8112/report/pilot_compare.html" target="_blank">📊 Eval summary report (scores, lenient, error analysis)</a></p>
     <select id="dataset-select"></select>
     <input id="search" type="text" placeholder="Search id / genre / schema..." autocomplete="off">
     <div class="filter-group" id="lang-filters"></div>
     <div class="filter-group" id="format-filters"></div>
     <div class="filter-group" id="tier-filters"></div>
     <div class="filter-group" id="hardcase-filters"></div>
+    <div class="filter-group" id="flag-filters"></div>
     <div id="sample-count" class="muted"></div>
     <ul id="sample-list"></ul>
   </aside>
@@ -40,13 +42,13 @@
         <div id="doc-container" class="doc-text"></div>
 
         <section id="records-panel"></section>
+        <section id="reasoning-panel"></section>
       </div>
 
       <div id="prompts-view" hidden></div>
     </div>
   </main>
 </div>
-<script src="data.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

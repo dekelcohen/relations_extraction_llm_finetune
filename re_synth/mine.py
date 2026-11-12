@@ -6,7 +6,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from . import prompting
+from . import chunking, prompting
 from .llm import chat
 from .schemas import schema_of
 from .score import aggregate, parse_prediction, sample_f1, score_sample, slot_types_for
@@ -19,7 +19,10 @@ def sample_messages(s: dict) -> list[dict]:
     return prompting.messages(schema_of(s).to_prompt_dict(), s["text"])
 
 
-def predict(samples: list[dict], model: str, out_path: Path, workers: int = 8, max_tokens: int = 2000) -> None:
+def predict(samples: list[dict], model: str, out_path: Path, workers: int = 8, max_tokens: int = 2000,
+            chunk: dict | None = None) -> None:
+    """chunk: kwargs of chunking.split (max_chars/overlap/min_chars); long docs are predicted per overlapping chunk
+    and the chunk outputs merged (raw = merged JSON, "chunks" = per-chunk raw outputs). None disables chunking."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if out_path.exists():
@@ -28,17 +31,23 @@ def predict(samples: list[dict], model: str, out_path: Path, workers: int = 8, m
     log.info("predict %s: %d todo -> %s", model, len(todo), out_path)
 
     def one(s):
-        return chat(sample_messages(s), model, temperature=0.0, max_tokens=max_tokens)
+        parts = chunking.split(s["text"], **chunk) if chunk is not None else []
+        if not parts:
+            return chat(sample_messages(s), model, temperature=0.0, max_tokens=max_tokens), None
+        sd = schema_of(s).to_prompt_dict()
+        raws = [chat(prompting.messages(sd, c), model, temperature=0.0, max_tokens=max_tokens) for c in parts]
+        return chunking.merge_raws(raws, slot_types_for(s["schema_id"], inline=s.get("schema")), s["text"]), raws
 
     with ThreadPoolExecutor(workers) as ex, out_path.open("a", encoding="utf-8") as f:
         futs = {ex.submit(one, s): s["id"] for s in todo}
         for fu in as_completed(futs):
             try:
-                raw = fu.result()
+                raw, parts = fu.result()
             except Exception as e:
                 log.warning("predict %s %s error: %s", model, futs[fu], e)
                 continue
-            f.write(json.dumps({"id": futs[fu], "model": model, "raw": raw}, ensure_ascii=False) + "\n")
+            row = {"id": futs[fu], "model": model, "raw": raw} | ({"chunks": parts} if parts else {})
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
             f.flush()
 
 
@@ -56,10 +65,15 @@ def score_preds(samples: list[dict], preds: dict[str, str]) -> dict[str, dict]:
     return out
 
 
-def tier(weak_f1: float | None, strong_f1: float | None) -> str:
+DETERMINISTIC_GOLD = ("H6", "H7", "H13", "H19")  # gold comes from a rendered list/table block, not from LLM-written text
+
+
+def tier(weak_f1: float | None, strong_f1: float | None, deterministic: bool = False) -> str:
     if weak_f1 is None or strong_f1 is None:
         return "unknown"
     w, st = weak_f1 >= TIER_F1, strong_f1 >= TIER_F1
+    if not st and deterministic:
+        return "frontier_hard"  # frontier errs although gold is reliable: hardest trustworthy set
     if w and st:
         return "easy"
     if st and not w:
@@ -74,7 +88,8 @@ def mine(samples: list[dict], weak: dict[str, dict], strong: dict[str, dict]) ->
     for s in samples:
         wf = sample_f1(weak[s["id"]]) if s["id"] in weak else None
         sf = sample_f1(strong[s["id"]]) if s["id"] in strong else None
-        out[s["id"]] = {"tier": tier(wf, sf), "weak_f1": wf, "strong_f1": sf}
+        det = any(c in s.get("hard_cases", []) for c in DETERMINISTIC_GOLD)
+        out[s["id"]] = {"tier": tier(wf, sf, det), "weak_f1": wf, "strong_f1": sf}
     return out
 
 

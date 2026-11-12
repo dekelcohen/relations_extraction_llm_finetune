@@ -315,3 +315,95 @@ GENERATORS = {
     "color": lambda rng, lang: rng.choice(COLORS[lang]),
     "role": lambda rng, lang: rng.choice(ROLES[lang]),
 }
+
+
+# ---- richer main-entity vocab (long documents need 10-30 distinct entities) ----
+GOODS_X = {"he": ["ציוד רפואי", "חלקי חילוף", "מוצרי חשמל", "ספרים", "כלי עבודה", "רהיטים משרדיים", "צמיגים", "תרופות",
+                  "מזון יבש", "ציוד מחשוב", "חומרי בניין", "מוצרי טקסטיל", "צעצועים", "מכשירי סלולר", "פאנלים סולאריים",
+                  "ציוד חקלאי", "מוצרי קוסמטיקה", "כלי מטבח", "נורות LED", "ציוד ספורט"],
+           "fa": ["تجهیزات پزشکی", "قطعات یدکی", "لوازم برقی", "کتاب", "ابزارآلات", "مبلمان اداری", "لاستیک", "دارو",
+                  "مواد غذایی خشک", "تجهیزات رایانه‌ای", "مصالح ساختمانی", "منسوجات", "اسباب‌بازی", "گوشی همراه",
+                  "پنل خورشیدی", "تجهیزات کشاورزی", "لوازم آرایشی", "ظروف آشپزخانه", "لامپ LED", "لوازم ورزشی"],
+           "en": ["medical equipment", "spare parts", "electronics", "books", "power tools", "office furniture", "tyres",
+                  "pharmaceuticals", "dry food", "computer hardware", "building materials", "textiles", "toys",
+                  "mobile phones", "solar panels", "farm equipment", "cosmetics", "kitchenware", "LED bulbs", "sports gear"]}
+PACK = {"he": ["משלוח", "מכולת", "משטח", "ארגז", "מטען"], "fa": ["محموله", "کانتینر", "پالت", "جعبه", "بار"],
+        "en": ["shipment of", "container of", "pallet of", "crate of", "consignment of"]}
+ASSET_TYPES = {
+    "he": {"מחשב נייד": ["Dell Latitude 5440", "Lenovo ThinkPad T14", "HP EliteBook 840", "MacBook Air M3", "Asus ExpertBook B5"],
+           "מקרן": ["Epson EB-X51", "BenQ MW560", "Optoma W400"], "טאבלט": ["Samsung Galaxy Tab S9", "iPad Air", "Lenovo Tab P12"],
+           "מדפסת": ["HP LaserJet M404", "Brother HL-L2350", "Canon i-SENSYS MF445"], "רחפן": ["DJI Mavic 3", "DJI Mini 4 Pro"],
+           "מצלמה": ["Canon EOS R6", "Sony A7 IV", "Nikon Z6"], "נתב": ["Cisco ISR 1100", "MikroTik hAP ax3"],
+           "שרת": ["Dell PowerEdge R650", "HPE ProLiant DL380"], "מסך": ["LG UltraFine 27", "Dell P2723"],
+           "סורק": ["Fujitsu fi-8170", "Epson DS-530"]},
+    "fa": {"لپ‌تاپ": ["Dell Latitude 5440", "Lenovo ThinkPad T14", "HP EliteBook 840", "MacBook Air M3", "Asus ExpertBook B5"],
+           "ویدئو پروژکتور": ["Epson EB-X51", "BenQ MW560", "Optoma W400"], "تبلت": ["Samsung Galaxy Tab S9", "iPad Air", "Lenovo Tab P12"],
+           "پرینتر": ["HP LaserJet M404", "Brother HL-L2350", "Canon i-SENSYS MF445"], "پهپاد": ["DJI Mavic 3", "DJI Mini 4 Pro"],
+           "دوربین": ["Canon EOS R6", "Sony A7 IV", "Nikon Z6"], "روتر": ["Cisco ISR 1100", "MikroTik hAP ax3"],
+           "سرور": ["Dell PowerEdge R650", "HPE ProLiant DL380"], "مانیتور": ["LG UltraFine 27", "Dell P2723"],
+           "اسکنر": ["Fujitsu fi-8170", "Epson DS-530"]},
+    "en": {"laptop": ["Dell Latitude 5440", "Lenovo ThinkPad T14", "HP EliteBook 840", "MacBook Air M3", "Asus ExpertBook B5"],
+           "projector": ["Epson EB-X51", "BenQ MW560", "Optoma W400"], "tablet": ["Samsung Galaxy Tab S9", "iPad Air", "Lenovo Tab P12"],
+           "printer": ["HP LaserJet M404", "Brother HL-L2350", "Canon i-SENSYS MF445"], "drone": ["DJI Mavic 3", "DJI Mini 4 Pro"],
+           "camera": ["Canon EOS R6", "Sony A7 IV", "Nikon Z6"], "router": ["Cisco ISR 1100", "MikroTik hAP ax3"],
+           "server": ["Dell PowerEdge R650", "HPE ProLiant DL380"], "monitor": ["LG UltraFine 27", "Dell P2723"],
+           "scanner": ["Fujitsu fi-8170", "Epson DS-530"]},
+}
+VESSEL_TYPES = {"he": ["אוניית המשא", "המכלית", "ספינת המכולות", "אוניית הצובר", "גוררת", "ספינת הדיג"],
+                "fa": ["کشتی باری", "نفتکش", "کشتی کانتینری", "کشتی فله‌بر", "یدک‌کش", "کشتی صیادی"],
+                "en": ["cargo ship", "tanker", "container ship", "bulk carrier", "tug", "fishing vessel"]}
+VESSEL_NAMES = {"he": ["גלית", "נגה", "אביב", "תמר", "שחר", "אלמוג", "דפנה", "רותם", "כנרת", "ענבל", "הדר", "יעלים", "סהר", "לילך"],
+                "fa": ["ستاره", "دریا", "مهتاب", "البرز", "خزر", "نسیم", "آرمان", "پارسا", "سپیده", "کیان", "هامون", "شبنم", "ترنج", "آوا"],
+                "en": ["Galit", "Nova Star", "Aurora", "Tamar", "Dawn", "Coral", "Daphne", "Rotem", "Kinneret", "Inbal",
+                       "Hadar", "Selene", "Lilac", "Orion"]}
+MEETING_KINDS = {"he": ["ישיבת", "כנס", "סדנת", "דיון", "פגישת"], "fa": ["جلسه", "همایش", "کارگاه", "نشست", "گردهمایی"],
+                 "en": ["{t} meeting", "{t} conference", "{t} workshop", "{t} hearing", "{t} review"]}
+MEETING_TOPICS = {"he": ["תקציב", "בטיחות", "ספקים", "רכש", "גיוס", "תכנון", "איכות", "מערכות מידע", "שיווק", "הדרכה", "אבטחת מידע", "קיימות"],
+                  "fa": ["بودجه", "ایمنی", "تأمین‌کنندگان", "خرید", "استخدام", "برنامه‌ریزی", "کیفیت", "فناوری اطلاعات", "بازاریابی",
+                         "آموزش", "امنیت اطلاعات", "پایداری"],
+                  "en": ["budget", "safety", "suppliers", "procurement", "hiring", "planning", "quality", "IT", "marketing",
+                         "training", "infosec", "sustainability"]}
+SERVICES = {"he": ["אחזקת מבנים", "ניקיון", "הסעות עובדים", "אבטחה", "ייעוץ משפטי", "שירותי ענן", "הדברה", "קייטרינג",
+                   "תחזוקת מעליות", "ביקורת חשבונות", "פיתוח תוכנה", "שינוע מכולות", "גינון", "תמיכה טכנית"],
+            "fa": ["نگهداری ساختمان", "نظافت", "سرویس ایاب و ذهاب", "حراست", "مشاوره حقوقی", "خدمات ابری", "سم‌پاشی", "پذیرایی",
+                   "نگهداری آسانسور", "حسابرسی", "توسعه نرم‌افزار", "حمل کانتینر", "فضای سبز", "پشتیبانی فنی"],
+            "en": ["building maintenance", "cleaning", "staff shuttle", "security", "legal advice", "cloud services",
+                   "pest control", "catering", "elevator maintenance", "auditing", "software development",
+                   "container haulage", "landscaping", "tech support"]}
+ACCOUNT_KINDS = {"he": ["עו\"ש", "חיסכון", "עסקי", "פיקדון", "מט\"ח"], "fa": ["جاری", "پس‌انداز", "تجاری", "سپرده", "ارزی"],
+                 "en": ["checking", "savings", "business", "deposit", "FX"]}
+ACCOUNT_PURPOSES = {"he": ["משכורות", "ספקים", "תפעול", "השקעות", "פרויקט הצפון", "קרן חירום", "גבייה", "יבוא", "תרומות", "שכירות"],
+                    "fa": ["حقوق", "تأمین‌کنندگان", "عملیات", "سرمایه‌گذاری", "پروژه شمال", "صندوق اضطراری", "وصول", "واردات",
+                           "کمک‌ها", "اجاره"],
+                    "en": ["payroll", "suppliers", "operations", "investments", "north project", "emergency fund",
+                           "collections", "imports", "donations", "rent"]}
+
+
+def shipment_main(rng, lang):
+    p, g = rng.choice(PACK[lang]), rng.choice(GOODS_X[lang])
+    return f"{p} {g}"
+
+
+def asset_main(rng, lang):
+    t = rng.choice(list(ASSET_TYPES[lang]))
+    m = rng.choice(ASSET_TYPES[lang][t])
+    return f"{m} {t}" if lang == "en" else f"{t} {m}"
+
+
+def vessel_main(rng, lang):
+    return f"{rng.choice(VESSEL_TYPES[lang])} {rng.choice(VESSEL_NAMES[lang])}"
+
+
+def meeting_main(rng, lang):
+    k, t = rng.choice(MEETING_KINDS[lang]), rng.choice(MEETING_TOPICS[lang])
+    return k.format(t=t) if lang == "en" else f"{k} {t}"
+
+
+def contract_main(rng, lang):
+    pre = {"he": "חוזה ", "fa": "قرارداد ", "en": "contract for "}[lang]
+    return pre + (rng.choice(SERVICES[lang]) if rng.random() < 0.6 else rng.choice(GOODS_X[lang]))
+
+
+def account_main(rng, lang):
+    k, p = rng.choice(ACCOUNT_KINDS[lang]), rng.choice(ACCOUNT_PURPOSES[lang])
+    return {"he": f"חשבון {k} {p}", "fa": f"حساب {k} {p}", "en": f"{p} {k} account"}[lang]

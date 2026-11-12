@@ -17,9 +17,16 @@ sys.path.insert(0, str(ROOT))
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-from scripts.export_viewer_data import build_dataset_payload, discover_datasets  # noqa: E402
+from scripts.viewer_data import build_dataset_payload, discover_datasets  # noqa: E402
 
 app = FastAPI(title="RE dataset viewer")
+
+
+@app.middleware("http")
+async def no_cache(request, call_next):
+    resp = await call_next(request)
+    resp.headers["Cache-Control"] = "no-cache"  # always revalidate: viewer code/data change often
+    return resp
 DATA_ROOT = ROOT / "data"
 
 

@@ -1,0 +1,11 @@
+{
+ "preds": {
+  "sonnet-5.5": "data/pilot/preds_strong.jsonl",
+  "llama-3.3-70b": "data/pilot/preds_weak.jsonl",
+  "qwen3-4b": "outputs/eval/qwen3-4b-think.preds.jsonl",
+  "qwen3-4b-ft": "outputs/eval/qwen3-4b-ft-think.preds.jsonl",
+  "qwen3-4b-nothink": "outputs/eval/qwen3-4b-nothink.preds.jsonl",
+  "qwen3-4b-ft-nothink": "outputs/eval/qwen3-4b-ft-nothink.preds.jsonl"
+ },
+ "flags": "outputs/report/pilot_compare.json"
+}

@@ -423,6 +423,16 @@ User-priority papers are marked ⭐.
   ) Links: Code https://github.com/urchade/GLiNER (4243★, Apache-2.0); https://github.com/fastino-ai/GLiNER2 (2462★, Apache-2.0); https://github.com/jackboyla/GLiREL (297★) / HF https://huggingface.co/urchade/gliner_multi-v2.1, https://huggingface.co/fastino/gliner2-large-v1, https://huggingface.co/jackboyla/glirel-large-v0
   ) Relevance: Cheap baselines, and pre-taggers for decoy candidates. They don't follow guidelines.
 
+* **GLiNER-2.5 (Fastino)** (no paper yet; successor of GLiNER2)
+  ) Goal: TLDR - schema-driven encoder --> NER + classification + structured/relation extraction in one pass, CPU-friendly
+  ) Links: HF https://huggingface.co/fastino/gliner2.5-multi-v1, https://huggingface.co/fastino/gliner2.5-base-v1, https://huggingface.co/fastino/gliner2.5-small-v1 (also `GLiNER2.5-Decide` decision variants)
+  ) Relevance: Encoder candidate for the experiment matrix (plan §4.6, E1.2). The multi variant matters for he/fa. The `-Decide` models are a possible E2 verifier baseline.
+
+* **GLiNER-Relex (Knowledgator)** (no paper yet)
+  ) Goal: TLDR - GLiNER extended to joint entity + relation extraction with label prompts for both
+  ) Links: HF https://huggingface.co/knowledgator/gliner-relex-multi-v1.0, https://huggingface.co/knowledgator/gliner-relex-large-v1.0, https://huggingface.co/knowledgator/gliner-relex-base-v1.0
+  ) Relevance: The most direct encoder baseline for joint E+R (plan §4.6, E1.3). Fine-tune it on our synthetic data and compare it against the DeBERTa and LLM rows.
+
 * **NuExtract (NuMind 1.x / 2.0 / 3)** (no paper)
   ) Goal: TLDR - text + JSON template --> fine-tuned LM --> filled JSON
   ) Links: Code https://github.com/numindai/nuextract (272★, MIT) / HF https://huggingface.co/numind/NuExtract3

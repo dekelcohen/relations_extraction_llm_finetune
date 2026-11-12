@@ -45,16 +45,13 @@ def _vehicle_main(rng, lang):
 
 MAIN_GEN = {
     "vehicle": _vehicle_main,
-    "shipment": lambda rng, lang: rng.choice(L.GOODS[lang]),
+    "shipment": L.shipment_main,
     "person_employment": L.person,
-    "asset": lambda rng, lang: rng.choice(L.ASSETS[lang]),
-    "meeting": lambda rng, lang: rng.choice(L.MEETINGS[lang]),
-    "contract": lambda rng, lang: {"he": "חוזה ", "fa": "قرارداد ", "en": "contract for "}[lang]
-    + rng.choice(L.GOODS[lang]),
-    "account": lambda rng, lang: {"he": "חשבון ה{k}", "fa": "حساب {k}", "en": "{k} account"}[lang]
-    .format(k=rng.choice({"he": ["עו\"ש", "חיסכון", "עסקי", "פיקדון"], "fa": ["جاری", "پس‌انداز", "تجاری", "سپرده"],
-                          "en": ["checking", "savings", "business", "deposit"]}[lang])),
-    "vessel": lambda rng, lang: rng.choice(L.VESSELS[lang]),
+    "asset": L.asset_main,
+    "meeting": L.meeting_main,
+    "contract": L.contract_main,
+    "account": L.account_main,
+    "vessel": L.vessel_main,
 }
 
 SCHEMAS: dict[str, Schema] = {s.id: s for s in [

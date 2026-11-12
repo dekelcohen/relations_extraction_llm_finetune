@@ -170,11 +170,73 @@ def parse_prediction(out) -> tuple[list[dict] | None, bool]:
         obj = {"records": obj}
     if not isinstance(obj, dict) or not isinstance(obj.get("records"), list):
         return None, False
+    return _records(obj), True
+
+
+def _records(obj: dict) -> list[dict]:
     recs = []
     for r in obj["records"]:
         if isinstance(r, dict):
             recs.append({str(k): (None if v in ("", "null", "None", [], "N/A") else v) for k, v in r.items()})
-    return recs, True
+    return recs
+
+
+def _escape_inner_quotes(s: str) -> str:
+    """Escape `"` that can't be structural: inside a string, a quote only closes it if the next non-space char is
+    one of , : } ] (or end). Fixes Hebrew acronyms written with a plain quote (בע"מ, ש"ח, תשפ"ה)."""
+    out, in_str, i = [], False, 0
+    while i < len(s):
+        c = s[i]
+        if in_str and c == "\\":
+            out.append(s[i:i + 2])
+            i += 2
+            continue
+        if c == '"':
+            if not in_str:
+                in_str = True
+            else:
+                rest = s[i + 1:].lstrip()
+                if not rest or rest[0] in ",:}]":
+                    in_str = False
+                else:
+                    out.append('\\"')
+                    i += 1
+                    continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def parse_prediction_lenient(out) -> tuple[list[dict] | None, bool, str]:
+    """Tolerant parse -> (records, valid, repair). repair: "" (strict parse ok), "inner_quotes", "trailing_data",
+    "trailing_commas", "unclosed_think" (no answer after <think>: not repairable) or "unparseable"."""
+    recs, valid = parse_prediction(out)
+    if valid:
+        return recs, True, ""
+    if isinstance(out, list):
+        out = out[-1].get("content", "") if out and isinstance(out[-1], dict) else ""
+    if not isinstance(out, str):
+        return None, False, "unparseable"
+    if "<think>" in out and "</think>" not in out:
+        return None, False, "unclosed_think"
+    s = re.sub(r"<think>.*?</think>", "", out, flags=re.S).strip()
+    s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s)
+    i = s.find("{")
+    if i < 0:
+        return None, False, "unparseable"
+    s = s[i:]
+    dec = json.JSONDecoder()
+    for tag, cand in (("trailing_data", s), ("inner_quotes", _escape_inner_quotes(s)),
+                      ("trailing_commas", re.sub(r",\s*([}\]])", r"\1", _escape_inner_quotes(s)))):
+        try:
+            obj = dec.raw_decode(cand)[0]  # raw_decode ignores trailing junk (e.g. an extra "}")
+        except Exception:
+            continue
+        if isinstance(obj, list):
+            obj = {"records": obj}
+        if isinstance(obj, dict) and isinstance(obj.get("records"), list):
+            return _records(obj), True, tag
+    return None, False, "unparseable"
 
 
 # --------------------------------------------------------------------------- scoring
@@ -190,15 +252,8 @@ def _rec_sim(p: dict, g: dict, slot_types: dict) -> float:
     return 0.5 * tok + 0.5 * agree
 
 
-def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys: list[dict], text: str,
-                 slot_types: dict) -> dict:
-    gold = gt.get("records", [])
-    m = defaultdict(float)
-    m["valid_json"] = float(valid)
-    m["n_gold_values"] = sum(1 for g in gold for k in slot_types if g.get(k) is not None)
-    preds = pred_records or []
-    tn, tc = norm(text), compact(text)
-    # greedy alignment
+def align(preds: list[dict], gold: list[dict], slot_types: dict) -> list[tuple[int, int]]:
+    """Greedy pred<->gold record alignment by _rec_sim (pairs below 0.3 similarity stay unaligned)."""
     pairs, used_p, used_g = [], set(), set()
     cands = sorted(((_rec_sim(p, g, slot_types), i, j) for i, p in enumerate(preds) for j, g in enumerate(gold)),
                    reverse=True)
@@ -208,6 +263,19 @@ def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys:
         pairs.append((i, j))
         used_p.add(i)
         used_g.add(j)
+    return pairs
+
+
+def score_sample(pred_records: list[dict] | None, valid: bool, gt: dict, decoys: list[dict], text: str,
+                 slot_types: dict) -> dict:
+    gold = gt.get("records", [])
+    m = defaultdict(float)
+    m["valid_json"] = float(valid)
+    m["n_gold_values"] = sum(1 for g in gold for k in slot_types if g.get(k) is not None)
+    preds = pred_records or []
+    tn, tc = norm(text), compact(text)
+    pairs = align(preds, gold, slot_types)
+    used_p, used_g = {i for i, _ in pairs}, {j for _, j in pairs}
     m["rec_tp"] = len(pairs)
     m["rec_fp"] = len(preds) - len(pairs)
     m["rec_fn"] = len(gold) - len(pairs)

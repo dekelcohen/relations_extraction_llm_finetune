@@ -8,7 +8,7 @@ import random
 import re
 
 from . import layout
-from .hardcases import directives
+from .hardcases import BLOCK_CASES, directives
 from .llm import chat
 from .schemas import SCHEMAS
 from .score import norm
@@ -160,7 +160,7 @@ def generate_sample(plan: dict, seed: dict, rng: random.Random, model: str = "ge
     """Plan -> LLM -> verify -> layout. Returns a sample dict with qc.status in {ok, fail}."""
     schema = SCHEMAS[plan["schema_id"]]
     lang, fmt = plan["lang"], plan["format"]
-    block = "H6" in plan["hard_cases"] or "H7" in plan["hard_cases"]
+    block = any(c in plan["hard_cases"] for c in BLOCK_CASES)
     genre = rng.choice(GENRES[fmt])
     prompt = build_prompt(plan, seed, genre, block)
     raw = chat([{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}], model,
@@ -186,11 +186,21 @@ def generate_sample(plan: dict, seed: dict, rng: random.Random, model: str = "ge
     paras = [p.strip() for p in body_c.split("\n\n") if p.strip()]
 
     block_text = block_html = None
-    if "H6" in plan["hard_cases"]:
+    if "H6" in plan["hard_cases"] and "H19" not in plan["hard_cases"]:
         sub, filler, items = layout.h6_block(schema, plan["records"], lang, seed["text"], rng)
         block_text = "\n".join([sub] + filler + items)
         block_html = (f"<p><b>{sub}</b></p>" + "".join(f"<p>{f}</p>" for f in filler)
                       + "<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>")
+    if "H19" in plan["hard_cases"]:
+        decoys += [{k: v for k, v in d.items() if k != "col"} for d in plan["decoys"]]
+        if fmt == "html":
+            block_html = layout.long_doc(schema, plan, lang, rng, as_text=False)
+        else:
+            block_text = layout.long_doc(schema, plan, lang, rng, as_text=True)
+    elif "H13" in plan["hard_cases"]:
+        decoys += [{k: v for k, v in d.items() if k != "col"} for d in plan["decoys"]]
+        block_html = layout.big_table(schema, plan, lang, rng, as_text=False) if fmt == "html" else None
+        block_text = layout.big_table(schema, plan, lang, rng, as_text=True) if fmt != "html" else None
     if "H7" in plan["hard_cases"]:
         block_html, tdecoys = layout.h7_table(schema, plan["records"], lang, rng, "H7c" in plan["hard_cases"])
         decoys += tdecoys
@@ -222,7 +232,7 @@ def generate_sample(plan: dict, seed: dict, rng: random.Random, model: str = "ge
     if sr < (0.8 if lang == "en" else 0.55):
         issues.append(f"script_ratio:{sr:.2f}")
     n_words = len(re.sub(r"<[^>]+>", " ", plain).split())
-    if not 60 <= n_words <= 1500:
+    if not 60 <= n_words <= (6000 if "H19" in plan["hard_cases"] else 1500):
         issues.append(f"length:{n_words}")
     if "[[" in text:
         issues.append("leftover_markers")

@@ -1,32 +1,27 @@
-// Headless smoke test for the viewer: loads index.html via jsdom, checks that each
-// format renders without throwing, that highlight marks actually got inserted, that the
-// static-data.js fallback kicks in when no dynamic server is reachable, that the per-model
-// prediction overlay renders verdict badges, and that the Prompt-chain tab renders stage cards.
+// Headless smoke test for the viewer, against a running viewer/server.py (data comes only from its API):
+//   node viewer/smoke_test.js [http://127.0.0.1:8111/]
+// Loads index.html via jsdom, checks that the dataset API loads, that each format renders with highlight
+// marks, that the per-model prediction overlay renders verdict badges, and that the Prompt-chain tab renders.
 const fs = require("fs");
 const path = require("path");
 const { JSDOM } = require("jsdom");
 
 async function main() {
-  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf-8");
-  const dataJs = fs.readFileSync(path.join(__dirname, "data.js"), "utf-8");
+  const base = process.argv[2] || "http://127.0.0.1:8111/";
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf-8").replace(/<script src="[^"]+"><\/script>/g, "");
   const appJs = fs.readFileSync(path.join(__dirname, "app.js"), "utf-8");
 
-  const dom = new JSDOM(html, { runScripts: "outside-only", url: "http://localhost/" });
+  const dom = new JSDOM(html, { runScripts: "outside-only", url: base });
   const { window } = dom;
-  // No `fetch` in this jsdom window -> initDatasetSelector()'s dynamic API call throws and it
-  // must fall back to the static `DATASET` global baked into data.js by export_viewer_data.py.
-  delete window.fetch;
-  window.eval(dataJs);
+  window.fetch = (u, o) => fetch(new URL(u, base), o); // resolve the app's relative api/ URLs against the server
   window.eval(appJs);
   await window.initDatasetSelector(); // app.js already kicked this off once; await it again to be sure it settled
 
   const dataset = window.DATASET;
-  console.log(`DATASET.samples: ${dataset.samples.length}`);
-  if (!dataset.samples.length) throw new Error("static fallback did not populate DATASET.samples");
-
-  const selectOptions = window.document.querySelectorAll("#dataset-select option");
-  if (selectOptions.length !== 1 || !selectOptions[0].textContent.includes("static"))
-    throw new Error("dataset-select did not fall back to a single 'static data.js' option");
+  console.log(`DATASET.samples: ${dataset.samples.length} (from ${base}api)`);
+  if (!dataset.samples.length) throw new Error("dataset API did not populate DATASET.samples");
+  if (!window.document.querySelectorAll("#dataset-select option").length)
+    throw new Error("dataset-select has no options from api/datasets");
 
   const byFormat = {};
   for (const s of dataset.samples) byFormat[s.format] = byFormat[s.format] || s.id;

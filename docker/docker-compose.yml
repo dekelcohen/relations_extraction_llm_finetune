@@ -1,0 +1,29 @@
+# Usage (docker needs sudo on this machine; values come from .env, not $HOME/$UID, which sudo changes):
+#   (once) cp .env.example .env  and fill: HOST_UID/HOST_GID=$(id -u)/$(id -g), DATA_DIR=~/data, ENVS_DIR=~/envs, NLP_DIR=~/NLP
+#   sudo docker compose up -d --build
+#   sudo docker compose exec dev bash                         # shell, env $ENV_NAME activated
+#   sudo docker compose exec -e ENV_NAME=other dev bash       # switch env per shell
+#   sudo docker compose run --rm -e ENV_NAME=cotracker dev python /data/x.py
+# Create an env once (from inside the container):
+#   micromamba create -y -p /data/envs/<name> python=3.12 pip   (or /envs/<name>)
+#   micromamba run -p /data/envs/<name> pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+name: gpu-dev   # unique project name (the cotracker stack also lives in a dir named "docker")
+services:
+  dev:
+    image: gpu-dev:slim
+    build:
+      context: .
+      args: {HOST_UID: "${HOST_UID}", HOST_GID: "${HOST_GID}"}
+    network_mode: host        # all ports are the host's; no `ports:` mapping needed
+    ipc: host                 # shared memory for torch DataLoader workers / NCCL
+    gpus: all
+    environment:
+      ENV_NAME: ${ENV_NAME:-}
+    volumes:
+      - ${DATA_DIR}:/data
+      - ${ENVS_DIR}:/envs
+      - ${NLP_DIR}:/NLP           # source code shared with the host (edit on host, run in container)
+    init: false               # tini is already the entrypoint
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
