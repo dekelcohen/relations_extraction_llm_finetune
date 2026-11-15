@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -26,6 +27,9 @@ from re_synth.score import aggregate, parse_prediction, score_sample  # noqa: E4
 log = logging.getLogger("predict")
 OUT_SCHEMA = {"type": "object", "properties": {"records": {"type": "array", "items": {"type": "object"}}},
               "required": ["records"]}
+
+
+_LLM = {}  # engine reused across datasets in one process
 
 
 def gen_vllm(a, prompts):
@@ -42,8 +46,10 @@ def gen_vllm(a, prompts):
                         n=getattr(a, "n", 1), **kw)
     extra = {k: v for k, v in {"quantization": a.quantization, "kv_cache_dtype": a.kv_cache_dtype,
                                "max_num_seqs": a.max_num_seqs, "enforce_eager": a.enforce_eager}.items() if v}
-    llm = LLM(model=a.model, tensor_parallel_size=a.tp, max_model_len=a.max_model_len, enable_lora=bool(a.lora),
-              max_lora_rank=a.max_lora_rank, gpu_memory_utilization=a.gpu_mem, **extra)
+    if "llm" not in _LLM:
+        _LLM["llm"] = LLM(model=a.model, tensor_parallel_size=a.tp, max_model_len=a.max_model_len, enable_lora=bool(a.lora),
+                          max_lora_rank=a.max_lora_rank, gpu_memory_utilization=a.gpu_mem, **extra)
+    llm = _LLM["llm"]
     lreq = None
     if a.lora:
         from vllm.lora.request import LoRARequest
@@ -105,8 +111,8 @@ def to_md(rep):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
-    ap.add_argument("--data", required=True)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--data", action="append", required=True, help="repeatable: several datasets share one engine load")
+    ap.add_argument("--out", action="append", required=True, help="one per --data")
     ap.add_argument("--lora", default=None)
     ap.add_argument("--backend", choices=["vllm", "hf"], default="vllm")
     ap.add_argument("--tp", type=int, default=1)
@@ -133,7 +139,14 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(a.lora or a.model)
-    rows = read_jsonl(a.data)[: a.limit]
+    assert len(a.data) == len(a.out), "--data/--out must pair up"
+    for data, out in zip(a.data, a.out):
+        run_set(a, tok, data, out)
+
+
+def run_set(a, tok, data, out_path):
+    t0 = time.time()
+    rows = read_jsonl(data)[: a.limit]
     prompts, owner = [], []          # one prompt per document, or one per chunk of a long document
     for i, r in enumerate(rows):
         parts = [] if a.no_chunk else chunking.split(r["text"], a.chunk_chars, a.chunk_overlap, a.chunk_min)
@@ -146,15 +159,21 @@ def main():
     for i, t in zip(owner, outs):
         per_doc[i].append(t)
     texts = [o[0] if len(o) == 1 else chunking.merge_raws(o, json.loads(r["slot_types"]), r["text"]) for r, o in zip(rows, per_doc)]
-    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-    with open(a.out, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
         for r, t, o in zip(rows, texts, per_doc):
             row = {"id": r["id"], "model": a.model, "lora": a.lora, "raw": t} | ({"chunks": o} if len(o) > 1 else {})
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     per, rep = score_rows(rows, {r["id"]: t for r, t in zip(rows, texts)})
-    with open(a.out + ".metrics.json", "w", encoding="utf-8") as f:
+    with open(out_path + ".metrics.json", "w", encoding="utf-8") as f:
         json.dump({"report": rep, "per_sample": per}, f, indent=1)
     print(to_md(rep))
+    if os.environ.get("PIPE_LOG"):  # one line per finished dataset in the pipeline log
+        with open(os.environ["PIPE_LOG"], "a") as f:
+            allr = rep["all"]
+            f.write(time.strftime("[%Y-%m-%d %H:%M:%S]") + f" STAGE eval-set INFO {os.path.basename(out_path)} slot_f1={allr.get('slot_f1')} "
+                    f"exact={allr.get('exact_sample')} json_valid={allr.get('json_valid')} n={allr.get('n')} prompts={len(prompts)} "
+                    f"wall={time.time() - t0:.0f}s ({len(prompts) * 60 / (time.time() - t0):.1f} prompts/min)\n")
 
 
 if __name__ == "__main__":

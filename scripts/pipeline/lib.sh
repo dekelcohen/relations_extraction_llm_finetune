@@ -33,8 +33,12 @@ init() {
   [ -n "$EXTRA_EXPORTS" ] && eval "$EXTRA_EXPORTS"
   export HF_HOME HF_HUB_DISABLE_PROGRESS_BARS=1 VLLM_LOGGING_LEVEL=WARNING TOKENIZERS_PARALLELISM=false
   RESOLVED=$(for k in $(echo $CFG_KEYS | tr ' ' '\n' | grep -vE '^(DOCKER|SSH_HOST|HOST_.*|EXTRA_EXPORTS)$' | sort -u); do printf '%s=%s ' $k "${!k}"; done)
-  echo "[$script] machine=$MACHINE run=$RUN"; echo "$RESOLVED" | tr ' ' '\n' | grep . | sed 's/^/  /'
-  log config INFO "$script machine=$MACHINE run=$RUN $RESOLVED"
+  if [ -z "$PIPELINE_CONFIG_LOGGED" ]; then  # resolved config: once per run (children inherit the flag)
+    echo "[$script] machine=$MACHINE run=$RUN"; echo "$RESOLVED" | tr ' ' '\n' | grep . | sed 's/^/  /'
+    log config INFO "machine=$MACHINE run=$RUN $RESOLVED"
+    export PIPELINE_CONFIG_LOGGED=1
+  fi
+  export PIPE_LOG
 }
 declare -A OVR; POSITIONAL=()
 
@@ -49,7 +53,7 @@ log() {
 stage() {
   local name=$1; shift; local t0=$SECONDS lf=$A100_DIR/$name.log
   log "$name" START
-  if "$@" > >(tr '\r' '\n' | grep -v -E '[0-9]+(\.[0-9]+)?(it/s|s/it)|%\|' > "$lf") 2>&1; then
+  if "$@" > >(tr '\r' '\n' | awk -v pf="$A100_DIR/progress.last" '/[0-9](it\/s|s\/it)|%\|/ {print > pf; close(pf); next} {print}' > "$lf") 2>&1; then
     log "$name" DONE "elapsed=$((SECONDS-t0))s $(cat "$A100_DIR/$name.info" 2>/dev/null)"; rm -f "$A100_DIR/$name.info"
   else
     sleep 1; log "$name" FAIL "elapsed=$((SECONDS-t0))s err=$(tail -n 3 "$lf" | tr '\n' ' ' | cut -c1-400)"; return 1
