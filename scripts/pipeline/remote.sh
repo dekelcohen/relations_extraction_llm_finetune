@@ -13,7 +13,7 @@ P=$RR/outputs/pipeline/$M
 case $CMD in
   status) rs "tail -n ${N:-15} $P/pipeline.log; cat $P/status.json; echo; nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu --format=csv,noheader" ;;
   logs)   rs "tail -n ${N:-40} $P/${1:-pipeline}.log" ;;
-  start)  rs "cd $RR && git pull -q --ff-only; bash scripts/pipeline/run_pipeline.sh --machine $M $*" ;;
+  start)  rs "cd $RR && git pull -q --ff-only; bash scripts/pipeline/run_pipeline.sh --machine $M $(printf "%q " "$@")" ;;
   sh)     rs "$@" ;;
   pull-results)
     [ -z "$SSH_HOST" ] && { echo "local machine: nothing to pull"; exit 0; }
