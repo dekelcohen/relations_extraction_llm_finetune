@@ -25,3 +25,12 @@ At the end of **every stable task / milestone** (e.g. after synthetic generation
 3. Push artifacts too big for GitHub (adapters, checkpoints, large datasets) to private HF Hub repos with `python scripts/hf_sync.py push <dir> --repo Shani123/<name>`; this updates `hf_artifacts.json`, which must be committed. Another machine resumes with `git pull && python scripts/hf_sync.py pull`.
 
 Never commit `.env` (holds `OPENROUTER_API_KEY`, `HF_TOKEN`).
+
+## Remote A100 host (shared)
+
+GPU work too big for the local RTX 3070 (8 GB) runs on the shared A100 40GB host `10.53.160.181` (credentials are not stored in the repo; ask the user).
+
+- **Always use Docker** there, the same `docker/` slim image as locally (micromamba envs on a mounted volume). Never use host venvs, and never touch other users' containers or images.
+- **Code location:** `/mnt/tv_developers/projects/vla/NLP`. Commit and push from the local machine, then `git pull` there; don't rsync working copies.
+- **Never copy `.env`** or write any secret to that host. If a step needs `HF_TOKEN`, pass it at runtime from the local machine (`docker exec -e HF_TOKEN=...`), or do the HF push locally.
+- **The disk is shared, so keep the footprint minimal:** keep one model copy, no frequent checkpoints, no many-file dumps, clean pip/conda caches, and keep logs small. Upload adapters and checkpoints to private HF repos (`scripts/hf_sync.py`) instead of keeping them there.
