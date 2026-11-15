@@ -31,7 +31,7 @@ init() {
   fi
   cd "$ROOT"
   [ -n "$EXTRA_EXPORTS" ] && eval "$EXTRA_EXPORTS"
-  export HF_HOME HF_HUB_DISABLE_PROGRESS_BARS=1 VLLM_LOGGING_LEVEL=WARNING TOKENIZERS_PARALLELISM=false
+  export HF_HOME HF_HUB_DISABLE_PROGRESS_BARS=1 VLLM_LOGGING_LEVEL=${VLLM_LOGGING_LEVEL:-INFO} TOKENIZERS_PARALLELISM=false
   RESOLVED=$(for k in $(echo $CFG_KEYS | tr ' ' '\n' | grep -vE '^(DOCKER|SSH_HOST|HOST_.*|EXTRA_EXPORTS)$' | sort -u); do printf '%s=%s ' $k "${!k}"; done)
   if [ -z "$PIPELINE_CONFIG_LOGGED" ]; then  # resolved config: once per run (children inherit the flag)
     echo "[$script] machine=$MACHINE run=$RUN"; echo "$RESOLVED" | tr ' ' '\n' | grep . | sed 's/^/  /'

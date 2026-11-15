@@ -1,5 +1,5 @@
 #!/bin/bash
-# eval/predict.py on pilot / grpo_dev / test_long with the thinking settings of the config. Skips finished sets (metrics file exists).
+# eval/predict.py on pilot / grpo_dev / test_long with the thinking settings of the config. Skips finished sets (metrics file exists) and resumes unfinished ones per prompt.
 #   eval_model.sh --machine M --run R [--name N] [--model X] [--quant bitsandbytes] [--lora dir] [--limit 3] [--eval-sets "pilot"] [--outdir outputs/eval]
 # outputs: pilot -> $NAME-think.preds.jsonl ; others -> $NAME.<set>.preds.jsonl (+ .metrics.json)
 source "$(dirname "$0")/lib.sh"; init "$@"
@@ -22,11 +22,6 @@ F="--temperature $TEMPERATURE --top_p $TOP_P --top_k $TOP_K --max_tokens $MAX_TO
 [ -n "$QUANT" ] && F="$F --quantization $QUANT"
 [ -n "$LORA" ] && F="$F --lora $LORA --max_lora_rank $MAX_LORA_RANK"
 [ -n "$LIMIT" ] && F="$F --limit $LIMIT"
-rm -f $A100_DIR/progress.last
-( sleep 240; while true; do   # throughput / ETA from vLLM's progress line every ~5 min
-    l=$(tail -c 400 $A100_DIR/progress.last 2>/dev/null | tr '\n' ' ')
-    [ -n "$l" ] && log eval-$NAME INFO "progress: $(echo "$l" | sed 's/.*Processed prompts//' | cut -c1-200)"
-    sleep 300; done ) & MP=$!
-stage eval-$NAME py $ENV_VLLM eval/predict.py --model $MODEL "${D[@]}" "${O[@]}" $F; rc=$?
-kill $MP 2>/dev/null
-exit $rc
+# predict.py logs engine load, progress/throughput/ETA (every $PROGRESS_EVERY s) and per-set results to pipeline.log;
+# finished prompts go to <out>.partial.jsonl, so a restart resumes mid-set
+stage eval-$NAME py $ENV_VLLM eval/predict.py --model $MODEL "${D[@]}" "${O[@]}" $F ${ENGINE_KW:+--engine_kw "$ENGINE_KW"}

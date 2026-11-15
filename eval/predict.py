@@ -32,7 +32,15 @@ OUT_SCHEMA = {"type": "object", "properties": {"records": {"type": "array", "ite
 _LLM = {}  # engine reused across datasets in one process
 
 
-def gen_vllm(a, prompts):
+def _pipe_log(msg):
+    if os.environ.get("PIPE_LOG"):
+        with open(os.environ["PIPE_LOG"], "a") as f:
+            f.write(time.strftime("[%Y-%m-%d %H:%M:%S]") + f" STAGE eval-set INFO {msg}\n")
+
+
+def gen_vllm(a, prompts, cache_path=None):
+    """Generate with one shared engine. With cache_path: stream requests through the engine, append every finished
+    prompt to cache_path (resume: prompts already there are skipped) and log throughput/ETA periodically."""
     from vllm import LLM, SamplingParams
     kw = {}
     if a.guided_json:
@@ -46,18 +54,56 @@ def gen_vllm(a, prompts):
                         n=getattr(a, "n", 1), **kw)
     extra = {k: v for k, v in {"quantization": a.quantization, "kv_cache_dtype": a.kv_cache_dtype,
                                "max_num_seqs": a.max_num_seqs, "enforce_eager": a.enforce_eager}.items() if v}
+    extra |= json.loads(getattr(a, "engine_kw", None) or "{}")
     if "llm" not in _LLM:
+        t0 = time.time()
         _LLM["llm"] = LLM(model=a.model, tensor_parallel_size=a.tp, max_model_len=a.max_model_len, enable_lora=bool(a.lora),
                           max_lora_rank=a.max_lora_rank, gpu_memory_utilization=a.gpu_mem, **extra)
+        _pipe_log(f"engine loaded in {time.time() - t0:.0f}s ({a.model}{' +lora' if a.lora else ''}; {extra})")
     llm = _LLM["llm"]
     lreq = None
     if a.lora:
         from vllm.lora.request import LoRARequest
         lreq = LoRARequest("adapter", 1, a.lora)
-    outs = llm.generate(prompts, sp, lora_request=lreq)
     if getattr(a, "n", 1) > 1:  # prefilter: all n samples per prompt
-        return [[c.text for c in o.outputs] for o in outs]
-    return [o.outputs[0].text for o in outs]
+        return [[c.text for c in o.outputs] for o in llm.generate(prompts, sp, lora_request=lreq)]
+    if not cache_path:
+        return [o.outputs[0].text for o in llm.generate(prompts, sp, lora_request=lreq)]
+    import hashlib
+    key = lambda p: hashlib.sha1(f"{a.model}|{a.lora}|{a.max_tokens}|{p}".encode()).hexdigest()  # noqa: E731
+    keys = [key(p) for p in prompts]
+    done = {}
+    if os.path.exists(cache_path):
+        for line in open(cache_path, encoding="utf-8"):
+            try:
+                d = json.loads(line)
+                done[d["k"]] = d["text"]
+            except (json.JSONDecodeError, KeyError):  # truncated last line after a kill
+                pass
+    todo = [i for i, k in enumerate(keys) if k not in done]
+    name = os.path.basename(cache_path).replace(".partial.jsonl", "")
+    if len(todo) < len(prompts):
+        _pipe_log(f"{name} resume: {len(prompts) - len(todo)}/{len(prompts)} prompts cached")
+    eng = llm.llm_engine
+    for i in todo:
+        eng.add_request(f"{name}-{i}", prompts[i], sp, lora_request=lreq)
+    t0 = last = time.time(); ntok = nfin = 0; every = float(os.environ.get("PROGRESS_EVERY", 300))
+    with open(cache_path, "a", encoding="utf-8") as f:
+        while eng.has_unfinished_requests():
+            for o in eng.step():
+                if not o.finished:
+                    continue
+                i = int(o.request_id.rsplit("-", 1)[1]); c = o.outputs[0]
+                done[keys[i]] = c.text; nfin += 1; ntok += len(c.token_ids)
+                f.write(json.dumps({"k": keys[i], "text": c.text, "ntok": len(c.token_ids),
+                                    "finish": c.finish_reason}, ensure_ascii=False) + "\n"); f.flush()
+            if time.time() - last > every and nfin:
+                last = time.time(); dt = last - t0; left = len(todo) - nfin
+                msg = (f"{name} progress {len(prompts) - left}/{len(prompts)} prompts, {nfin * 60 / dt:.1f} prompts/min, "
+                       f"{ntok / dt:.0f} gen tok/s (finished reqs), avg {ntok / nfin:.0f} tok/prompt, "
+                       f"ETA {left * dt / nfin / 60:.0f} min, running={eng.get_num_unfinished_requests()}")
+                log.info(msg); _pipe_log(msg)
+    return [done[k] for k in keys]
 
 
 def gen_hf(a, prompts, tok):
@@ -128,6 +174,7 @@ def main():
     ap.add_argument("--kv_cache_dtype", default=None, help="e.g. fp8 to fit longer contexts on small GPUs")
     ap.add_argument("--max_num_seqs", type=int, default=None)
     ap.add_argument("--enforce_eager", action="store_true", help="skip CUDA graphs (saves VRAM on small GPUs)")
+    ap.add_argument("--engine_kw", default=None, help='extra vLLM LLM(...) kwargs as JSON, e.g. {"language_model_only": true}')
     ap.add_argument("--guided_json", action="store_true")
     ap.add_argument("--enable_thinking", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
@@ -154,7 +201,8 @@ def run_set(a, tok, data, out_path):
             prompts.append(render_prompt(tok, chunk_prompt(r, c), a.enable_thinking))
             owner.append(i)
     log.info("generating %d prompts for %d docs with %s (%s)", len(prompts), len(rows), a.model, a.backend)
-    outs = gen_vllm(a, prompts) if a.backend == "vllm" else gen_hf(a, prompts, tok)
+    cache = out_path + ".partial.jsonl"
+    outs = gen_vllm(a, prompts, cache) if a.backend == "vllm" else gen_hf(a, prompts, tok)
     per_doc = [[] for _ in rows]
     for i, t in zip(owner, outs):
         per_doc[i].append(t)
@@ -168,12 +216,12 @@ def run_set(a, tok, data, out_path):
     with open(out_path + ".metrics.json", "w", encoding="utf-8") as f:
         json.dump({"report": rep, "per_sample": per}, f, indent=1)
     print(to_md(rep))
-    if os.environ.get("PIPE_LOG"):  # one line per finished dataset in the pipeline log
-        with open(os.environ["PIPE_LOG"], "a") as f:
-            allr = rep["all"]
-            f.write(time.strftime("[%Y-%m-%d %H:%M:%S]") + f" STAGE eval-set INFO {os.path.basename(out_path)} slot_f1={allr.get('slot_f1')} "
-                    f"exact={allr.get('exact_sample')} json_valid={allr.get('json_valid')} n={allr.get('n')} prompts={len(prompts)} "
-                    f"wall={time.time() - t0:.0f}s ({len(prompts) * 60 / (time.time() - t0):.1f} prompts/min)\n")
+    if os.path.exists(cache):
+        os.remove(cache)
+    allr = rep["all"]  # one line per finished dataset in the pipeline log
+    _pipe_log(f"{os.path.basename(out_path)} DONE slot_f1={allr.get('slot_f1')} exact={allr.get('exact_sample')} "
+              f"json_valid={allr.get('json_valid')} n={allr.get('n')} prompts={len(prompts)} "
+              f"wall={time.time() - t0:.0f}s ({len(prompts) * 60 / (time.time() - t0):.1f} prompts/min)")
 
 
 if __name__ == "__main__":
