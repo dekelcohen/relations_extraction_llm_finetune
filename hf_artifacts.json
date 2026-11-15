@@ -6,5 +6,9 @@
  "outputs/grpo-qwen3-4b": {
   "repo": "Shani123/re-qwen3-4b-grpo",
   "type": "model"
+ },
+ "outputs/sft-cot-qwen3.8-27b": {
+  "repo": "Shani123/re-qwen3.8-27b-sft-cot",
+  "type": "model"
  }
 }
