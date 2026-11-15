@@ -30,6 +30,10 @@ def main():
     ap.add_argument("--val", help="explicit validation jsonl (overrides --val_frac)")
     ap.add_argument("--log_steps", type=int, default=2)
     ap.add_argument("--eval_steps", type=int, default=0, help="0 = ~6 evals over the run")
+    ap.add_argument("--max_steps", type=int, default=-1, help="smoke test: stop after N optimizer steps")
+    ap.add_argument("--disable_tqdm", action="store_true", help="no progress bars (small logs)")
+    ap.add_argument("--save_state", action="store_true",
+                    help="after training also write one final checkpoint-N/ (optimizer, scheduler, trainer_state) to resume from")
     ap.add_argument("--log_dir", help="metrics.jsonl / train.log / charts.html (default: <out>/progress)")
     a = ap.parse_args()
 
@@ -59,7 +63,7 @@ def main():
     print(f"train={len(ds)} val={len(val) if val else 0} optimizer_steps={total} eval_every={eval_steps}")
     cfg = SFTConfig(output_dir=a.out, num_train_epochs=a.epochs, learning_rate=a.lr, per_device_train_batch_size=a.bs,
                     gradient_accumulation_steps=a.ga, max_length=a.max_len, completion_only_loss=True, bf16=True,
-                    logging_steps=a.log_steps, save_steps=200, lr_scheduler_type="cosine",
+                    logging_steps=a.log_steps, save_steps=200, max_steps=a.max_steps, disable_tqdm=a.disable_tqdm, lr_scheduler_type="cosine",
                     warmup_steps=max(1, round(0.03 * total)), report_to="none",
                     eval_strategy="steps" if val else "no", eval_steps=eval_steps, per_device_eval_batch_size=1)
     log_dir = a.log_dir or os.path.join(a.out, "progress")
@@ -71,6 +75,9 @@ def main():
     print(f"progress: {log_dir}/charts.html")
     model.save_pretrained(a.out)
     tok.save_pretrained(a.out)
+    if a.save_state:
+        trainer.save_state()
+        trainer._save_checkpoint(trainer.model, None)  # checkpoint-<step>/ incl. optimizer.pt, scheduler.pt, trainer_state.json
 
 
 if __name__ == "__main__":

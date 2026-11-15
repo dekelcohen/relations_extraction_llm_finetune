@@ -71,6 +71,23 @@ Long documents (> 4,000 chars) are split into overlapping chunks with repeated c
 
 Metrics: slot P/R/F1, record F1, null accuracy, decoy-hit rate (picked a distractor), hallucination rate (value not in text), JSON validity, exact-sample rate, grouped by language / format / hard case / tier.
 
+## Remote A100 (shared host, Docker)
+
+Reproducible 27B eval + QLoRA SFT on a single A100-40GB (host 10.53.160.181, work dir `/mnt/tv_developers/projects/vla/NLP`:
+`relations_extraction_llm_finetune/`, `envs/` (micromamba, mounted `/envs`), `hf_cache/` (mounted `/data`)). Scripts in `scripts/a100/`:
+
+| script | purpose |
+|---|---|
+| `setup_env.sh` | create/update `/envs/re-vllm` and `/envs/re-unsloth`, purge caches (idempotent) |
+| `download.sh <repo>...` | models into the shared HF cache |
+| `eval_model.sh` | `NAME= MODEL= [LORA= QUANT= LIMIT=]` -> pilot / grpo_dev / test_long preds (thinking settings of the 4B base run) |
+| `sft_qlora.sh` | Unsloth 4-bit QLoRA, same recipe as `sft-cot-qwen3-4b`; final adapter + one final checkpoint |
+| `pipeline_stages.sh` / `run_pipeline.sh` | setup -> download -> smoke -> base eval -> SFT smoke -> SFT -> ft eval (run `run_pipeline.sh [stages]` on the host, detached) |
+| `remote.sh` | local: `export SSHPASS=...; scripts/a100/remote.sh status|logs [name]|start|pull-results` |
+
+One-line-per-event log: `outputs/a100/pipeline.log` (`[ts] STAGE <name> START|DONE|FAIL <info>`) + `status.json`; per-stage logs next to it.
+Never put credentials in the repo; HF pushes (`scripts/hf_sync.py`) are done from the local machine.
+
 ## 5. Dataset viewer (manual review)
 A small webapp for the manual pilot-testset review in [`docs/status.md`](docs/status.md): shows
 each sample's raw text/HTML/email with its gold **main entities** (solid underline + tint, one
