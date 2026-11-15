@@ -4,7 +4,7 @@
 set -e; cd "$(dirname "$0")/.."
 E=outputs/eval; P=data/pilot; D=data/stage_2_RL_GRPO; T=data/test_long
 add() { [ -f "$2" ] && echo "--model $1=$2"; }   # label path
-B27="qwen3.8-27b-fp8 qwen3.8-27b-bnb4 qwen3.8-27b-ft-fp8 qwen3.8-27b-ft-bnb4"
+B27="qwen3.8-27b-fp8 qwen3.8-27b-int4 qwen3.8-27b-bnb4 qwen3.8-27b-ft-int4 qwen3.8-27b-ft-fp8 qwen3.8-27b-ft-bnb4"
 n27() { for l in $B27; do case $1 in pilot) f=$E/$l-think.preds.jsonl ;; *) f=$E/$l.$1.preds.jsonl ;; esac; add $l $f; done; }
 TH="vLLM, thinking, T=0.6 top_p 0.95 top_k 20, max 5120 tok, 1 sample"
 NOTES=(--note "sonnet-5.5=anthropic/claude-sonnet-5.5 via OpenRouter, T=0" --note "llama-3.3-70b=meta-llama/llama-3.3-70b-instruct via OpenRouter, T=0"
@@ -13,6 +13,8 @@ NOTES=(--note "sonnet-5.5=anthropic/claude-sonnet-5.5 via OpenRouter, T=0" --not
   --note "qwen3-4b-ft-nothink=same as qwen3-4b-nothink + the QLoRA adapter (trained WITH thinking: out-of-distribution mode)"
   --note "qwen3-4b-grpo=same as qwen3-4b-ft + 20 GRPO steps (strict reward, 40 prompts x G=4, final adapter), same thinking settings"
   --note "qwen3.8-27b-fp8=BASE Qwen/Qwen3.8-27B-FP8 (8-bit weights, vLLM Marlin), $TH"
+  --note "qwen3.8-27b-int4=BASE RedHatAI/Qwen3.8-27B-INT4 (W4A16), fast vLLM config (fp8 KV cache, Triton attention, max_num_seqs 96); sampling as above, see docs/status.md for settings that differ"
+  --note "qwen3.8-27b-ft-int4=27B + the same QLoRA adapter served on the INT4 base (vLLM LoRA), same settings as qwen3.8-27b-int4"
   --note "qwen3.8-27b-bnb4=BASE unsloth/Qwen3.8-27B-unsloth-bnb-4bit (vLLM bitsandbytes), $TH"
   --note "qwen3.8-27b-ft-fp8=27B + QLoRA adapter (r32, 2 ep, same data/recipe as qwen3-4b-ft; trained on the bnb-4bit base) served on the FP8 base, $TH"
   --note "qwen3.8-27b-ft-bnb4=27B + the same QLoRA adapter served on its training base (bnb-4bit), $TH")
