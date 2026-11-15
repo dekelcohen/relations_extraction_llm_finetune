@@ -31,6 +31,6 @@ Never commit `.env` (holds `OPENROUTER_API_KEY`, `HF_TOKEN`).
 GPU work too big for the local RTX 3070 (8 GB) runs on the shared A100 40GB host `10.53.160.181` (credentials are not stored in the repo; ask the user).
 
 - **Always use Docker** there, the same `docker/` slim image as locally (micromamba envs on a mounted volume). Never use host venvs, and never touch other users' containers or images.
-- **Code location:** `/mnt/tv_developers/projects/vla/NLP`. Commit and push from the local machine, then `git pull` there; don't rsync working copies.
+- **Code location:** `/mnt/tv_developers/projects/vla/NLP`. Commit and push from the local machine, then `git pull` there; don't rsync working copies. The HF cache/models and the micromamba envs also live **strictly under this mount** (never on the host's `/` disk).
 - **Never copy `.env`** or write any secret to that host. If a step needs `HF_TOKEN`, pass it at runtime from the local machine (`docker exec -e HF_TOKEN=...`), or do the HF push locally.
 - **The disk is shared, so keep the footprint minimal:** keep one model copy, no frequent checkpoints, no many-file dumps, clean pip/conda caches, and keep logs small. Upload adapters and checkpoints to private HF repos (`scripts/hf_sync.py`) instead of keeping them there.
