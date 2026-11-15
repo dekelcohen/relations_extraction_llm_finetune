@@ -84,7 +84,7 @@ Runs: `qwen3.8-27b` (FP8 eval + 4-bit QLoRA SFT), `qwen3-4b` (original AWQ eval 
 |---|---|
 | `setup_env.sh` | create/update micromamba envs (`ENV_VLLM`, `ENV_UNSLOTH`), purge caches (skipped if `MANAGE_ENVS=0`) |
 | `download.sh` | `DOWNLOAD` model ids -> `HF_HOME` |
-| `eval_model.sh` | `predict.py` on pilot / grpo_dev / test_long (`--name --model --quant --lora --limit`), skips finished sets |
+| `eval_model.sh` | `predict.py` on pilot / grpo_dev / test_long (`--name --model --quant --lora --limit`; bases via `EVAL_BASES` (e.g. `fp8 bnb4` -> columns `<name>-fp8`, `<name>-bnb4`, `<ft>-fp8`, `<ft>-bnb4`)), skips finished sets |
 | `sft_qlora.sh` | Unsloth 4-bit QLoRA (recipe of `sft-cot-qwen3-4b`); final adapter + one final checkpoint with optimizer |
 | `pipeline_stages.sh` | stages `setup download smoke base_eval sft_smoke sft ft_eval` (idempotent) |
 | `run_pipeline.sh` | on the host: pull, start compose, run stages detached |
