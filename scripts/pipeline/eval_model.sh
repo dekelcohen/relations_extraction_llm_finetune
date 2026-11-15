@@ -26,6 +26,7 @@ F="--temperature $TEMPERATURE --top_p $TOP_P --top_k $TOP_K --max_tokens $MAX_TO
 [ -n "$QUANT" ] && F="$F --quantization $QUANT"
 [ -n "$LORA" ] && F="$F --lora $LORA --max_lora_rank $MAX_LORA_RANK"
 [ -n "$LIMIT" ] && F="$F --limit $LIMIT"
+[ -n "$CHAT_KW" ] && F="$F --chat_kw $(printf %q "$CHAT_KW")"
 # predict.py logs engine load, progress/throughput/ETA (every $PROGRESS_EVERY s) and per-set results to pipeline.log;
 # finished prompts go to <out>.partial.jsonl, so a restart resumes mid-set
 stage eval-$NAME py $ENV_VLLM eval/predict.py --model $MODEL "${D[@]}" "${O[@]}" $F ${ENGINE_KW:+--engine_kw "$ENGINE_KW"}

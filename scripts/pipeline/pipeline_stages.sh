@@ -3,7 +3,8 @@
 #   pipeline_stages.sh --machine a100 --run qwen3.8-27b [--stages "base_eval sft"] [--limit N] [--detach]
 source "$(dirname "$0")/lib.sh"; init "$@"
 S="scripts/pipeline"; A="--machine $MACHINE --run $RUN"; export NO_REEXEC=1; export IN_CONTAINER=${IN_CONTAINER:-1}
-bm_() { local k=${1^^}; local m=BASE_${k}_MODEL q=BASE_${k}_QUANT; BM=${!m}; BQ=${!q}; }  # EVAL_BASES entry -> model/quant
+bm_() { local k=${1^^}; local m=BASE_${k}_MODEL q=BASE_${k}_QUANT e=BASE_${k}_ENGINE_KW g=BASE_${k}_GPU_MEM s=BASE_${k}_MAX_NUM_SEQS
+  BM=${!m}; BQ=${!q}; BO=(); [ -n "${!e}" ] && BO+=(--engine-kw "${!e}"); [ -n "${!g}" ] && BO+=(--gpu-mem "${!g}"); [ -n "${!s}" ] && BO+=(--max-num-seqs "${!s}"); }  # EVAL_BASES entry -> model/quant + per-base engine overrides
 run_stage() {
   case $1 in
     setup)          stage setup bash $S/setup_env.sh $A ;;
@@ -12,11 +13,11 @@ run_stage() {
     download)       stage download bash $S/download.sh $A ;;
     download_eval)  stage download_eval bash $S/download.sh $A ;;
     download_sft)   stage download_sft bash $S/download.sh $A --download "$SFT_BASE" ;;
-    smoke)     b=${EVAL_BASES%% *}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" --limit ${LIMIT:-3} --eval-sets pilot ;;
+    smoke)     b=${EVAL_BASES%% *}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" "${BO[@]}" --limit ${LIMIT:-3} --eval-sets pilot ;;
     base_eval)      for b in $EVAL_BASES; do run_stage base_eval_$b || return 1; done ;;
-    base_eval_*)    b=${1#base_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" ;;
+    base_eval_*)    b=${1#base_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" "${BO[@]}" ;;
     ft_eval)        for b in $EVAL_BASES; do run_stage ft_eval_$b || return 1; done ;;
-    ft_eval_*)      b=${1#ft_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $FT_NAME-$b --model $BM --quant "$BQ" --lora $SFT_OUT ;;
+    ft_eval_*)      b=${1#ft_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $FT_NAME-$b --model $BM --quant "$BQ" "${BO[@]}" --lora $SFT_OUT ;;
     sft_smoke) bash $S/sft_qlora.sh $A --max-steps 3 --sft-out outputs/smoke-sft; r=$?; rm -rf outputs/smoke-sft; return $r ;;
     sft)       bash $S/sft_qlora.sh $A ;;
     *) echo "unknown stage $1"; return 2 ;;

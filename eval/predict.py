@@ -175,6 +175,7 @@ def main():
     ap.add_argument("--max_num_seqs", type=int, default=None)
     ap.add_argument("--enforce_eager", action="store_true", help="skip CUDA graphs (saves VRAM on small GPUs)")
     ap.add_argument("--engine_kw", default=None, help='extra vLLM LLM(...) kwargs as JSON, e.g. {"language_model_only": true}')
+    ap.add_argument("--chat_kw", default=None, help='extra chat-template kwargs as JSON, e.g. {"reasoning_effort": "medium"}')
     ap.add_argument("--guided_json", action="store_true")
     ap.add_argument("--enable_thinking", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
@@ -198,7 +199,7 @@ def run_set(a, tok, data, out_path):
     for i, r in enumerate(rows):
         parts = [] if a.no_chunk else chunking.split(r["text"], a.chunk_chars, a.chunk_overlap, a.chunk_min)
         for c in parts or [None]:
-            prompts.append(render_prompt(tok, chunk_prompt(r, c), a.enable_thinking))
+            prompts.append(render_prompt(tok, chunk_prompt(r, c), a.enable_thinking, **json.loads(a.chat_kw or "{}")))
             owner.append(i)
     log.info("generating %d prompts for %d docs with %s (%s)", len(prompts), len(rows), a.model, a.backend)
     cache = out_path + ".partial.jsonl"

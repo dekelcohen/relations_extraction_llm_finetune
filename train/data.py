@@ -18,10 +18,10 @@ def read_jsonl(paths: str | list[str]) -> list[dict]:
     return rows
 
 
-def render_prompt(tok, messages: list[dict], enable_thinking: bool = False) -> str:
+def render_prompt(tok, messages: list[dict], enable_thinking: bool = False, **template_kw) -> str:
     try:
         return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True,
-                                       enable_thinking=enable_thinking)
+                                       enable_thinking=enable_thinking, **template_kw)
     except TypeError:  # templates without enable_thinking
         return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
