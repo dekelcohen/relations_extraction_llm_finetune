@@ -12,7 +12,7 @@ run_stage() {
     download)       stage download bash $S/download.sh $A ;;
     download_eval)  stage download_eval bash $S/download.sh $A ;;
     download_sft)   stage download_sft bash $S/download.sh $A --download "$SFT_BASE" ;;
-    smoke)     b=${EVAL_BASES%% *}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" --limit 3 --eval-sets pilot ;;
+    smoke)     b=${EVAL_BASES%% *}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" --limit ${LIMIT:-3} --eval-sets pilot ;;
     base_eval)      for b in $EVAL_BASES; do run_stage base_eval_$b || return 1; done ;;
     base_eval_*)    b=${1#base_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" ;;
     ft_eval)        for b in $EVAL_BASES; do run_stage ft_eval_$b || return 1; done ;;

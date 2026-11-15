@@ -187,7 +187,8 @@ def parse_prediction(out) -> tuple[list[dict] | None, bool]:
         out = out[-1].get("content", "") if out and isinstance(out[-1], dict) else ""
     if not isinstance(out, str):
         return None, False
-    s = re.sub(r"<think>.*?</think>", "", out, flags=re.S).strip()
+    s = re.sub(r"<think>.*?</think>", "", out, flags=re.S)
+    s = s.rsplit("</think>", 1)[-1].strip()  # Qwen3.5+/3.8 templates prefill "<think>" in the prompt: output has only the closing tag
     s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s)
     obj = None
     try:
@@ -252,7 +253,8 @@ def parse_prediction_lenient(out) -> tuple[list[dict] | None, bool, str]:
         return None, False, "unparseable"
     if "<think>" in out and "</think>" not in out:
         return None, False, "unclosed_think"
-    s = re.sub(r"<think>.*?</think>", "", out, flags=re.S).strip()
+    s = re.sub(r"<think>.*?</think>", "", out, flags=re.S)
+    s = s.rsplit("</think>", 1)[-1].strip()  # Qwen3.5+/3.8 templates prefill "<think>" in the prompt: output has only the closing tag
     s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s)
     i = s.find("{")
     if i < 0:
