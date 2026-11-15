@@ -1,6 +1,6 @@
 """Print 'step=i/N s_per_step=x eta=Ymin loss=l' from a Trainer progress metrics.jsonl."""
-import json, sys
-rows = [json.loads(l) for l in open(sys.argv[1])] if __import__("os").path.exists(sys.argv[1]) else []
+import json, os, sys
+rows = [json.loads(l) for l in open(sys.argv[1])] if os.path.exists(sys.argv[1]) else []
 tr = [r for r in rows if "loss" in r]
 if tr:
     n, r = int(sys.argv[2]), tr[-1]

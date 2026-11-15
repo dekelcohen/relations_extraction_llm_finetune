@@ -71,22 +71,28 @@ Long documents (> 4,000 chars) are split into overlapping chunks with repeated c
 
 Metrics: slot P/R/F1, record F1, null accuracy, decoy-hit rate (picked a distractor), hallucination rate (value not in text), JSON validity, exact-sample rate, grouped by language / format / hard case / tier.
 
-## Remote A100 (shared host, Docker)
+## Reproducible pipeline (any machine: A100 host, local RTX 3070)
 
-Reproducible 27B eval + QLoRA SFT on a single A100-40GB (host 10.53.160.181, work dir `/mnt/tv_developers/projects/vla/NLP`:
-`relations_extraction_llm_finetune/`, `envs/` (micromamba, mounted `/envs`), `hf_cache/` (mounted `/data`)). Scripts in `scripts/a100/`:
+`scripts/pipeline/` is machine-agnostic; machine specifics live in `configs/machines/<name>.env` (container/compose, mounts, env paths,
+GPU mem / max_model_len / max_num_seqs / enforce_eager / kv dtype, ssh host IP) and run specifics in `configs/runs/<name>.env`
+(model, quant, thinking/sampling, SFT r/lr/bs/ga/max_len, stages). Every script takes `--machine M --run R` plus overrides
+(`--model X --stages "base_eval sft" --limit 2 --gpu-mem 0.8 --sft-lr 5e-5`), prints the resolved config and logs it.
+Machines: `a100` (shared 40GB host, Docker; work dir `/mnt/tv_developers/projects/vla/NLP` with `envs/`, `hf_cache/`, repo), `local3070` (gpu-dev compose).
+Runs: `qwen3.8-27b` (FP8 eval + 4-bit QLoRA SFT), `qwen3-4b` (original AWQ eval / bnb-4bit SFT).
 
 | script | purpose |
 |---|---|
-| `setup_env.sh` | create/update `/envs/re-vllm` and `/envs/re-unsloth`, purge caches (idempotent) |
-| `download.sh <repo>...` | models into the shared HF cache |
-| `eval_model.sh` | `NAME= MODEL= [LORA= QUANT= LIMIT=]` -> pilot / grpo_dev / test_long preds (thinking settings of the 4B base run) |
-| `sft_qlora.sh` | Unsloth 4-bit QLoRA, same recipe as `sft-cot-qwen3-4b`; final adapter + one final checkpoint |
-| `pipeline_stages.sh` / `run_pipeline.sh` | setup -> download -> smoke -> base eval -> SFT smoke -> SFT -> ft eval (run `run_pipeline.sh [stages]` on the host, detached) |
-| `remote.sh` | local: `export SSHPASS=...; scripts/a100/remote.sh status|logs [name]|start|pull-results` |
+| `setup_env.sh` | create/update micromamba envs (`ENV_VLLM`, `ENV_UNSLOTH`), purge caches (skipped if `MANAGE_ENVS=0`) |
+| `download.sh` | `DOWNLOAD` model ids -> `HF_HOME` |
+| `eval_model.sh` | `predict.py` on pilot / grpo_dev / test_long (`--name --model --quant --lora --limit`), skips finished sets |
+| `sft_qlora.sh` | Unsloth 4-bit QLoRA (recipe of `sft-cot-qwen3-4b`); final adapter + one final checkpoint with optimizer |
+| `pipeline_stages.sh` | stages `setup download smoke base_eval sft_smoke sft ft_eval` (idempotent) |
+| `run_pipeline.sh` | on the host: pull, start compose, run stages detached |
+| `exec.sh` | run any command in the machine's container |
+| `remote.sh` | `remote.sh --machine a100 status\|logs [name]\|start [args]\|pull-results` (ssh via `export SSHPASS=...`, never stored) |
 
-One-line-per-event log: `outputs/a100/pipeline.log` (`[ts] STAGE <name> START|DONE|FAIL <info>`) + `status.json`; per-stage logs next to it.
-Never put credentials in the repo; HF pushes (`scripts/hf_sync.py`) are done from the local machine.
+Status log: `outputs/pipeline/<machine>/pipeline.log` (`[ts] STAGE <name> START|DONE|FAIL <info>`), `status.json`, per-stage logs beside it.
+HF pushes (`scripts/hf_sync.py`) are done from the local machine; no credentials in the repo or on remote hosts.
 
 ## 5. Dataset viewer (manual review)
 A small webapp for the manual pilot-testset review in [`docs/status.md`](docs/status.md): shows
