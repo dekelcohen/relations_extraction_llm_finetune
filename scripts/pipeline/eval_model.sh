@@ -4,6 +4,10 @@
 # outputs: pilot -> $NAME-think.preds.jsonl ; others -> $NAME.<set>.preds.jsonl (+ .metrics.json)
 source "$(dirname "$0")/lib.sh"; init "$@"
 NAME=${NAME:-$EVAL_NAME}; OUTDIR=${OUTDIR:-outputs/eval}; mkdir -p $OUTDIR
+# pipeline evals (<EVAL_NAME|FT_NAME>-<base>): skip bases removed from EVAL_BASES since the pipeline started (config is re-read here)
+for p in $EVAL_NAME $FT_NAME; do b=${NAME#$p-}
+  [ "$b" != "$NAME" ] && [[ $b != *-* ]] && [[ " $EVAL_BASES " != *" $b "* ]] && { log eval-$NAME INFO "skip (base $b not in EVAL_BASES)"; exit 0; }
+done
 declare -A DATA=([pilot]=data/pilot/export/pilot_all.jsonl [grpo_dev]=data/stage_2_RL_GRPO/grpo_dev.jsonl [test_long]=data/test_long/test_long.jsonl)
 # one process / one engine load for all unfinished sets
 D=(); O=()

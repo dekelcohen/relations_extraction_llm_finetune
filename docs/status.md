@@ -37,6 +37,7 @@ which records them in `hf_artifacts.json`.
 | M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2). SFT completion tokens p50 1004 / p95 2239. `train/grpo_unsloth.py`, `scripts/grpo_retry.sh` (auto-resume after OOM) | ✅ |
 | M5 | GRPO run: **20 steps** (2 prompts × G=4 per step, lr 1e-5, β=0, dr_grpo, strict reward, max completion 1024, ~2.5 min/step, ~50 min). Final adapter = best on grpo_dev. Pilot slot-F1 SFT 0.9584 → GRPO **0.9591** (exact 0.722 → 0.725); grpo_dev 0.853 → 0.852; test_long 0.847 → **0.858**. Adapter on HF `Shani123/re-qwen3-4b-grpo`; report sections appended | ✅ (small effect) |
 | T1 | Test set: realistic long docs (H20) → `data/test_long/` (40 he + 40 fa, TEST ONLY, [doc](datasets/test_long.md)). Slot-F1 Llama-70B ~0.974 (he 0.978, fa 0.969), Sonnet ~0.988 (he 0.992, fa 0.984). Open: per-case breakdown, harder v2 constructs | ✅ |
+| A1 | Qwen3.8-27B on the shared A100-40GB (`scripts/pipeline`, `configs/runs/qwen3.8-27b.env`): base **FP8** eval (thinking, 3 sets) running since 2026-11-15 13:49 UTC, ~5.7 prompts/min, ETA ~2–2.5 h; then QLoRA SFT (bnb-4bit base, max_len 3072, 64 steps) and LoRA eval on FP8. bnb4 base eval dropped | 🔄 running |
 
 ### Resume on another machine
 1. `git pull`. All code, docs and stage-1/2 data (`data/pilot`, `data/synth_hefa`,
@@ -88,6 +89,10 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 - [ ] Update this file and the dataset doc with the actual counts and results.
 
 ### Open issues
+- **A100 / Qwen3.8-27B eval:** engine-init failures were missing gcc for Triton, the flashinfer sampler JIT
+  needing nvcc (`VLLM_USE_FLASHINFER_SAMPLER=0`), and `max_num_seqs` > Mamba cache blocks (41 → 40). Engine load
+  ~6.6 min. Eval resumes per prompt from `<out>.partial.jsonl`. If a 4-bit base column is needed, use a W4A16
+  (Marlin) checkpoint such as `RedHatAI/Qwen3.8-27B-INT4` instead of vLLM bnb.
 - **Probe fairness:** the H13 "date" column is label-ambiguous when a distractor date column
   exists. The H15 "previous supplier" vs current one may also be too subtle. Review these
   in the viewer before trusting `frontier_hard` labels.
