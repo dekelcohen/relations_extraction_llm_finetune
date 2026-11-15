@@ -24,7 +24,8 @@ init() {
   if [ "$RUNNER" = docker ] && [ -z "$IN_CONTAINER" ] && [ -z "$NO_REEXEC" ]; then
     local env=(-e IN_CONTAINER=1); [ "$DETACH" = 1 ] && env+=(-d)
     if [ "$DETACH" = 1 ]; then
-      exec $DOCKER exec "${env[@]}" -w "$REPO" "$CONTAINER" bash -c "bash scripts/pipeline/$script ${ORIG[*]/--detach/} >> $REPO/outputs/pipeline/$MACHINE/pipeline.out 2>&1"
+      local q=(); for a in "${ORIG[@]}"; do [ "$a" = --detach ] || q+=("$a"); done; local qs; qs=$(printf '%q ' "${q[@]}")
+      exec $DOCKER exec "${env[@]}" -w "$REPO" "$CONTAINER" bash -c "bash scripts/pipeline/$script $qs >> $REPO/outputs/pipeline/$MACHINE/pipeline.out 2>&1"
     fi
     exec $DOCKER exec "${env[@]}" -w "$REPO" "$CONTAINER" bash "scripts/pipeline/$script" "${ORIG[@]}"
   fi
