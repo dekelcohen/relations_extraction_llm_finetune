@@ -41,6 +41,7 @@ declare -A OVR; POSITIONAL=()
 log() {
   local st=$1 ev=$2; shift 2; local ts; ts=$(date '+%Y-%m-%d %H:%M:%S')
   echo "[$ts] STAGE $st $ev $*" >> "$PIPE_LOG"
+  [ "$st" = config ] && return
   printf '{"stage":"%s","state":"%s","info":"%s","time":"%s"}\n' "$st" "$ev" "${*//\"/\'}" "$ts" > "$A100_DIR/status.json"
 }
 # stage <name> <cmd...>: START/DONE/FAIL + elapsed + error tail; detail log $A100_DIR/<name>.log without progress bars
