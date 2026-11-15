@@ -9,5 +9,8 @@ cd docker
 [ -f .env ] || printf "HOST_UID=$(id -u)\nHOST_GID=$(id -g)\nDATA_DIR=$HOST_DATA\nENVS_DIR=$HOST_ENVS\nNLP_DIR=$HOST_NLP\n" > .env   # paths only, no secrets
 $DOCKER ps --format '{{.Names}}' | grep -qx "$CONTAINER" || $DOCKER compose -p $COMPOSE_PROJECT up -d --build >/dev/null 2>&1
 cd "$ROOT"
+# GPU idle watchdog: separate host process (single instance), survives pipeline crashes
+setsid nohup bash scripts/pipeline/gpu_watchdog.sh --machine "$MACHINE" ${WATCHDOG_IDLE_MIN:+--idle-min $WATCHDOG_IDLE_MIN} \
+  >> "$A100_DIR/watchdog.out" 2>&1 < /dev/null &
 unset NO_REEXEC; [ $FG = 0 ] && ARGS+=(--detach)
 exec bash scripts/pipeline/pipeline_stages.sh "${ARGS[@]}"
