@@ -70,8 +70,8 @@ def main():
     else:
         val = None
     if a.longest_first:
-        order = sorted(range(len(ds)), key=lambda i: -len(tok(ds[i]["prompt"] + ds[i]["completion"])["input_ids"]
-                                                          if isinstance(ds[i]["prompt"], str) else 0))
+        tk = getattr(tok, "tokenizer", tok)  # multimodal processor wraps the text tokenizer
+        order = sorted(range(len(ds)), key=lambda i: -len(tk(ds[i]["prompt"] + ds[i]["completion"])["input_ids"]))
         ds = ds.select(order)
     total = math.ceil(math.ceil(len(ds) / a.bs) / a.ga * a.epochs)
     eval_steps = a.eval_steps or max(1, total // 6)
