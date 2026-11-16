@@ -37,9 +37,23 @@ which records them in `hf_artifacts.json`.
 | M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2). SFT completion tokens p50 1004 / p95 2239. `train/grpo_unsloth.py`, `scripts/grpo_retry.sh` (auto-resume after OOM) | ✅ |
 | M5 | GRPO run: **20 steps** (2 prompts × G=4 per step, lr 1e-5, β=0, dr_grpo, strict reward, max completion 1024, ~2.5 min/step, ~50 min). Final adapter = best on grpo_dev. Pilot slot-F1 SFT 0.9584 → GRPO **0.9591** (exact 0.722 → 0.725); grpo_dev 0.853 → 0.852; test_long 0.847 → **0.858**. Adapter on HF `Shani123/re-qwen3-4b-grpo`; report sections appended | ✅ (small effect) |
 | T1 | Test set: realistic long docs (H20) → `data/test_long/` (40 he + 40 fa, TEST ONLY, [doc](datasets/test_long.md)). Slot-F1 Llama-70B ~0.974 (he 0.978, fa 0.969), Sonnet ~0.988 (he 0.992, fa 0.984). Open: per-case breakdown, harder v2 constructs | ✅ |
-| A1 | Qwen3.8-27B on the shared A100-40GB (`scripts/pipeline`, `configs/runs/qwen3.8-27b.env`). **Base FP8** (thinking, T=0.6, max 5120 tok): slot-F1 pilot **0.9356** (json_valid 0.90), grpo_dev **0.621** (0.73), test_long **0.490** (0.725); wall 3.2 h at 2.4–5.8 prompts/min. **Truncation:** of the invalid-JSON chunks, 28/29 (pilot), 42/47 (grpo_dev), 173/192 (test_long) never closed `</think>` = hit max_tokens 5120, so the low 27B scores on the long sets are mostly truncation, not wrong answers. **SFT** (QLoRA on bnb-4bit, r32, 2 ep, 64 steps, max_len 3072): 2687 s (~40 s/step), peak VRAM 29.3 GB, train loss 0.437→0.182, eval loss 0.2115→0.1808; adapter kept on the remote (+ checkpoint-64) and on HF. **INT4 attempt (stopped 2026-11-15 23:52 UTC by the 5 h watchdog deadline, nothing finished):** `RedHatAI/Qwen3.8-27B-INT4` is downloaded; engine init failed twice (1st: fp8 KV unsupported by Triton attn on sm80; 2nd, bf16 KV + max_num_seqs 96: crash in `profile_cudagraph_memory`, root cause not diagnosed — retry with lower max_num_seqs/gpu_mem or `enforce_eager`); the reasoning_effort A/B failed on JSON quoting of the chat kwargs. INT4 columns (max_tokens 12288 vs 5120 for fp8) and ft-int4 are still open. **Plan was:** faster INT4 vLLM config (`RedHatAI/Qwen3.8-27B-INT4`, fp8 KV, Triton attn, max_num_seqs 96): A/B on 50 pilot prompts (INT4 vs FP8; reasoning_effort medium), then base `int4` and `ft-int4` on 3 sets (FP8 column stays as an extra) | 🔄 running |
+| A1 | Qwen3.8-27B on the shared A100-40GB (`scripts/pipeline`, `configs/runs/qwen3.8-27b.env`). **Base FP8** (thinking, T=0.6, max 5120 tok): slot-F1 pilot 0.936 / grpo_dev 0.621 / test_long 0.490, mostly truncation. **INT4 works (2026-11-16):** `RedHatAI/Qwen3.8-27B-INT4`, bf16 KV (the checkpoint defaults to fp8 KV, needs sm89+), `attention_backend=TRITON_ATTN` (the auto-picked FLASHINFER JIT-compiles and needs nvcc; that was the "cudagraph profiling" crash), max_num_seqs 48, **max_tokens 12288** / max_model_len 16384. Engine load 2–9 min. **Base int4** 0.953 / 0.928 / 0.855. **ft-int4** (27B SFT adapter via vLLM LoRA on the INT4 base) **0.984 / 0.972 / 0.967**, json_valid 1.0, 0 max_tokens hits, 23–33 prompts/min. **Hit-limit retry** (`eval/retry_hits.py`, `retry_<tag>` stage): the base hits are overthinking at the template's default `reasoning_effort=xhigh`. Re-generating only the hit chunks with `reasoning_effort=medium` closes all of them, and the substituted F1 is 0.967 / 0.991 / 0.984. See the table below | ✅ (SFT adapter on HF `Shani123/re-qwen3.8-27b-sft-cot`) |
 | H1 | Hard INSS dataset (`data/hard_inss/`, [README](../data/hard_inss/README.md)): 92 verified (74 train / 18 dev; he 66 / fa 26) on real INSS prose, 7 difficulty types, schemas meeting/contract/person_employment. Generator comparison (10 each): Sonnet 6/10 verified, blind F1 ≈0.89 (harder) vs Terra 7/10, ≈0.95 (easier, "fictional" leaks) → Sonnet. Raw articles in private HF `Shani123/re-inss-raw`. **Next:** score Qwen3.8-27B/SFT on dev (no GPU run yet), mix train into SFT/GRPO, manual audit of more rows, more schemas | ✅ |
 
+
+### A1 results: Qwen3.8-27B on the A100 (lenient slot-F1; `outputs/report/pilot_compare.html`; retry summary `outputs/eval/qwen3.8-27b-int4.retry_summary.jsonl`)
+| model | max_tok | pilot F1 / json_valid / hit% / p/min | grpo_dev | test_long |
+|---|---|---|---|---|
+| qwen3.8-27b-fp8 (base) | 5120 | 0.936 / 0.90 / 10.7% / 5.8 | 0.621 / 0.73 / 49% / 3.2 | 0.490 / 0.725 / 67% / 2.7 |
+| qwen3.8-27b-int4 (base) | 12288 | 0.953 / 0.977 / 2.7% / 13.1 | 0.928 / 0.95 / 10.6% / 6.9 | 0.855 / 0.988 / 26.7% / 5.1 |
+| int4 + hits retried, seed 1 (still hit) | 12288 | 0.963 / 0.997 (2/8) | 0.932 / 0.967 (8/11) | 0.908 / 1.0 (48/79) |
+| int4 + hits retried, reasoning_effort=medium (still hit) | 12288 | 0.967 / 1.0 (0/8) | 0.991 / 1.0 (0/11) | 0.984 / 1.0 (0/79) |
+| int4, non-hit docs only (upper bound) | | 0.966 (290 docs) | 0.993 (52) | 0.990 (31) |
+| **qwen3.8-27b-ft-int4** (LoRA) | 12288 | **0.984** / 1.0 / 0% / 22.7 | **0.972** / 1.0 / 0% / 28.7 | **0.967** / 1.0 / 0% / 33.2 |
+
+hit% = share of prompts (chunks) that hit max_tokens. p/min = prompts per minute; the first set's wall time includes the engine load.
+The fine-tuned model thinks much shorter (no hits). The base model at `reasoning_effort=medium` looks competitive with it on the hard sets.
+This is a mixed-mode estimate: only the hit chunks were re-run at medium.
 
 ### Resume on another machine
 1. `git pull`. All code, docs and stage-1/2 data (`data/pilot`, `data/synth_hefa`,
@@ -72,6 +86,9 @@ GRPO is optional (+0.01). Training curves: reward is noisy (0.12–0.99 per step
 completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std` 0–1.
 
 ### Next items
+- [ ] **A1:** full base INT4 eval at `reasoning_effort=medium` (and ft-int4 at medium), so the mixed retry estimate gets a clean
+      column. About 30–40 min on the A100. Add the variant as a `--chat-kw` per-base option in the run config.
+- [ ] **A1 fallback, not needed:** `Qwen/Qwen3.5-9B` exists (Qwen3_5ForConditionalGeneration, same family). There is no `unsloth/...-bnb-4bit` repo.
 - [x] Probe done (M2). 84 `frontier_hard` samples is enough, so no harder constructs for now.
       Candidates for a later round: footnote overrides, in-cell changes (`<del>old</del> new`),
       rowspan-merged cells, cross-table ID joins.
@@ -91,6 +108,11 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 - [ ] Update this file and the dataset doc with the actual counts and results.
 
 ### Open issues
+- **A100 monitoring (fixed 2026-11-16):** the watchdog now counts only OUR container's GPU processes (`docker top` pids ×
+  `nvidia-smi --query-compute-apps` / `pmon`) and writes `alerts.log` (gpu_idle, stage_fail, pipeline_dead, deadline). The resolved config goes to
+  `config.log`. FAIL lines carry the root-cause error line, and engine init times out after `ENGINE_INIT_TIMEOUT` (1500 s). Agents wait with
+  `remote.sh --machine a100 wait` (returns on the first new DONE/FAIL/ALERT line or TIMEOUT + 1-line status), not with async notifications.
+  There is still no auto-retry.
 - **A100 / Qwen3.8-27B eval:** engine-init failures were missing gcc for Triton, the flashinfer sampler JIT
   needing nvcc (`VLLM_USE_FLASHINFER_SAMPLER=0`), and `max_num_seqs` > Mamba cache blocks (41 → 40). Engine load
   ~6.6 min. Eval resumes per prompt from `<out>.partial.jsonl`. If a 4-bit base column is needed, use a W4A16

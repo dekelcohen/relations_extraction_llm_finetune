@@ -6,7 +6,10 @@
   "qwen3-4b-ft": "outputs/eval/qwen3-4b-ft-think.preds.jsonl",
   "qwen3-4b-nothink": "outputs/eval/qwen3-4b-nothink.preds.jsonl",
   "qwen3-4b-ft-nothink": "outputs/eval/qwen3-4b-ft-nothink.preds.jsonl",
-  "qwen3-4b-grpo": "outputs/eval/qwen3-4b-grpo-think.preds.jsonl"
+  "qwen3-4b-grpo": "outputs/eval/qwen3-4b-grpo-think.preds.jsonl",
+  "qwen3.8-27b-fp8": "outputs/eval/qwen3.8-27b-fp8-think.preds.jsonl",
+  "qwen3.8-27b-int4": "outputs/eval/qwen3.8-27b-int4-think.preds.jsonl",
+  "qwen3.8-27b-ft-int4": "outputs/eval/qwen3.8-27b-ft-int4-think.preds.jsonl"
  },
  "flags": "outputs/report/pilot_compare.json"
 }
