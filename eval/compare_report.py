@@ -27,7 +27,7 @@ from re_synth.mine import load_preds, score_preds  # noqa: E402
 from re_synth.score import aggregate, parse_prediction_lenient, sample_f1, score_sample, slot_types_for  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "eval"))
-from error_analysis import CAT_DESC, CATS, ROOTS, analyze  # noqa: E402
+from error_analysis import ADJ, ADJ_SUB, CAT_DESC, CATS, ROOTS, analyze, audit_verdict, load_audit, verdict_label  # noqa: E402
 
 LENIENT_LEGEND = (
     "Lenient = same scorer, but model outputs that fail strict JSON parsing are repaired first by a deterministic "
@@ -235,6 +235,10 @@ def main():
     ap.add_argument("--viewer_dir", help="dataset dir to write viewer_sources.json (paths of preds + flags) into")
     ap.add_argument("--viewer_url", default="", help="base viewer url for sample links, e.g. http://host:8111/")
     ap.add_argument("--out", default="outputs/report/pilot_compare.html")
+    ap.add_argument("--audit", default="outputs/audit/label_noise_audit.jsonl",
+                    help="manual/LLM audit verdicts keyed by id+slot (adds an adjudication layer when the file exists)")
+    ap.add_argument("--audit_patches", default="outputs/audit/gold_patches.jsonl", help="audited gold fixes (id/rec/slot/new)")
+    ap.add_argument("--audit_set", default="pilot", help="'set' value of the audit entries that belong to this report")
     a = ap.parse_args()
 
     samples = read_jsonl(a.samples)
@@ -357,17 +361,62 @@ def main():
         tot = "".join(f"<td><b>{len(errors[l])}</b></td>" for l in labels)
         return h + f"<tr><td class=g>total slot errors</td>{tot}<td></td><td></td></tr></table>"
 
+    audit = load_audit(a.audit, a.audit_set)
+
+    def verdict_td(e):
+        o = audit_verdict(e, err_model, audit)
+        return tip(verdict_label(o), f"{o['reason']} Proposed fix: {o['proposed_fix']}", "td") if o else "<td></td>"
+
     ex_html = []
     for r in ROOTS:
         es = [e for e in errors[err_model] if e["root"] == r]
         if not es:
             continue
+        if audit:  # audited errors first, so the verdicts show up among the listed examples
+            es = sorted(es, key=lambda e: audit_verdict(e, err_model, audit) is None)
         rows = "".join(f"<tr><td>{link(e['id'])}</td><td>{e['lang']}</td>{tip(e['cat'], CAT_DESC.get(e['cat']), 'td')}<td>{e['slot'] or ''}</td>"
                        f"<td class=v>{html.escape(str(e['gold']))}</td><td class=v>{html.escape(str(e['pred']))}</td>"
-                       f"<td>{' '.join(tip(h, HC_DESC.get(h)) for h in e['hc'])}</td></tr>" for e in es[:12])
+                       f"<td>{' '.join(tip(h, HC_DESC.get(h)) for h in e['hc'])}</td>{verdict_td(e) if audit else ''}</tr>" for e in es[:12])
         ex_html.append(f"<details><summary><b>{r}</b> ({len(es)}) &mdash; {html.escape(ROOTS[r])}</summary><table>"
                        f"<tr><th>id</th><th>lang</th>{tip('category', 'Mechanical error category (see table below).', 'th')}<th>slot</th><th>gold</th><th>pred</th>"
-                       f"<th>hard cases</th></tr>{rows}</table></details>")
+                       f"<th>hard cases</th>{tip('audited verdict', 'Manual/LLM audit verdict for this slot (outputs/audit/label_noise_audit.jsonl); hover for the reason.', 'th') if audit else ''}</tr>{rows}</table></details>")
+
+    adj_html = ""
+    if audit:
+        verd = {l: [verdict_label(audit_verdict(e, l, audit)) for e in errors[l]] for l in labels}
+        adj_rows = [(k, ADJ[k], lambda v, k=k: v == k or (k == "true_model_error" and v and v.startswith(k)))
+                    for k in ADJ] + [(f"&nbsp;&nbsp;&#x2514; {s_}", f"true model error, subtype {s_}",
+                                      lambda v, s_=s_: v == f"true_model_error/{s_}") for s_ in ADJ_SUB]
+        adj_rows.append(("not audited", "Errors without an audit entry (mechanical category only).", lambda v: v is None))
+        adj_html = ("<h3>Adjudicated (manual/LLM audit)</h3><p class=muted>Verdicts from "
+                    f"<code>{html.escape(a.audit)}</code> (set={html.escape(a.audit_set)}), matched to the errors above by "
+                    "id + record + slot; another model's gold-side verdict (a/b/c/e) is reused when the predicted value is "
+                    "the same. Only a sample of errors is audited.</p><table><tr><th>verdict</th>"
+                    + "".join(f"<th>{html.escape(l)}</th>" for l in labels) + "<th>meaning</th></tr>")
+        for name, desc, f in adj_rows:
+            cnt = {l: sum(1 for v in verd[l] if f(v)) for l in labels}
+            if not any(cnt.values()) and name != "not audited":
+                continue
+            adj_html += (f"<tr>{tip(name, desc, 'td', ' class=g')}" + "".join(f"<td>{cnt[l]}</td>" for l in labels)
+                         + f"<td class=note>{html.escape(desc)}</td></tr>")
+        adj_html += "</table>"
+        pp = Path(a.audit_patches)
+        patches = [json.loads(x) for x in pp.open(encoding="utf-8")] if pp.exists() else []
+        patches = [p for p in patches if p.get("set") == a.audit_set and p["id"] in by_id]
+        if patches:
+            fixed = []
+            for s in samples:
+                ps = [p for p in patches if p["id"] == s["id"]]
+                if ps:
+                    s = dict(s, gt=json.loads(json.dumps(s["gt"])))
+                    for p in ps:
+                        s["gt"]["records"][p["rec"]][p["slot"]] = p["new"]
+                fixed.append(s)
+            f1_fix = {l: aggregate(list(score_preds(fixed, raw_preds[l]).values())).get("slot_f1") for l in labels}
+            adj_html += (f"<p><b>F1 with audited gold fixes</b> ({len(patches)} gold slots patched from "
+                         f"<code>{html.escape(a.audit_patches)}</code>; scorer unchanged): "
+                         + " &middot; ".join(f"{html.escape(l)} {fmt(agg['all'].get(l, {}).get('slot_f1'))} &rarr; <b>{fmt(f1_fix[l])}</b>"
+                                             for l in labels) + "</p>")
     (out.with_suffix(".errors.json")).write_text(json.dumps(errors, ensure_ascii=False, indent=0), encoding="utf-8")
     (out.with_suffix(".json")).write_text(json.dumps({"agg": agg, "agg_lenient": agg_len, "repairs": repairs,
                                                       "flags": flags, "sample_f1": f1}, indent=1, ensure_ascii=False))
@@ -375,7 +424,7 @@ def main():
                 f"gets one category, using the scorer's own record alignment and value matching "
                 f"(eval/error_analysis.py). Root causes group them by why they happen; examples are for "
                 f"<b>{html.escape(err_model)}</b>. Counts are slot-level (a missed record counts once).</p>"
-                f"<h3>Root causes</h3>{count_table('root', list(ROOTS), ROOTS)}"
+                f"<h3>Root causes</h3>{count_table('root', list(ROOTS), ROOTS)}{adj_html}"
                 f"<h3>Examples per root cause ({html.escape(err_model)})</h3>{''.join(ex_html)}"
                 f"<details><summary>Mechanical error categories</summary>{count_table('cat', CATS, CAT_DESC)}</details>")
 

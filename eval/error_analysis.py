@@ -148,3 +148,53 @@ def summarize(errs: list[dict]) -> dict:
     return {"total": len(errs), "by_cat": dict(Counter(e["cat"] for e in errs)), "by_lang": by("lang"),
             "by_slot_type": by("type"), "by_hc": {c: dict(v) for c, v in hc.items()},
             "samples_with_errors": len({e["id"] for e in errs})}
+
+
+# ---- adjudication layer: manual/LLM audit verdicts (outputs/audit/label_noise_audit.jsonl, see outputs/audit/adjudicate.py)
+ADJ = {
+    "gold_wrong": "(a) The gold value is wrong (e.g. a cancelled-event travel date, a previous location); the model may be right.",
+    "gold_incomplete": "(b) Gold left the slot null although the text states a value.",
+    "ambiguous": "(c) Slot definition / text allow both readings; not a model error.",
+    "scorer_issue": "(e) Equivalent value judged wrong by the scorer (span boundary, placeholder dash as null).",
+    "true_model_error": "(d) Real model error after reading the document; subtypes below.",
+}
+ADJ_SUB = ("missed", "wrong_value", "decoy", "normalization_format", "main_entity_mismatch")
+
+
+def load_audit(path, set_name: str = "pilot") -> dict | None:
+    """{(id, record, slot): [audit entries]} for one eval set, or None when there is no audit file."""
+    import json
+    from pathlib import Path
+    p = Path(path) if path else None
+    if not p or not p.exists():
+        return None
+    out = defaultdict(list)
+    for line in p.open(encoding="utf-8"):
+        o = json.loads(line)
+        if o.get("set") == set_name:
+            out[(o["id"], o.get("rec"), o["slot"])].append(o)
+    return dict(out) or None
+
+
+def audit_verdict(e: dict, model: str, audit: dict | None) -> dict | None:
+    """Audit entry for one error: the same model's verdict, else a gold-side/scorer verdict (a/b/c/e) given for the
+    same predicted value by another model's audit."""
+    if not audit or not e.get("slot"):
+        return None
+    cands = audit.get((e["id"], e.get("record"), e["slot"]), [])
+    same = [o for o in cands if o["model"] == model]
+    if same:
+        return same[0]
+    pv = norm(e["pred"]) if e.get("pred") is not None else None
+    for o in cands:
+        if o["category"] in "abce" and (norm(o["pred"]) if o.get("pred") is not None else None) == pv:
+            return o
+    return None
+
+
+def verdict_label(o: dict | None) -> str | None:
+    if o is None:
+        return None
+    if o["category"] == "d":
+        return f"true_model_error/{o.get('subtype') or 'other'}"
+    return o["category_name"]

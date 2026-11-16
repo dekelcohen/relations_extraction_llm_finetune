@@ -1,0 +1,47 @@
+[
+ {
+  "set": "grpo_dev",
+  "id": "fa-2-00233",
+  "why": "whole doc: ambiguous ditto next to a previous-value column (8 client_org slots)"
+ },
+ {
+  "set": "pilot",
+  "id": "en-0-00042",
+  "why": "slot status (rec 0): status_synonym -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "en-0-00062",
+  "why": "slot operator_org (rec 0): role_unclear -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "fa-0-00046",
+  "why": "slot client_org (rec 1): role_unstated -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "fa-0-00046",
+  "why": "slot supplier_org (rec 1): role_unstated -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "fa-0-00061",
+  "why": "slot location (rec 0): status_as_location -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "fa-0-00077",
+  "why": "slot date (rec 0): event_vs_definition -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "he-0-00038",
+  "why": "slot date (rec 0): as_of_status_date -> drop/null the slot or accept alternates"
+ },
+ {
+  "set": "pilot",
+  "id": "he-0-00090",
+  "why": "slot date (rec 0): inspection_vs_delivery_date -> drop/null the slot or accept alternates"
+ }
+]
