@@ -38,6 +38,25 @@ def _pipe_log(msg):
             f.write(time.strftime("[%Y-%m-%d %H:%M:%S]") + f" STAGE eval-set INFO {msg}\n")
 
 
+def _init_watchdog(sec):
+    """Fail fast if engine init hangs: kill the engine-core children and exit(3) with a greppable error line."""
+    import threading
+
+    def boom():
+        print(f"TimeoutError: vLLM engine init exceeded {sec:.0f}s (ENGINE_INIT_TIMEOUT)", file=sys.stderr, flush=True)
+        try:
+            import psutil
+            for c in psutil.Process().children(recursive=True):
+                c.kill()
+        except Exception:  # noqa: BLE001
+            pass
+        os._exit(3)
+    t = threading.Timer(sec, boom)
+    t.daemon = True
+    t.start()
+    return t
+
+
 def gen_vllm(a, prompts, cache_path=None):
     """Generate with one shared engine. With cache_path: stream requests through the engine, append every finished
     prompt to cache_path (resume: prompts already there are skipped) and log throughput/ETA periodically."""
@@ -57,8 +76,10 @@ def gen_vllm(a, prompts, cache_path=None):
     extra |= json.loads(getattr(a, "engine_kw", None) or "{}")
     if "llm" not in _LLM:
         t0 = time.time()
+        wd = _init_watchdog(float(os.environ.get("ENGINE_INIT_TIMEOUT", 1500)))
         _LLM["llm"] = LLM(model=a.model, tensor_parallel_size=a.tp, max_model_len=a.max_model_len, enable_lora=bool(a.lora),
                           max_lora_rank=a.max_lora_rank, gpu_memory_utilization=a.gpu_mem, **extra)
+        wd.cancel()
         _pipe_log(f"engine loaded in {time.time() - t0:.0f}s ({a.model}{' +lora' if a.lora else ''}; {extra})")
     llm = _LLM["llm"]
     lreq = None

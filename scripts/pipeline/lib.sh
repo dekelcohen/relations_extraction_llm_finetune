@@ -45,8 +45,10 @@ declare -A OVR; POSITIONAL=()
 # log <stage> <START|DONE|FAIL|INFO> [info...]  -> one line in pipeline.log + status.json
 log() {
   local st=$1 ev=$2; shift 2; local ts; ts=$(date '+%Y-%m-%d %H:%M:%S')
+  if [ "$st" = config ]; then   # full resolved config -> config.log; pipeline.log keeps only stage/watchdog events
+    echo "[$ts] $*" >> "$A100_DIR/config.log"; echo "[$ts] STAGE config INFO machine=$MACHINE run=$RUN (resolved config: config.log)" >> "$PIPE_LOG"; return
+  fi
   echo "[$ts] STAGE $st $ev $*" >> "$PIPE_LOG"
-  [ "$st" = config ] && return
   printf '{"stage":"%s","state":"%s","info":"%s","time":"%s"}\n' "$st" "$ev" "${*//\"/\'}" "$ts" > "$A100_DIR/status.json"
 }
 # stage <name> <cmd...>: START/DONE/FAIL + elapsed + error tail; detail log $A100_DIR/<name>.log without progress bars
@@ -56,7 +58,12 @@ stage() {
   if "$@" > >(tr '\r' '\n' | awk -v pf="$A100_DIR/progress.last" '/[0-9](it\/s|s\/it)|%\|/ {print > pf; close(pf); next} {print}' > "$lf") 2>&1; then
     log "$name" DONE "elapsed=$((SECONDS-t0))s $(cat "$A100_DIR/$name.info" 2>/dev/null)"; rm -f "$A100_DIR/$name.info"
   else
-    sleep 1; log "$name" FAIL "elapsed=$((SECONDS-t0))s err=$(tail -n 3 "$lf" | tr '\n' ' ' | cut -c1-400)"; return 1
+    sleep 1; log "$name" FAIL "elapsed=$((SECONDS-t0))s root=$(root_cause "$lf") tail=$(tail -n 2 "$lf" | tr '\n' ' ' | cut -c1-200)"; return 1
   fi
+}
+# root_cause <log>: last real error line (skips tracebacks and vLLM's generic "Engine core initialization failed" wrapper)
+root_cause() {
+  grep -aE '[A-Za-z]+(Error|Exception)(:|$)|: error:|out of memory|Killed' "$1" | grep -avE 'Engine core initialization failed|^\s*(File |Traceback|raise )|WARNING' \
+    | tail -n 1 | sed -E 's/^.*\] //' | tr -s ' ' | cut -c1-300
 }
 py() { local e=$1; shift; micromamba run -p "$e" python "$@"; }

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generic helper (run on your workstation) for a machine in configs/machines. Remote machines: ssh password only from the env: export SSHPASS=...
-#   remote.sh --machine a100 status | logs [name] | start [pipeline args...] | pull-results | sh "<cmd>" | watchdog [--idle-min N] [--deadline-h H] | watchdog-stop
+#   remote.sh --machine a100 status | logs [name] | start [pipeline args...] | pull-results | sh "<cmd>" | wait [--timeout 570] | watchdog [--idle-min N] [--deadline-h H] | watchdog-stop
 # A machine with empty SSH_HOST (local3070) runs the same commands locally.
 cd "$(dirname "$0")/../.."
 [ "$1" = --machine ] && M=$2 && shift 2 || { sed -n 2,5p "$0"; exit 1; }
@@ -16,6 +16,7 @@ case $CMD in
   start)  rs "cd $RR && git pull -q --ff-only; bash scripts/pipeline/run_pipeline.sh --machine $M $(printf "%q " "$@")" ;;
   sh)     rs "$@" ;;
   watchdog) rs "cd $RR && git pull -q --ff-only; setsid nohup bash scripts/pipeline/gpu_watchdog.sh --machine $M $(printf "%q " "$@") >> $P/watchdog.out 2>&1 < /dev/null & sleep 1; cat $P/watchdog.pid" ;;
+  wait)   rs "cd $RR && bash scripts/pipeline/wait_event.sh --machine $M $(printf "%q " "$@")" ;;   # first new DONE/FAIL/ALERT line or TIMEOUT+status
   watchdog-stop) rs "touch $P/watchdog.stop" ;;
   pull-results)
     [ -z "$SSH_HOST" ] && { echo "local machine: nothing to pull"; exit 0; }
