@@ -18,6 +18,7 @@ run_stage() {
     base_eval_*)    b=${1#base_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $EVAL_NAME-$b --model $BM --quant "$BQ" "${BO[@]}" ;;
     ft_eval)        for b in $EVAL_BASES; do run_stage ft_eval_$b || return 1; done ;;
     ft_eval_*)      b=${1#ft_eval_}; bm_ $b; bash $S/eval_model.sh $A --name $FT_NAME-$b --model $BM --quant "$BQ" "${BO[@]}" --lora $SFT_OUT ;;
+    ftlim_*)        b=${1#ftlim_}; bm_ $b; bash $S/eval_model.sh $A --name $FT_NAME-$b --model $BM --quant "$BQ" "${BO[@]}" --lora $SFT_OUT --limit ${LIMIT:-50} --eval-sets "${LIMIT_SETS:-grpo_dev}" ;;  # ft on the first N prompts -> smoke.<name>.<set>.jsonl
     ab_*)           bm_ int4; bash $S/eval_model.sh $A --name smoke-int4-${1#ab_} --model $BM --quant "$BQ" "${BO[@]}" --limit ${LIMIT:-50} --eval-sets pilot ${AB_MAX_TOKENS:+--max-tokens $AB_MAX_TOKENS --max-model-len $AB_MAX_MODEL_LEN} ${AB_CHAT_KW:+--chat-kw "$AB_CHAT_KW"} ;;  # A/B speed+quality on the first 50 pilot prompts (AB_CHAT_KW / --engine-kw etc. override)
     retry_*)        t=${1#retry_}; bm_ int4; CK=(); [ $t = medium ] && CK=(--chat-kw '{"reasoning_effort": "medium"}')   # hit-limit retry (base+ft int4 preds, one engine), seed 1
                     bash $S/eval_model.sh $A --name $FT_NAME-int4 --names "$EVAL_NAME-int4 $FT_NAME-int4" --model $BM --quant "$BQ" "${BO[@]}" --lora $SFT_OUT --retry $t --seed 1 "${CK[@]}" ;;
