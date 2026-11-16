@@ -51,7 +51,8 @@ while [ ! -f "$D/watchdog.stop" ]; do
     else util=$gutil; fi
   fi
   # pipeline_dead: an open (START without DONE/FAIL) stage while no pipeline process runs in the container, 2 polls in a row
-  open=$(awk '$3=="STAGE" && $4!="watchdog" && ($5=="START"||$5=="DONE"||$5=="FAIL") {s[$4]=$5; t[$4]=$1"_"$2} END{for (k in s) if (s[k]=="START") printf "%s@%s ", k, t[k]}' "$LOG" 2>/dev/null)
+  open=$(awk '$3=="STAGE" && $4=="config" {delete s; delete t}  # only stages of the latest run (lib.sh logs config once per run)
+    $3=="STAGE" && $4!="watchdog" && ($5=="START"||$5=="DONE"||$5=="FAIL") {s[$4]=$5; t[$4]=$1"_"$2} END{for (k in s) if (s[k]=="START") printf "%s@%s ", k, t[k]}' "$LOG" 2>/dev/null)
   if [ -n "$open" ] && ! echo "$top" | grep -qE 'pipeline_stages\.sh|eval_model\.sh|sft_qlora\.sh|setup_env\.sh|download\.sh|predict\.py|sft_unsloth\.py'; then
     noproc=$((noproc + 1)); [ $noproc -ge 2 ] && [ -z "${SEEN[$open]}" ] && { SEEN[$open]=1; alert pipeline_dead "open=${open% } container_procs=$(echo "$top" | grep -c .)"; }
   else noproc=0; fi
