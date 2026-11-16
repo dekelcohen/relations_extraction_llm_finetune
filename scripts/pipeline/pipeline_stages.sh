@@ -3,8 +3,8 @@
 #   pipeline_stages.sh --machine a100 --run qwen3.8-27b [--stages "base_eval sft"] [--limit N] [--detach]
 source "$(dirname "$0")/lib.sh"; init "$@"
 S="scripts/pipeline"; A="--machine $MACHINE --run $RUN"; export NO_REEXEC=1; export IN_CONTAINER=${IN_CONTAINER:-1}
-bm_() { local k=${1^^}; local m=BASE_${k}_MODEL q=BASE_${k}_QUANT e=BASE_${k}_ENGINE_KW g=BASE_${k}_GPU_MEM s=BASE_${k}_MAX_NUM_SEQS t=BASE_${k}_MAX_TOKENS l=BASE_${k}_MAX_MODEL_LEN
-  BM=${!m}; BQ=${!q}; BO=(); [ -n "${!e}" ] && BO+=(--engine-kw "${!e}"); [ -n "${!g}" ] && BO+=(--gpu-mem "${!g}"); [ -n "${!s}" ] && BO+=(--max-num-seqs "${!s}"); [ -n "${!t}" ] && BO+=(--max-tokens "${!t}"); [ -n "${!l}" ] && BO+=(--max-model-len "${!l}"); }  # EVAL_BASES entry -> model/quant + per-base engine overrides
+bm_() { local k=${1^^}; k=${k//-/_}; local m=BASE_${k}_MODEL q=BASE_${k}_QUANT e=BASE_${k}_ENGINE_KW g=BASE_${k}_GPU_MEM s=BASE_${k}_MAX_NUM_SEQS t=BASE_${k}_MAX_TOKENS l=BASE_${k}_MAX_MODEL_LEN c=BASE_${k}_CHAT_KW
+  BM=${!m}; BQ=${!q}; BO=(); [ -n "${!c}" ] && BO+=(--chat-kw "${!c}"); [ -n "${!e}" ] && BO+=(--engine-kw "${!e}"); [ -n "${!g}" ] && BO+=(--gpu-mem "${!g}"); [ -n "${!s}" ] && BO+=(--max-num-seqs "${!s}"); [ -n "${!t}" ] && BO+=(--max-tokens "${!t}"); [ -n "${!l}" ] && BO+=(--max-model-len "${!l}"); }  # EVAL_BASES entry -> model/quant + per-base engine overrides
 run_stage() {
   case $1 in
     setup)          stage setup bash $S/setup_env.sh $A ;;

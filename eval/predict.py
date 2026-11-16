@@ -242,13 +242,15 @@ def run_set(a, tok, data, out_path):
     with open(out_path + ".metrics.json", "w", encoding="utf-8") as f:
         json.dump({"report": rep, "per_sample": per}, f, indent=1)
     print(to_md(rep))
-    ntrunc = 0
+    ntrunc = ntok = 0
     if os.path.exists(cache):
-        ntrunc = sum('"finish": "length"' in l for l in open(cache, encoding="utf-8"))
+        cl = [json.loads(l) for l in open(cache, encoding="utf-8") if l.strip().endswith("}")]
+        ntrunc = sum(d.get("finish") == "length" for d in cl)
+        ntok = sum(d.get("ntok", 0) for d in cl) / max(len(cl), 1)
         os.remove(cache)
     allr = rep["all"]  # one line per finished dataset in the pipeline log
     _pipe_log(f"{os.path.basename(out_path)} DONE slot_f1={allr.get('slot_f1')} exact={allr.get('exact_sample')} "
-              f"json_valid={allr.get('json_valid')} hit_max_tokens={ntrunc}/{len(prompts)} n={allr.get('n')} prompts={len(prompts)} "
+              f"json_valid={allr.get('json_valid')} hit_max_tokens={ntrunc}/{len(prompts)} avg_gen_tok={ntok:.0f} n={allr.get('n')} prompts={len(prompts)} "
               f"wall={time.time() - t0:.0f}s ({len(prompts) * 60 / (time.time() - t0):.1f} prompts/min)")
 
 
