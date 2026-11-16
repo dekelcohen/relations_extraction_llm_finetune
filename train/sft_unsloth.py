@@ -35,7 +35,7 @@ def main():
     ap.add_argument("--disable_tqdm", action="store_true", help="no progress bars (small logs)")
     ap.add_argument("--save_state", action="store_true",
                     help="after training also write one final checkpoint-N/ (optimizer, scheduler, trainer_state) to resume from")
-    ap.add_argument("--chat_kw", default="{}", help='chat-template kwargs JSON, e.g. {"reasoning_effort": "medium"}')
+    ap.add_argument("--chat_kw", default=os.environ.get("SFT_CHAT_KW") or "{}", help='chat-template kwargs JSON, e.g. {"reasoning_effort": "medium"}')
     ap.add_argument("--init_adapter", help="continue from this LoRA adapter dir (weights only, fresh optimizer/scheduler)")
     ap.add_argument("--warmup_ratio", type=float, default=0.03)
     ap.add_argument("--longest_first", type=int, default=0, help="smoke: put the N longest rows first (peak-VRAM check)")

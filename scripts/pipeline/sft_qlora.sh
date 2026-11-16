@@ -11,7 +11,6 @@ if [ "$SFT_MAX_LEN" = auto ]; then   # cover the data: max rendered token length
 fi
 F="--model $SFT_BASE --load_in_4bit --train $SFT_TRAIN --out $SFT_OUT --max_len $SFT_MAX_LEN --r $SFT_R --epochs $SFT_EPOCHS --lr $SFT_LR --bs $SFT_BS --ga $SFT_GA --val_frac $SFT_VAL_FRAC --log_steps 2 --disable_tqdm --save_state"
 [ "$ENABLE_THINKING" = 1 ] && F="$F --enable_thinking"
-[ -n "$SFT_CHAT_KW" ] && F="$F --chat_kw '$SFT_CHAT_KW'"
 [ -n "$SFT_INIT_ADAPTER" ] && F="$F --init_adapter $SFT_INIT_ADAPTER"
 [ -n "$SFT_WARMUP" ] && F="$F --warmup_ratio $SFT_WARMUP"
 [ -n "$MAX_STEPS" ] && F="$F --max_steps $MAX_STEPS --longest_first 16"
