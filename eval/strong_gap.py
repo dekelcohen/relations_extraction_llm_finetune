@@ -21,7 +21,7 @@ from error_analysis import ROOTS, analyze, audit_verdict, load_audit  # noqa: E4
 from compare_report import HC_DESC  # noqa: E402
 
 E, P, D, T = "outputs/eval", "data/pilot", "data/stage_2_RL_GRPO", "data/test_long"
-MODELS = {"27B-ft-stage-1": "qwen3.8-27b-ft-int4", "27B-INT4-base": "qwen3.8-27b-int4"}
+MODELS = {"27B-ft-stage-1": "qwen3.8-27b-ft-int4", "27B-ft-stage-2": "qwen3.8-27b-ft-stage2-int4-medium", "27B-INT4-base": "qwen3.8-27b-int4"}
 DROP = {"gold_wrong", "gold_incomplete", "ambiguous", "scorer_issue"}
 SETS = {
     "pilot": dict(rows=None, strong=f"{P}/preds_strong.jsonl", weak=f"{P}/preds_weak.jsonl",
