@@ -1,6 +1,7 @@
 """Hit-limit retry: re-generate ONLY the prompts (doc chunks) of finished preds that hit max_tokens, i.e. whose
 thinking never closed (no </think>; mostly overthinking at the template's default reasoning_effort=xhigh).
 Writes <stem>.retry-<tag>.jsonl next to each preds file ({id, chunk, text, hit}); the main preds are never touched.
+Re-running appends only chunks not yet in the retry file.
 Base and LoRA preds files share one engine (the row's "lora" field picks the adapter).
 
   # generate (GPU; same args as predict.py, --out = existing preds files):
@@ -20,7 +21,11 @@ from predict import _pipe_log, chunk_prompt, chunking, read_jsonl, render_prompt
 
 
 def hit(t: str) -> bool:
-    return "</think>" not in t
+    """max_tokens hit: thinking never closed, or the answer after </think> was cut mid-JSON."""
+    if "</think>" not in t:
+        return True
+    ans = t.rsplit("</think>", 1)[1].strip().removesuffix("```").strip()
+    return bool(ans) and ans[-1] not in "}]"
 
 
 def retry_path(preds: str, tag: str) -> str:
@@ -79,9 +84,10 @@ def main():
         assert len(a.tag) == 1, "generate one --tag per run"
         groups = {}  # lora -> [(preds, row, chunk_idx, chunk)]
         for data, preds in zip(a.data, a.out):
-            if os.path.exists(retry_path(preds, a.tag[0])):
-                continue
             _, _, todo, lora = load(a, data, preds)
+            rp = retry_path(preds, a.tag[0])  # resume: only chunks not retried yet
+            have = {(d["id"], d["chunk"]) for d in read_jsonl(rp)} if os.path.exists(rp) else set()
+            todo = [x for x in todo if (x[0]["id"], x[1]) not in have]
             groups.setdefault(lora, []).append((preds, todo))
         for lora in sorted(groups, key=lambda x: x is None):  # LoRA group first: the engine is created with enable_lora
             a.lora = lora or None
@@ -91,7 +97,7 @@ def main():
                        for _, r, _, c in items]
             outs = P.gen_vllm(a, prompts) if prompts else []
             for preds, _ in groups[lora]:
-                with open(retry_path(preds, a.tag[0]), "w", encoding="utf-8") as f:
+                with open(retry_path(preds, a.tag[0]), "a", encoding="utf-8") as f:
                     for (p, r, j, _), t in zip(items, outs):
                         if p == preds:
                             f.write(json.dumps({"id": r["id"], "chunk": j, "text": t, "hit": hit(t), "lora": lora,

@@ -14,7 +14,7 @@ D=(); O=()
 for n in ${NAMES:-$NAME}; do for s in $EVAL_SETS; do
   if [ $s = pilot ]; then out=$OUTDIR/$n-think.preds.jsonl; else out=$OUTDIR/$n.$s.preds.jsonl; fi
   if [ -n "$RETRY" ]; then   # --retry TAG [--names "a b"]: hit-limit retry of finished preds -> <stem>.retry-TAG.jsonl (eval/retry_hits.py)
-    [ -f $out.metrics.json ] && [ ! -f ${out%.preds.jsonl}.retry-$RETRY.jsonl ] && D+=(--data ${DATA[$s]}) O+=(--out $out); continue
+    [ -f $out.metrics.json ] && D+=(--data ${DATA[$s]}) O+=(--out $out); continue   # retry_hits.py skips chunks already retried
   fi
   [ -n "$LIMIT" ] && out=$OUTDIR/smoke.$NAME.$s.jsonl
   [ -z "$LIMIT" ] && [ -f $out.metrics.json ] && { log eval-$NAME INFO "skip $s (done)"; continue; }
