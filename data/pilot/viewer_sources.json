@@ -9,7 +9,9 @@
   "qwen3-4b-grpo": "outputs/eval/qwen3-4b-grpo-think.preds.jsonl",
   "qwen3.8-27b-fp8": "outputs/eval/qwen3.8-27b-fp8-think.preds.jsonl",
   "qwen3.8-27b-int4": "outputs/eval/qwen3.8-27b-int4-think.preds.jsonl",
-  "qwen3.8-27b-ft-int4": "outputs/eval/qwen3.8-27b-ft-int4-think.preds.jsonl"
+  "qwen3.8-27b-int4-medium": "outputs/eval/qwen3.8-27b-int4-medium-think.preds.jsonl",
+  "qwen3.8-27b-ft-int4": "outputs/eval/qwen3.8-27b-ft-int4-think.preds.jsonl",
+  "qwen3.8-27b-ft-int4-medium": "outputs/eval/qwen3.8-27b-ft-int4-medium-think.preds.jsonl"
  },
  "flags": "outputs/report/pilot_compare.json"
 }

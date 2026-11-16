@@ -37,7 +37,7 @@ which records them in `hf_artifacts.json`.
 | M4 | vLLM pre-filter (SFT adapter, **n=4** on a 240-prompt subset, prompts ≤ 2500 tok; 170 kept with reward std>0; then ≤1300-token completions → 111 unique / 191 rows after hard×2). SFT completion tokens p50 1004 / p95 2239. `train/grpo_unsloth.py`, `scripts/grpo_retry.sh` (auto-resume after OOM) | ✅ |
 | M5 | GRPO run: **20 steps** (2 prompts × G=4 per step, lr 1e-5, β=0, dr_grpo, strict reward, max completion 1024, ~2.5 min/step, ~50 min). Final adapter = best on grpo_dev. Pilot slot-F1 SFT 0.9584 → GRPO **0.9591** (exact 0.722 → 0.725); grpo_dev 0.853 → 0.852; test_long 0.847 → **0.858**. Adapter on HF `Shani123/re-qwen3-4b-grpo`; report sections appended | ✅ (small effect) |
 | T1 | Test set: realistic long docs (H20) → `data/test_long/` (40 he + 40 fa, TEST ONLY, [doc](datasets/test_long.md)). Slot-F1 Llama-70B ~0.974 (he 0.978, fa 0.969), Sonnet ~0.988 (he 0.992, fa 0.984). Open: per-case breakdown, harder v2 constructs | ✅ |
-| A1 | Qwen3.8-27B on the shared A100-40GB (`scripts/pipeline`, `configs/runs/qwen3.8-27b.env`). **Base FP8** (thinking, T=0.6, max 5120 tok): slot-F1 pilot 0.936 / grpo_dev 0.621 / test_long 0.490, mostly truncation. **INT4 works (2026-11-16):** `RedHatAI/Qwen3.8-27B-INT4`, bf16 KV (the checkpoint defaults to fp8 KV, needs sm89+), `attention_backend=TRITON_ATTN` (the auto-picked FLASHINFER JIT-compiles and needs nvcc; that was the "cudagraph profiling" crash), max_num_seqs 48, **max_tokens 12288** / max_model_len 16384. Engine load 2–9 min. **Base int4** 0.953 / 0.928 / 0.855. **ft-int4** (27B SFT adapter via vLLM LoRA on the INT4 base) **0.984 / 0.972 / 0.967**, json_valid 1.0, 0 max_tokens hits, 23–33 prompts/min. **Hit-limit retry** (`eval/retry_hits.py`, `retry_<tag>` stage): the base hits are overthinking at the template's default `reasoning_effort=xhigh`. Re-generating only the hit chunks with `reasoning_effort=medium` closes all of them, and the substituted F1 is 0.967 / 0.991 / 0.984. See the table below | ✅ (SFT adapter on HF `Shani123/re-qwen3.8-27b-sft-cot`) |
+| A1 | Qwen3.8-27B on the shared A100-40GB (`scripts/pipeline`, `configs/runs/qwen3.8-27b.env`). **Base FP8** (thinking, T=0.6, max 5120 tok): slot-F1 pilot 0.936 / grpo_dev 0.621 / test_long 0.490, mostly truncation. **INT4 works (2026-11-16):** `RedHatAI/Qwen3.8-27B-INT4`, bf16 KV (the checkpoint defaults to fp8 KV, needs sm89+), `attention_backend=TRITON_ATTN` (the auto-picked FLASHINFER JIT-compiles and needs nvcc; that was the "cudagraph profiling" crash), max_num_seqs 48, **max_tokens 12288** / max_model_len 16384. Engine load 2–9 min. **Base int4** 0.953 / 0.928 / 0.855. **ft-int4** (27B SFT adapter via vLLM LoRA on the INT4 base) **0.984 / 0.972 / 0.967**, json_valid 1.0, 0 max_tokens hits, 23–33 prompts/min. **Hit-limit retry** (`eval/retry_hits.py`, `retry_<tag>` stage): the base hits are overthinking at the template's default `reasoning_effort=xhigh`. Re-generating only the hit chunks with `reasoning_effort=medium` closes all of them, and the substituted F1 is 0.967 / 0.991 / 0.984. Clean full run of base **int4-medium**: 0.966 / **0.987** / **0.986**, 0 hits, 20–24 prompts/min. It beats ft-int4 on grpo_dev and test_long because the ft CoT is too short (teacher CoT, not max_len). See the table and verdict below | ✅ (SFT adapter on HF `Shani123/re-qwen3.8-27b-sft-cot`) |
 | H1 | Hard INSS dataset (`data/hard_inss/`, [README](../data/hard_inss/README.md)): pool 186 verified (he 97 / fa 89), train 147 / dev 39 (dev = 4th eval set, `prompt/gt/decoys/text/slot_types` format; docs up to 9.6k chars → chunked inference). Round 1: 92 short samples; round 2: 31 new long audit-driven he docs + 60 he→fa whole-sample translations. Sonnet vs Terra (10 each): Sonnet 6/10 verified, blind F1 ≈0.89 (harder) vs Terra 7/10, ≈0.95 (easier, "fictional" leaks) → Sonnet. Raw articles in private HF `Shani123/re-inss-raw` | ✅ |
 | S2 | Stage-2 SFT data for Qwen3.8-27B (`data/sft_stage2/`, [README](../data/sft_stage2/README.md)): 860 rows = 481 stage-2 CoT (54 eval-id rows removed; 164 dup'd by audit emphasis H9/H20/H12/H2/H1/H13/H11/H18, fa-weighted) + 61 INSS teacher-CoT (61/147 kept, 85 teacher mismatch) + 138 replay. Max 8692 tokens; 76 rows flagged short CoT for ≥4 records. **Next:** SFT on the A100, eval on grpo_dev/pilot/test_long/hard_inss-dev; consider regenerating flagged short-CoT rows | ✅ data |
 
@@ -50,14 +50,31 @@ which records them in `hf_artifacts.json`.
 | int4 + hits retried, seed 1 (still hit) | 12288 | 0.963 / 0.997 (2/8) | 0.932 / 0.967 (8/11) | 0.908 / 1.0 (48/79) |
 | int4 + hits retried, reasoning_effort=medium (still hit) | 12288 | 0.967 / 1.0 (0/8) | 0.991 / 1.0 (0/11) | 0.984 / 1.0 (0/79) |
 | int4, non-hit docs only (upper bound) | | 0.966 (290 docs) | 0.993 (52) | 0.990 (31) |
-| **qwen3.8-27b-ft-int4** (LoRA) | 12288 | **0.984** / 1.0 / 0% / 22.7 | **0.972** / 1.0 / 0% / 28.7 | **0.967** / 1.0 / 0% / 33.2 |
+| **qwen3.8-27b-ft-int4** (LoRA) | 12288 | **0.984** / 1.0 / 0% / 22.7 | 0.972 / 1.0 / 0% / 28.7 | 0.967 / 1.0 / 0% / 33.2 |
+| **qwen3.8-27b-int4-medium** (base, all prompts at `reasoning_effort=medium`) | 12288 | 0.966 / 1.0 / 0% / 23.6 (877 tok) | **0.987** / 1.0 / 0% / 20.1 (2249 tok) | **0.986** / 1.0 / 0% / 20.7 (2289 tok) |
+| qwen3.8-27b-ft-int4-medium (LoRA, medium) | 12288 | 0.979 / 1.0 / 0% / 23.9 (359 tok) | 0.980 / 1.0 / 0% / 29.4 (1170 tok) | 0.972 / 1.0 / 0% / 35.5 (1069 tok) |
 
 hit% = share of prompts (chunks) that hit max_tokens. p/min = prompts per minute; the first set's wall time includes the engine load.
-The fine-tuned model thinks much shorter (no hits). The base model at `reasoning_effort=medium` looks competitive with it on the hard sets.
-This is a mixed-mode estimate: only the hit chunks were re-run at medium.
+(N tok) = avg generated tokens per prompt. Thinking chars per chunk: int4 xhigh 11k/17k/24k, int4-medium 2.5k/4.3k/4.9k,
+ft-int4 0.7k/1.5k/1.5k, ft-int4-medium 0.7k/1.5k/1.5k.
+
+**Verdict (ft vs clean base-medium, 2026-11-16):**
+- The stage-1 adapter helps only on pilot, which is in-distribution with its SFT data: +0.018.
+- It loses on the hard sets: grpo_dev −0.015, test_long −0.019 (base-medium 0.987/0.986 vs ft 0.972/0.967).
+- ft at medium is slightly better than ft at xhigh on the hard sets (0.980/0.972). Its thinking length is unchanged, so the adapter ignores the effort instruction.
+- Analysis (`scripts/compare_ft_base.py`, `outputs/analysis/ft_vs_basemed.<set>.json`):
+  - Errors, ft vs base-medium: 62 vs 44 on grpo_dev, 193 vs 116 on test_long.
+  - Docs better per model, ft/base: grpo_dev 8/7, test_long 17/20. The losses are concentrated in a few multi-record docs.
+  - ft-only errors are recall errors, by category: missed_value 67, missed_record 40 (test_long); missed_record 14, decoy 21 (grpo_dev).
+  - ft-only errors by root: long_range_or_coref 61, multi_entity_bleeding 48 (test_long); multi_entity_bleeding 19, distractor_or_role 22 (grpo_dev).
+  - Worst ids: test_long fa-t3-00018 (whole list of records dropped), fa-t3-00012, he-t3-00039, he-t3-00018, fa-t3-00013; grpo_dev he-2-00239, fa-2-00169.
+- Hypothesis (a): the SFT max_len 3072 is NOT the cause. auto max_len covered all data (token max 2675, nothing truncated).
+  - The cause is the teacher CoT itself: 651 chars mean (p90 1021) in `sft_cot_train.jsonl`. ft thinks about 1.5k chars per chunk, vs 4.3–4.9k for base-medium.
+  - Within ft, losses have only slightly longer thinking than wins (1.7k vs 1.5k). So the short CoT is a model-wide habit, not a per-doc one; it under-deliberates on long, multi-record chunks.
+- Hypothesis (b), LoRA drift (bnb-4bit-trained adapter on the GPTQ INT4 base): untested. vLLM 0.33 has no bitsandbytes support; see Open issues.
 
 ### 27B-ft-stage-1 error analysis (report sections, `eval/strong_gap.py`, `eval/append_errors.py`)
-- Report: full Error analysis for `qwen3.8-27b-ft-int4` (root causes, loses-vs-INT4/FP8-base tables, examples with viewer links) for pilot, grpo_dev, test_long; 27B INT4 `-medium` full preds don't exist yet (only retry files), so not included.
+- Report: full Error analysis for `qwen3.8-27b-ft-int4` (root causes, loses-vs-INT4/FP8-base tables, examples with viewer links) for pilot, grpo_dev, test_long; `qwen3.8-27b-int4-medium` and `ft-int4-medium` are columns in all three tables.
 - `outputs/audit/27b_vs_strong.{md,json}`: 27B errors where Sonnet AND Llama are right (audit-excluded), ft-int4 kept: pilot 14, grpo_dev 30, test_long 99 (INT4 base 42/59/389); ends with a ranked stage-2 SFT emphasis list.
 
 ### Resume on another machine
@@ -91,8 +108,13 @@ GRPO is optional (+0.01). Training curves: reward is noisy (0.12–0.99 per step
 completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std` 0–1.
 
 ### Next items
-- [ ] **A1:** full base INT4 eval at `reasoning_effort=medium` (and ft-int4 at medium), so the mixed retry estimate gets a clean
-      column. About 30–40 min on the A100. Add the variant as a `--chat-kw` per-base option in the run config.
+- [x] **A1:** full base INT4 eval at `reasoning_effort=medium` and ft-int4 at medium are done (`BASE_INT4_MEDIUM_*`). Base-medium beats ft on grpo_dev and test_long; see the A1 results verdict.
+- [ ] **A1 SFT v2 (recommended):** make the teacher CoT longer and more deliberate. Current mean is 651 chars; target about 3–5k chars per chunk, roughly what base-medium writes.
+      - Option: self-distill rejection-sampled base-INT4-medium traces (`grpo_dev`-style data, keep only F1=1 outputs).
+      - Over-sample long multi-record chunks with list/coref cases.
+      - Keep auto max_len, which will rise to about 4–6k tokens.
+      - Render the training data under the `reasoning_effort=medium` instruction.
+      - Re-evaluate against `qwen3.8-27b-int4-medium`, which is now the baseline to beat.
 - [ ] **A1 fallback, not needed:** `Qwen/Qwen3.5-9B` exists (Qwen3_5ForConditionalGeneration, same family). There is no `unsloth/...-bnb-4bit` repo.
 - [x] Probe done (M2). 84 `frontier_hard` samples is enough, so no harder constructs for now.
       Candidates for a later round: footnote overrides, in-cell changes (`<del>old</del> new`),
@@ -113,6 +135,9 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 - [ ] Update this file and the dataset doc with the actual counts and results.
 
 ### Open issues
+- **A1 hypothesis (b), LoRA drift bnb-4bit→GPTQ, untested.** The `ftlim_bnb4` stage failed: vLLM 0.33 has no `bitsandbytes` quantization ("Unknown quantization method").
+  - Testing it would need HF/unsloth generation on the bnb base (slow) or the adapter on the bf16 base.
+  - It is unlikely to be the main cause: ft-only errors are recall/short-CoT errors, not format or garbage drift, and json_valid is 1.0.
 - **A100 monitoring (fixed 2026-11-16):** the watchdog now counts only OUR container's GPU processes (`docker top` pids ×
   `nvidia-smi --query-compute-apps` / `pmon`) and writes `alerts.log` (gpu_idle, stage_fail, pipeline_dead, deadline). The resolved config goes to
   `config.log`. FAIL lines carry the root-cause error line, and engine init times out after `ENGINE_INIT_TIMEOUT` (1500 s). Agents wait with
