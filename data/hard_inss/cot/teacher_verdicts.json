@@ -1,0 +1,732 @@
+{
+ "stats": {
+  "n": 147,
+  "no_output": 0,
+  "no_think": 0,
+  "mismatch": 85,
+  "near_dup": 1,
+  "kept": 61
+ },
+ "per_sample": {
+  "hard-inss-6ae565-02-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.037
+  },
+  "hard-inss-148292-05-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.05
+  },
+  "hard-inss-90da79-06": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.051
+  },
+  "hard-inss-148292-06": {
+   "f1": 0.9565,
+   "has_think": true,
+   "ref_overlap": 0.029
+  },
+  "hard-inss-5f9bd5-08": {
+   "f1": 0.5217,
+   "has_think": true,
+   "ref_overlap": 0.031
+  },
+  "hard-inss-583f58-05": {
+   "f1": 0.8333,
+   "has_think": true,
+   "ref_overlap": 0.012
+  },
+  "hard-inss-0aaaaf-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.019
+  },
+  "hard-inss-6d2783-01": {
+   "f1": 0.7778,
+   "has_think": true,
+   "ref_overlap": 0.019
+  },
+  "hard-inss-0aaaaf-06": {
+   "f1": 0.9333,
+   "has_think": true,
+   "ref_overlap": 0.03
+  },
+  "hard-inss-438720-01": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.04
+  },
+  "hard-inss-90da79-04": {
+   "f1": 0.8,
+   "has_think": true,
+   "ref_overlap": 0.094
+  },
+  "hard-inss-0a5150-00-fa": {
+   "f1": 0.96,
+   "has_think": true,
+   "ref_overlap": 0.069
+  },
+  "hard-inss-ba655f-00": {
+   "f1": 0.9524,
+   "has_think": true,
+   "ref_overlap": 0.026
+  },
+  "hard-inss-583f58-08": {
+   "f1": 0.8571,
+   "has_think": true,
+   "ref_overlap": 0.015
+  },
+  "hard-inss-3043ee-01": {
+   "f1": 0.9474,
+   "has_think": true,
+   "ref_overlap": 0.012
+  },
+  "hard-inss-07ec8c-03": {
+   "f1": 0.9697,
+   "has_think": true,
+   "ref_overlap": 0.02
+  },
+  "hard-inss-583f58-01": {
+   "f1": 0.88,
+   "has_think": true,
+   "ref_overlap": 0.022
+  },
+  "hard-inss-a2c299-00": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.018
+  },
+  "hard-inss-ed7673-02": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.269
+  },
+  "hard-inss-583f58-07": {
+   "f1": 0.8889,
+   "has_think": true,
+   "ref_overlap": 0.022
+  },
+  "hard-inss-90da79-00": {
+   "f1": 0.9677,
+   "has_think": true,
+   "ref_overlap": 0.035
+  },
+  "hard-inss-f5e7b7-05": {
+   "f1": 0.9,
+   "has_think": true,
+   "ref_overlap": 0.041
+  },
+  "hard-inss-f5e7b7-08": {
+   "f1": 0.9412,
+   "has_think": true,
+   "ref_overlap": 0.026
+  },
+  "hard-inss-5f9bd5-05-fa": {
+   "f1": 0.88,
+   "has_think": true,
+   "ref_overlap": 0.038
+  },
+  "hard-inss-5023bd-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.019
+  },
+  "hard-inss-07ec8c-06-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.053
+  },
+  "hard-inss-07ec8c-12": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.017
+  },
+  "hard-inss-ba655f-00-fa": {
+   "f1": 0.9474,
+   "has_think": true,
+   "ref_overlap": 0.042
+  },
+  "hard-inss-2cf12e-10": {
+   "f1": 0.8235,
+   "has_think": true,
+   "ref_overlap": 0.031
+  },
+  "hard-inss-0b891f-00-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.052
+  },
+  "hard-inss-07ec8c-01": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.013
+  },
+  "hard-inss-4960d4-00-fa": {
+   "f1": 0.8889,
+   "has_think": true,
+   "ref_overlap": 0.064
+  },
+  "hard-inss-00e1a1-04": {
+   "f1": 0.8889,
+   "has_think": true,
+   "ref_overlap": 0.031
+  },
+  "hard-inss-426dc4-01": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.545
+  },
+  "hard-inss-eb7358-02": {
+   "f1": 0.9474,
+   "has_think": true,
+   "ref_overlap": 0.045
+  },
+  "hard-inss-c20393-04": {
+   "f1": 0.9333,
+   "has_think": true,
+   "ref_overlap": 0.047
+  },
+  "hard-inss-22ee80-03-fa": {
+   "f1": 0.8235,
+   "has_think": true,
+   "ref_overlap": 0.131
+  },
+  "hard-inss-583f58-00": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.02
+  },
+  "hard-inss-2cf12e-04": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.03
+  },
+  "hard-inss-426dc4-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.031
+  },
+  "hard-inss-5f9bd5-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.021
+  },
+  "hard-inss-583f58-04": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.014
+  },
+  "hard-inss-426dc4-03-fa": {
+   "f1": 0.9524,
+   "has_think": true,
+   "ref_overlap": 0.051
+  },
+  "hard-inss-a1fa8c-00": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.023
+  },
+  "hard-inss-5b066c-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.146
+  },
+  "hard-inss-148292-09": {
+   "f1": 0.9091,
+   "has_think": true,
+   "ref_overlap": 0.024
+  },
+  "hard-inss-0a5150-02": {
+   "f1": 0.9524,
+   "has_think": true,
+   "ref_overlap": 0.025
+  },
+  "hard-inss-2cf12e-09": {
+   "f1": 0.9,
+   "has_think": true,
+   "ref_overlap": 0.029
+  },
+  "hard-inss-00e1a1-02": {
+   "f1": 0.9231,
+   "has_think": true,
+   "ref_overlap": 0.347
+  },
+  "hard-inss-0aaaaf-08": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.016
+  },
+  "hard-inss-148292-08": {
+   "f1": 0.9333,
+   "has_think": true,
+   "ref_overlap": 0.02
+  },
+  "hard-inss-ed7673-00": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.03
+  },
+  "hard-inss-5023bd-02": {
+   "f1": 0.8182,
+   "has_think": true,
+   "ref_overlap": 0.01
+  },
+  "hard-inss-07ec8c-10": {
+   "f1": 0.9697,
+   "has_think": true,
+   "ref_overlap": 0.021
+  },
+  "hard-inss-781d2d-00": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.012
+  },
+  "hard-inss-ed7673-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.241
+  },
+  "hard-inss-3043ee-02": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.03
+  },
+  "hard-inss-2cf12e-05": {
+   "f1": 0.9412,
+   "has_think": true,
+   "ref_overlap": 0.038
+  },
+  "hard-inss-b4a041-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.019
+  },
+  "hard-inss-488a48-00": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.022
+  },
+  "hard-inss-0b891f-00": {
+   "f1": 0.9697,
+   "has_think": true,
+   "ref_overlap": 0.032
+  },
+  "hard-inss-148292-09-fa": {
+   "f1": 0.9091,
+   "has_think": true,
+   "ref_overlap": 0.045
+  },
+  "hard-inss-438720-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.055
+  },
+  "hard-inss-2cf12e-05-fa": {
+   "f1": 0.9231,
+   "has_think": true,
+   "ref_overlap": 0.053
+  },
+  "hard-inss-0b891f-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.026
+  },
+  "hard-inss-5f9bd5-00-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.049
+  },
+  "hard-inss-583f58-05-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.032
+  },
+  "hard-inss-f5e7b7-03-fa": {
+   "f1": 0.9,
+   "has_think": true,
+   "ref_overlap": 0.042
+  },
+  "hard-inss-5023bd-03-fa": {
+   "f1": 0.9412,
+   "has_think": true,
+   "ref_overlap": 0.049
+  },
+  "hard-inss-b4a041-01-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.045
+  },
+  "hard-inss-f5e7b7-09-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.042
+  },
+  "hard-inss-4960d4-06-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.043
+  },
+  "hard-inss-f5e7b7-08-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.043
+  },
+  "hard-inss-eb7358-03-fa": {
+   "f1": 0.8235,
+   "has_think": true,
+   "ref_overlap": 0.049
+  },
+  "hard-inss-148292-06-fa": {
+   "f1": 0.88,
+   "has_think": true,
+   "ref_overlap": 0.041
+  },
+  "hard-inss-ed7673-02-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.057
+  },
+  "hard-inss-eb7358-02-fa": {
+   "f1": 0.8421,
+   "has_think": true,
+   "ref_overlap": 0.028
+  },
+  "hard-inss-ed7673-00-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.058
+  },
+  "hard-inss-07ec8c-01-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.038
+  },
+  "hard-inss-a1fa8c-00-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.039
+  },
+  "hard-inss-b4a041-03-fa": {
+   "f1": 0.9677,
+   "has_think": true,
+   "ref_overlap": 0.046
+  },
+  "hard-inss-0aaaaf-03-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.041
+  },
+  "hard-inss-a2c299-00-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.032
+  },
+  "hard-inss-2cf12e-04-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.044
+  },
+  "hard-inss-0aaaaf-06-fa": {
+   "f1": 0.9655,
+   "has_think": true,
+   "ref_overlap": 0.044
+  },
+  "hard-inss-5f9bd5-08-fa": {
+   "f1": 0.8696,
+   "has_think": true,
+   "ref_overlap": 0.05
+  },
+  "hard-inss-583f58-00-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.045
+  },
+  "hard-inss-583f58-07-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.059
+  },
+  "hard-inss-426dc4-01-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.158
+  },
+  "hard-inss-3043ee-02-fa": {
+   "f1": 0.8889,
+   "has_think": true,
+   "ref_overlap": 0.047
+  },
+  "hard-inss-148292-08-fa": {
+   "f1": 0.7059,
+   "has_think": true,
+   "ref_overlap": 0.04
+  },
+  "hard-inss-00e1a1-02-fa": {
+   "f1": 0.8571,
+   "has_think": true,
+   "ref_overlap": 0.24
+  },
+  "hard-inss-07ec8c-03-fa": {
+   "f1": 0.9697,
+   "has_think": true,
+   "ref_overlap": 0.032
+  },
+  "hard-inss-2cf12e-09-fa": {
+   "f1": 0.8421,
+   "has_think": true,
+   "ref_overlap": 0.045
+  },
+  "hard-inss-2cf12e-10-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.054
+  },
+  "hard-inss-c20393-04-fa": {
+   "f1": 0.9655,
+   "has_think": true,
+   "ref_overlap": 0.055
+  },
+  "hardL-6ae565-00+6ae565-01+6ae565-02": {
+   "f1": 0.7368,
+   "has_think": true,
+   "ref_overlap": 0.019
+  },
+  "hardL-0aaaaf-00+0aaaaf-01+0aaaaf-02": {
+   "f1": 0.7857,
+   "has_think": true,
+   "ref_overlap": 0.037
+  },
+  "hardL-0b891f-04+0b891f-05": {
+   "f1": 0.8941,
+   "has_think": true,
+   "ref_overlap": 0.035
+  },
+  "hardL-2cf12e-01+2cf12e-02+2cf12e-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.026
+  },
+  "hardL-4960d4-01+4960d4-02": {
+   "f1": 0.9714,
+   "has_think": true,
+   "ref_overlap": 0.026
+  },
+  "hardL-07ec8c-00+07ec8c-01+07ec8c-02": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.019
+  },
+  "hardL-148292-02+148292-03+148292-04": {
+   "f1": 0.9167,
+   "has_think": true,
+   "ref_overlap": 0.02
+  },
+  "hardL-a2c299-02+a2c299-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.024
+  },
+  "hardL-22ee80-02+22ee80-03+22ee80-04": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.196
+  },
+  "hardL-c20393-02+c20393-03+c20393-04": {
+   "f1": 0.8889,
+   "has_think": true,
+   "ref_overlap": 0.271
+  },
+  "hardL-0aaaaf-02+0aaaaf-03+0aaaaf-04": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.021
+  },
+  "hardL-0b891f-02+0b891f-03+0b891f-04": {
+   "f1": 0.9,
+   "has_think": true,
+   "ref_overlap": 0.018
+  },
+  "hardL-2cf12e-14+2cf12e-15": {
+   "f1": 0.9608,
+   "has_think": true,
+   "ref_overlap": 0.025
+  },
+  "hardL-6d2783-02+6d2783-03": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.02
+  },
+  "hardL-07ec8c-11+07ec8c-12+07ec8c-13": {
+   "f1": 0.8519,
+   "has_think": true,
+   "ref_overlap": 0.021
+  },
+  "hardL-5b066c-04+5b066c-05": {
+   "f1": 0.9778,
+   "has_think": true,
+   "ref_overlap": 0.068
+  },
+  "hardL-148292-00+148292-01+148292-02": {
+   "f1": 0.8571,
+   "has_think": true,
+   "ref_overlap": 0.024
+  },
+  "hardL-b4a041-00+b4a041-01": {
+   "f1": 0.7727,
+   "has_think": true,
+   "ref_overlap": 0.024
+  },
+  "hardL-0a5150-03+0a5150-04": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.024
+  },
+  "hardL-5f9bd5-04+5f9bd5-05+5f9bd5-06": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.027
+  },
+  "hardL-438720-04+438720-05+438720-06": {
+   "f1": 0.8936,
+   "has_think": true,
+   "ref_overlap": 0.216
+  },
+  "hardL-a2c299-01+a2c299-02+a2c299-03": {
+   "f1": 0.8627,
+   "has_think": true,
+   "ref_overlap": 0.025
+  },
+  "hardL-eb7358-00+eb7358-01": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.03
+  },
+  "hardL-c9dc66-00+c9dc66-01+c9dc66-02": {
+   "f1": 0.9697,
+   "has_think": true,
+   "ref_overlap": 0.11
+  },
+  "hardL-3043ee-00+3043ee-01": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.015
+  },
+  "hardL-0aaaaf-00+0aaaaf-01+0aaaaf-02-fa": {
+   "f1": 0.7719,
+   "has_think": true,
+   "ref_overlap": 0.045
+  },
+  "hardL-2cf12e-14+2cf12e-15-fa": {
+   "f1": 0.9703,
+   "has_think": true,
+   "ref_overlap": 0.044
+  },
+  "hardL-6ae565-00+6ae565-01+6ae565-02-fa": {
+   "f1": 0.8421,
+   "has_think": true,
+   "ref_overlap": 0.034
+  },
+  "hardL-5f9bd5-04+5f9bd5-05+5f9bd5-06-fa": {
+   "f1": 0.9053,
+   "has_think": true,
+   "ref_overlap": 0.047
+  },
+  "hardL-0b891f-04+0b891f-05-fa": {
+   "f1": 0.9176,
+   "has_think": true,
+   "ref_overlap": 0.051
+  },
+  "hardL-0aaaaf-02+0aaaaf-03+0aaaaf-04-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.043
+  },
+  "hardL-0b891f-02+0b891f-03+0b891f-04-fa": {
+   "f1": 0.9268,
+   "has_think": true,
+   "ref_overlap": 0.036
+  },
+  "hardL-5b066c-04+5b066c-05-fa": {
+   "f1": 0.9556,
+   "has_think": true,
+   "ref_overlap": 0.053
+  },
+  "hardL-22ee80-02+22ee80-03+22ee80-04-fa": {
+   "f1": 0.9014,
+   "has_think": true,
+   "ref_overlap": 0.197
+  },
+  "hardL-6d2783-02+6d2783-03-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.034
+  },
+  "hardL-a2c299-02+a2c299-03-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.034
+  },
+  "hardL-c20393-02+c20393-03+c20393-04-fa": {
+   "f1": 0.8889,
+   "has_think": true,
+   "ref_overlap": 0.204
+  },
+  "hardL-0a5150-03+0a5150-04-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.073
+  },
+  "hardL-eb7358-00+eb7358-01-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.04
+  },
+  "hardL-4960d4-01+4960d4-02-fa": {
+   "f1": 0.9859,
+   "has_think": true,
+   "ref_overlap": 0.043
+  },
+  "hardL-07ec8c-11+07ec8c-12+07ec8c-13-fa": {
+   "f1": 0.9032,
+   "has_think": true,
+   "ref_overlap": 0.082
+  },
+  "hardL-148292-02+148292-03+148292-04-fa": {
+   "f1": 0.9388,
+   "has_think": true,
+   "ref_overlap": 0.04
+  },
+  "hardL-148292-00+148292-01+148292-02-fa": {
+   "f1": 0.8182,
+   "has_think": true,
+   "ref_overlap": 0.041
+  },
+  "hardL-2cf12e-01+2cf12e-02+2cf12e-03-fa": {
+   "f1": 0.9565,
+   "has_think": true,
+   "ref_overlap": 0.047
+  },
+  "hardL-438720-04+438720-05+438720-06-fa": {
+   "f1": 0.7442,
+   "has_think": true,
+   "ref_overlap": 0.112
+  },
+  "hardL-c9dc66-00+c9dc66-01+c9dc66-02-fa": {
+   "f1": 0.8923,
+   "has_think": true,
+   "ref_overlap": 0.052
+  },
+  "hardL-a2c299-01+a2c299-02+a2c299-03-fa": {
+   "f1": 0.7755,
+   "has_think": true,
+   "ref_overlap": 0.041
+  },
+  "hardL-3043ee-00+3043ee-01-fa": {
+   "f1": 1.0,
+   "has_think": true,
+   "ref_overlap": 0.029
+  }
+ }
+}

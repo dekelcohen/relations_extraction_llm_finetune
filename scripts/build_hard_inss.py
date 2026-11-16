@@ -46,6 +46,8 @@ DIFF = {
     "table_prose": "TABLE+PROSE: one entity is introduced in prose, and some of its slot values appear only in a small "
                    "pipe-delimited text table (| a | b |) later in the text, with a distractor column "
                    "(e.g. 'previous update').",
+    "status_change": "STATUS CHANGES: for at least two entities the status/date changed over the text (earlier status/date, later update); "
+                     "the gold is the LATEST one, the earlier ones are distractors.",
     "negation": "NEGATION/HYPOTHETICALS: include a postponed/cancelled/denied/'might be held'/'if signed' statement whose "
                 "value must NOT be extracted (the slot is null or takes the confirmed value).",
 }
@@ -167,7 +169,7 @@ def stage_gen(a):
     print("generated", len(out))
 
 
-def prog_check(s, source_text):
+def prog_check(s, source_text, maxlen=3600, min_overlap=0.45, min_values=4):
     """Programmatic verifier: gold verbatim in text, shapes, nulls, language, length, host overlap."""
     iss = []
     t = s.get("text")
@@ -193,9 +195,9 @@ def prog_check(s, source_text):
         iss.append("dup_main")
     if not any(isinstance(r, dict) and any(r.get(x.name) is None for x in sch.slots) for r in recs):
         iss.append("no_null")
-    if sum(1 for r in recs for x in sch.slots if isinstance(r, dict) and r.get(x.name)) < 4:
+    if sum(1 for r in recs for x in sch.slots if isinstance(r, dict) and r.get(x.name)) < min_values:
         iss.append("too_few_values")
-    if not 900 <= len(t) <= 3600:
+    if not 900 <= len(t) <= maxlen:
         iss.append(f"length:{len(t)}")
     if script_ratio(t, s["lang"]) < 0.6:
         iss.append("script_ratio")
@@ -210,7 +212,7 @@ def prog_check(s, source_text):
             iss.append("decoy_is_gold")
     sm = difflib.SequenceMatcher(None, source_text[:2600], t[:2600], autojunk=False)
     ov = sum(b.size for b in sm.get_matching_blocks()) / max(1, min(len(source_text[:2600]), len(t[:2600])))
-    if ov < 0.45:
+    if ov < min_overlap:
         iss.append(f"host_overlap:{ov:.2f}")
     s["host_overlap"] = round(ov, 2)
     return sorted(set(iss))

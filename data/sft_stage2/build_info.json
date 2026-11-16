@@ -1,0 +1,26 @@
+{
+ "stage2_in": 535,
+ "stage2_kept": 481,
+ "stage2_dropped": {
+  "id": 54
+ },
+ "inss": 61,
+ "replay_sampled": 138,
+ "replay_kept": 138,
+ "replay_dropped": {},
+ "total": 860,
+ "duplicated": {
+  "stage2_synth/he": 58,
+  "stage2_synth/fa": 106,
+  "inss/he": 10,
+  "inss/fa": 6
+ },
+ "by_source_lang": {
+  "replay_synth_hefa/he": 62,
+  "stage2_synth/fa": 345,
+  "stage2_synth/he": 300,
+  "replay_synth_hefa/fa": 76,
+  "inss/he": 44,
+  "inss/fa": 33
+ }
+}

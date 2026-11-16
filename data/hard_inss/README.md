@@ -26,3 +26,6 @@ Terra 2 flaws (fictional-word leak, one trivial sample). → Sonnet used for the
 (raw candidates + QC). Source articles (copyrighted, ~270 KB) are NOT in git: `data/raw/inss/` is git-ignored and pushed to private
 HF dataset `Shani123/re-inss-raw`. Samples embed ≤2.5k-char chunks of the host prose.
 Source URLs: see `url` in `meta.jsonl` (inss.org.il/he/publication/<slug>/).
+
+## Round 2 (stage-2 SFT)
+Now 186 verified samples (he 97 / fa 89), `train.jsonl` 147 / `dev.jsonl` 39 (he 19 / fa 20; **dev = eval set**, never trained on). Added by `scripts/build_hard_inss2.py`: whole-sample he→fa translations (text+gold+decoys translated together, verbatim re-check + Terra blind F1 ≥ 0.7) and 31 long audit-driven he docs (`hardL-*`, 2–3 chunks, 6–12 entities; tags far_header/table_head/status_change added). `meta.jsonl` has `round`, `split`, `src_chunk`; `cot/` holds teacher CoT for train (61 kept).

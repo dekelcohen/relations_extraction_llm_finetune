@@ -31,7 +31,10 @@ COT_INSTRUCTION = (
 
 def cot_messages(s: dict) -> list[dict]:
     msgs = prompting.messages(schema_of(s).to_prompt_dict(), s["text"])
-    msgs[-1] = {"role": "user", "content": msgs[-1]["content"] + COT_INSTRUCTION}
+    instr = COT_INSTRUCTION
+    if len(s["text"]) > 4000:  # long multi-entity documents need a longer reasoning budget
+        instr = instr.replace("~250 words", f"~{min(900, len(s['text']) // 12)} words, covering every entity")
+    msgs[-1] = {"role": "user", "content": msgs[-1]["content"] + instr}
     return msgs
 
 
