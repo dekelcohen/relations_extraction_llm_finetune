@@ -55,6 +55,10 @@ hit% = share of prompts (chunks) that hit max_tokens. p/min = prompts per minute
 The fine-tuned model thinks much shorter (no hits). The base model at `reasoning_effort=medium` looks competitive with it on the hard sets.
 This is a mixed-mode estimate: only the hit chunks were re-run at medium.
 
+### 27B-ft-stage-1 error analysis (report sections, `eval/strong_gap.py`, `eval/append_errors.py`)
+- Report: full Error analysis for `qwen3.8-27b-ft-int4` (root causes, loses-vs-INT4/FP8-base tables, examples with viewer links) for pilot, grpo_dev, test_long; 27B INT4 `-medium` full preds don't exist yet (only retry files), so not included.
+- `outputs/audit/27b_vs_strong.{md,json}`: 27B errors where Sonnet AND Llama are right (audit-excluded), ft-int4 kept: pilot 14, grpo_dev 30, test_long 99 (INT4 base 42/59/389); ends with a ranked stage-2 SFT emphasis list.
+
 ### Resume on another machine
 1. `git pull`. All code, docs and stage-1/2 data (`data/pilot`, `data/synth_hefa`,
    `data/stage_2_RL_GRPO`) are in the repo.

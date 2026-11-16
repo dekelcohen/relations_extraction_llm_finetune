@@ -22,7 +22,9 @@ python eval/compare_report.py --samples $P/samples.jsonl --model sonnet-5.5=$P/p
   --model qwen3-4b=$E/qwen3-4b-think.preds.jsonl --model qwen3-4b-ft=$E/qwen3-4b-ft-think.preds.jsonl \
   --model qwen3-4b-nothink=$E/qwen3-4b-nothink.preds.jsonl --model qwen3-4b-ft-nothink=$E/qwen3-4b-ft-nothink.preds.jsonl \
   --model qwen3-4b-grpo=$E/qwen3-4b-grpo-think.preds.jsonl $(n27 pilot) \
-  --base qwen3-4b --ft qwen3-4b-ft --frontier sonnet-5.5 --oss70 llama-3.3-70b "${NOTES[@]}" --viewer_dir $P --out outputs/report/pilot_compare.html
+  --base qwen3-4b --ft qwen3-4b-ft --frontier sonnet-5.5 --oss70 llama-3.3-70b "${NOTES[@]}" --viewer_dir $P --viewer_url http://127.0.0.1:8111/ \
+  --err27 qwen3.8-27b-ft-int4 --err27_ref qwen3.8-27b-int4 --err27_ref qwen3.8-27b-fp8 \
+  --section_models qwen3.8-27b-fp8,qwen3.8-27b-int4,qwen3.8-27b-ft-int4,qwen3-4b-ft,qwen3-4b-grpo,llama-3.3-70b,sonnet-5.5 --out outputs/report/pilot_compare.html
 python eval/append_section.py --report outputs/report/pilot_compare.html --id grpo_dev \
   --title "Stage-2 grpo_dev (60 held-out hard docs, doc-level, chunked inference)" --rows $D/grpo_dev.jsonl \
   --model qwen3-4b-ft=$E/sft.grpo_dev.preds.jsonl --model grpo-ckpt10=$E/grpo-mid.grpo_dev.preds.jsonl \
@@ -33,3 +35,14 @@ python eval/append_section.py --report outputs/report/pilot_compare.html --id te
   --model qwen3-4b-ft=$E/sft.test_long.preds.jsonl --model qwen3-4b-grpo=$E/grpo.test_long.preds.jsonl \
   --model llama-3.3-70b=$T/preds_weak.jsonl --model sonnet-5.5=$T/preds_strong.jsonl $(n27 test_long) \
   --note "never used for training or checkpoint selection; lenient scorer"
+# 27B-ft-stage-1 (= qwen3.8-27b-ft-int4) error analysis for grpo_dev and test_long (pilot's is inside the main Error analysis)
+ea() { # id title rows set
+  python eval/append_errors.py --report outputs/report/pilot_compare.html --id err27_$1 --title "Error analysis: 27B-ft-stage-1 (qwen3.8-27b-ft-int4) on $2" --rows $3 \
+    --model qwen3.8-27b-fp8=$E/qwen3.8-27b-fp8.$1.preds.jsonl --model qwen3.8-27b-int4=$E/qwen3.8-27b-int4.$1.preds.jsonl \
+    --model qwen3.8-27b-ft-int4=$E/qwen3.8-27b-ft-int4.$1.preds.jsonl --model qwen3-4b-ft=$E/${4}.$1.preds.jsonl \
+    --model qwen3-4b-grpo=$E/${5}.$1.preds.jsonl --model llama-3.3-70b=${6}/preds_weak.jsonl --model sonnet-5.5=${6}/preds_strong.jsonl \
+    --em qwen3.8-27b-ft-int4 --ref qwen3.8-27b-int4 --ref qwen3.8-27b-fp8
+}
+ea grpo_dev "grpo_dev" $D/grpo_dev.jsonl sft grpo-final $D
+ea test_long "test_long" $T/test_long.jsonl sft grpo $T
+python eval/strong_gap.py --report outputs/report/pilot_compare.html   # 27B errors where Sonnet AND Llama are right

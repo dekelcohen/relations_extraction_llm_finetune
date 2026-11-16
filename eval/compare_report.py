@@ -27,7 +27,7 @@ from re_synth.mine import load_preds, score_preds  # noqa: E402
 from re_synth.score import aggregate, parse_prediction_lenient, sample_f1, score_sample, slot_types_for  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "eval"))
-from error_analysis import ADJ, ADJ_SUB, CAT_DESC, CATS, ROOTS, analyze, audit_verdict, load_audit, verdict_label  # noqa: E402
+from error_analysis import render_model_errors, ADJ, ADJ_SUB, CAT_DESC, CATS, ROOTS, analyze, audit_verdict, load_audit, verdict_label  # noqa: E402
 
 LENIENT_LEGEND = (
     "Lenient = same scorer, but model outputs that fail strict JSON parsing are repaired first by a deterministic "
@@ -239,6 +239,9 @@ def main():
                     help="manual/LLM audit verdicts keyed by id+slot (adds an adjudication layer when the file exists)")
     ap.add_argument("--audit_patches", default="outputs/audit/gold_patches.jsonl", help="audited gold fixes (id/rec/slot/new)")
     ap.add_argument("--audit_set", default="pilot", help="'set' value of the audit entries that belong to this report")
+    ap.add_argument("--err27", action="append", default=[], help="extra model(s) to give a full error-analysis section")
+    ap.add_argument("--err27_ref", action="append", default=[], help="base label(s) the --err27 model is compared against")
+    ap.add_argument("--section_models", help="comma-separated labels shown in the --err27 section (default all)")
     a = ap.parse_args()
 
     samples = read_jsonl(a.samples)
@@ -427,6 +430,11 @@ def main():
                 f"<h3>Root causes</h3>{count_table('root', list(ROOTS), ROOTS)}{adj_html}"
                 f"<h3>Examples per root cause ({html.escape(err_model)})</h3>{''.join(ex_html)}"
                 f"<details><summary>Mechanical error categories</summary>{count_table('cat', CATS, CAT_DESC)}</details>")
+
+    for em in a.err27 if a.err27 else []:
+        sec_labels = a.section_models.split(",") if a.section_models else labels
+        err_html += (f"<h2 id='err-{html.escape(em)}'>Error analysis: {html.escape(em)} (pilot)</h2>"
+                     + render_model_errors(sec_labels, errors, em, a.err27_ref, link, HC_DESC, audit, f"{em} on pilot"))
 
     dl = lambda d: "<dl class=leg>" + "".join(f"<dt>{html.escape(k)}</dt><dd>{html.escape(v)}</dd>" for k, v in d.items()) + "</dl>"
     legend = ("<details open><summary><b>Legend</b> &mdash; what the metrics and labels mean "

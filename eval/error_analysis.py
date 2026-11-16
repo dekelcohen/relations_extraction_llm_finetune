@@ -198,3 +198,85 @@ def verdict_label(o: dict | None) -> str | None:
     if o["category"] == "d":
         return f"true_model_error/{o.get('subtype') or 'other'}"
     return o["category_name"]
+
+
+# ---- HTML error-analysis section for one model (used for the 27B-ft sections of every eval set)
+def _key(e):
+    return (e["id"], e["record"], e["slot"], e["cat"])
+
+
+def render_model_errors(labels, errors, em, refs, link, hc_desc, audit=None, title="", lang_of=None, n_ex=12):
+    """errors: {label: [error dict with 'root']}. em = model under analysis, refs = base labels to compare against."""
+    import html
+    esc = html.escape
+    labels = [l for l in labels if l in errors]
+    refs = [r for r in refs if r in errors]
+    root_cnt = lambda l, r: sum(1 for e in errors[l] if e["root"] == r)  # noqa: E731
+    h = f"<h3>{esc(title)}: root causes (slot errors; lower is better)</h3><table><tr><th>root cause</th>"
+    h += "".join(f"<th{' style=\"background:#dbeafe\"' if l == em else ''}>{esc(l)}</th>" for l in labels)
+    h += "".join(f"<th>{esc(em)} &minus; {esc(r)}</th>" for r in refs) + "<th>he / fa / en</th><th>meaning</th></tr>"
+    for r in ROOTS:
+        if not any(root_cnt(l, r) for l in labels):
+            continue
+        cells = "".join(f"<td>{root_cnt(l, r)}</td>" for l in labels)
+        for ref in refs:
+            d = root_cnt(em, r) - root_cnt(ref, r)
+            col = "#b91c1c" if d > 0 else "#15803d" if d < 0 else "#666"
+            cells += f"<td style='color:{col};font-weight:600'>{d:+d}</td>"
+        langs = " / ".join(str(sum(1 for e in errors[em] if e["root"] == r and e["lang"] == lg)) for lg in ("he", "fa", "en"))
+        h += f"<tr><td class=g>{r}</td>{cells}<td>{langs}</td><td class=note>{esc(ROOTS[r])}</td></tr>"
+    tot = "".join(f"<td><b>{len(errors[l])}</b></td>" for l in labels)
+    dt = "".join(f"<td><b>{len(errors[em]) - len(errors[r]):+d}</b></td>" for r in refs)
+    h += f"<tr><td class=g>total</td>{tot}{dt}<td></td><td></td></tr></table>"
+
+    def rows(es, extra=None):
+        out = ""
+        for e in es[:n_ex]:
+            v = audit_verdict(e, em, audit) if audit else None
+            out += (f"<tr><td>{link(e['id'])}</td><td>{e['lang']}</td><td>{e['cat']}</td><td>{e['slot'] or ''}</td>"
+                    f"<td class=v>{esc(str(e['gold']))}</td><td class=v>{esc(str(e['pred']))}</td>"
+                    + (f"<td class=v>{esc(str(extra(e)))}</td>" if extra else "")
+                    + f"<td>{' '.join(e['hc'])}</td>" + (f"<td>{esc(verdict_label(v) or '')}</td>" if audit else "") + "</tr>")
+        return out
+    hdr = lambda x="": ("<tr><th>id</th><th>lang</th><th>category</th><th>slot</th><th>gold</th><th>pred</th>" + x  # noqa: E731
+                        + "<th>hard cases</th>" + ("<th>audited verdict</th>" if audit else "") + "</tr>")
+
+    for ref in refs:  # errors the fine-tune makes where the base is right on that very slot
+        def covered(e, other):  # other model errs on the same slot, or has a record-level error in this sample
+            return any(o["id"] == e["id"] and (o["slot"] is None or (o["slot"] == e["slot"] and o["record"] == e["record"])) for o in other)
+        by_id = {}
+        for l_ in (em, ref):
+            by_id[l_] = {}
+            for o in errors[l_]:
+                by_id[l_].setdefault(o["id"], []).append(o)
+        cov = lambda e, l_: covered(e, by_id[l_].get(e["id"], []))  # noqa: E731
+        reg = [e for e in errors[em] if not cov(e, ref)]
+        fixed = [e for e in errors[ref] if not cov(e, em)]
+        h += (f"<h3>Where {esc(em)} loses vs {esc(ref)}</h3><p>{len(reg)} slot errors are new (slot correct in {esc(ref)}); "
+              f"{len(fixed)} {esc(ref)} errors are fixed by the fine-tune.</p><table><tr><th>root cause</th><th>new errors</th>"
+              f"<th>fixed</th><th>net</th></tr>")
+        for r in ROOTS:
+            a_, b_ = sum(1 for e in reg if e["root"] == r), sum(1 for e in fixed if e["root"] == r)
+            if a_ or b_:
+                h += f"<tr><td class=g>{r}</td><td>{a_}</td><td>{b_}</td><td style='color:{'#b91c1c' if a_ > b_ else '#15803d'};font-weight:600'>{a_ - b_:+d}</td></tr>"
+        h += "</table>"
+        for r in ROOTS:
+            es = [e for e in reg if e["root"] == r]
+            if es:
+                h += (f"<details><summary><b>{r}</b> &mdash; {len(es)} new vs {esc(ref)}</summary><table>{hdr()}{rows(es)}</table></details>")
+
+    h += f"<h3>Examples per root cause ({esc(em)})</h3>"
+    for r in ROOTS:
+        es = [e for e in errors[em] if e["root"] == r]
+        if not es:
+            continue
+        if audit:
+            es = sorted(es, key=lambda e: audit_verdict(e, em, audit) is None)
+        h += (f"<details><summary><b>{r}</b> ({len(es)}) &mdash; {esc(ROOTS[r])}</summary><table>{hdr()}{rows(es)}</table></details>")
+
+    h += "<details><summary>Mechanical error categories</summary><table><tr><th>category</th>" + "".join(f"<th>{esc(l)}</th>" for l in labels) + "<th>meaning</th></tr>"
+    for c in CATS:
+        cnt = {l: sum(1 for e in errors[l] if e["cat"] == c) for l in labels}
+        if any(cnt.values()):
+            h += f"<tr><td class=g>{c}</td>" + "".join(f"<td>{cnt[l]}</td>" for l in labels) + f"<td class=note>{esc(CAT_DESC[c])}</td></tr>"
+    return h + "</table></details>"
