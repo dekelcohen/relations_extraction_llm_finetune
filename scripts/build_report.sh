@@ -13,7 +13,7 @@ NOTES=(--note "sonnet-5.5=anthropic/claude-sonnet-5.5 via OpenRouter, T=0" --not
   --note "qwen3-4b-ft-nothink=same as qwen3-4b-nothink + the QLoRA adapter (trained WITH thinking: out-of-distribution mode)"
   --note "qwen3-4b-grpo=same as qwen3-4b-ft + 20 GRPO steps (strict reward, 40 prompts x G=4, final adapter), same thinking settings"
   --note "qwen3.8-27b-fp8=BASE Qwen/Qwen3.8-27B-FP8 (8-bit weights, vLLM Marlin), $TH"
-  --note "qwen3.8-27b-int4=BASE RedHatAI/Qwen3.8-27B-INT4 (W4A16), fast vLLM config (fp8 KV cache, Triton attention, max_num_seqs 96); sampling as above, see docs/status.md for settings that differ"
+  --note "qwen3.8-27b-int4=BASE RedHatAI/Qwen3.8-27B-INT4 (W4A16), bf16 KV cache, Triton attention, max_num_seqs 48, thinking T=0.6 top_p 0.95 top_k 20, **max 12288 tok** (max_model_len 16384; fp8 column used 5120), 1 sample"
   --note "qwen3.8-27b-ft-int4=27B + the same QLoRA adapter served on the INT4 base (vLLM LoRA), same settings as qwen3.8-27b-int4"
   --note "qwen3.8-27b-bnb4=BASE unsloth/Qwen3.8-27B-unsloth-bnb-4bit (vLLM bitsandbytes), $TH"
   --note "qwen3.8-27b-ft-fp8=27B + QLoRA adapter (r32, 2 ep, same data/recipe as qwen3-4b-ft; trained on the bnb-4bit base) served on the FP8 base, $TH"

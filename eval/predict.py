@@ -175,7 +175,7 @@ def to_md(rep):
     return "\n".join(lines)
 
 
-def main():
+def build_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--data", action="append", required=True, help="repeatable: several datasets share one engine load")
@@ -204,7 +204,11 @@ def main():
     ap.add_argument("--chunk_chars", type=int, default=chunking.CHUNK_CHARS)
     ap.add_argument("--chunk_overlap", type=int, default=chunking.CHUNK_OVERLAP)
     ap.add_argument("--chunk_min", type=int, default=chunking.CHUNK_MIN)
-    a = ap.parse_args()
+    return ap
+
+
+def main():
+    a = build_parser().parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(a.lora or a.model)
