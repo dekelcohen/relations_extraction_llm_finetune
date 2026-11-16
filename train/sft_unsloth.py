@@ -34,6 +34,9 @@ def main():
     ap.add_argument("--disable_tqdm", action="store_true", help="no progress bars (small logs)")
     ap.add_argument("--save_state", action="store_true",
                     help="after training also write one final checkpoint-N/ (optimizer, scheduler, trainer_state) to resume from")
+    ap.add_argument("--init_adapter", help="continue from this LoRA adapter dir (weights only, fresh optimizer/scheduler)")
+    ap.add_argument("--warmup_ratio", type=float, default=0.03)
+    ap.add_argument("--longest_first", type=int, default=0, help="smoke: put the N longest rows first (peak-VRAM check)")
     ap.add_argument("--log_dir", help="metrics.jsonl / train.log / charts.html (default: <out>/progress)")
     a = ap.parse_args()
 
@@ -44,9 +47,15 @@ def main():
     from data import read_jsonl, to_prompt_completion
 
     model, tok = FastLanguageModel.from_pretrained(a.model, max_seq_length=a.max_len, load_in_4bit=a.load_in_4bit)
-    model = FastLanguageModel.get_peft_model(
-        model, r=a.r, lora_alpha=a.r, lora_dropout=0.0, use_rslora=True, use_gradient_checkpointing="unsloth",
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"])
+    if a.init_adapter:
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, a.init_adapter, is_trainable=True)
+        FastLanguageModel.for_training(model, use_gradient_checkpointing="unsloth")
+        print(f"init adapter: {a.init_adapter} trainable={sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+    else:
+        model = FastLanguageModel.get_peft_model(
+            model, r=a.r, lora_alpha=a.r, lora_dropout=0.0, use_rslora=True, use_gradient_checkpointing="unsloth",
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"])
     import math
     from progress import ProgressCallback
 
@@ -58,20 +67,29 @@ def main():
         ds, val = sp["train"], sp["test"]
     else:
         val = None
+    if a.longest_first:
+        order = sorted(range(len(ds)), key=lambda i: -len(tok(ds[i]["prompt"] + ds[i]["completion"])["input_ids"]
+                                                          if isinstance(ds[i]["prompt"], str) else 0))
+        ds = ds.select(order)
     total = math.ceil(math.ceil(len(ds) / a.bs) / a.ga * a.epochs)
     eval_steps = a.eval_steps or max(1, total // 6)
     print(f"train={len(ds)} val={len(val) if val else 0} optimizer_steps={total} eval_every={eval_steps}")
     cfg = SFTConfig(output_dir=a.out, num_train_epochs=a.epochs, learning_rate=a.lr, per_device_train_batch_size=a.bs,
                     gradient_accumulation_steps=a.ga, max_length=a.max_len, completion_only_loss=True, bf16=True,
                     logging_steps=a.log_steps, save_steps=200, max_steps=a.max_steps, disable_tqdm=a.disable_tqdm, lr_scheduler_type="cosine",
-                    warmup_steps=max(1, round(0.03 * total)), report_to="none",
+                    warmup_steps=max(1, round(a.warmup_ratio * total)), report_to="none",
                     eval_strategy="steps" if val else "no", eval_steps=eval_steps, per_device_eval_batch_size=1)
     log_dir = a.log_dir or os.path.join(a.out, "progress")
+    if a.longest_first:  # keep the sorted order for the smoke run
+        from torch.utils.data import SequentialSampler
+        SFTTrainer._get_train_sampler = lambda self, *x, **k: SequentialSampler(self.train_dataset)
     trainer = SFTTrainer(model=model, processing_class=tok, train_dataset=ds, eval_dataset=val, args=cfg,
                          callbacks=[ProgressCallback(log_dir, title=f"{os.path.basename(a.out)} ({a.model})")])
     if val:
         trainer.evaluate()  # step-0 baseline eval loss
     trainer.train()
+    import torch
+    print(f"peak_vram_alloc_GiB={torch.cuda.max_memory_allocated() / 2**30:.1f} reserved_GiB={torch.cuda.max_memory_reserved() / 2**30:.1f}")
     print(f"progress: {log_dir}/charts.html")
     model.save_pretrained(a.out)
     tok.save_pretrained(a.out)

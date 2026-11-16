@@ -22,7 +22,7 @@ run_stage() {
     ab_*)           bm_ int4; bash $S/eval_model.sh $A --name smoke-int4-${1#ab_} --model $BM --quant "$BQ" "${BO[@]}" --limit ${LIMIT:-50} --eval-sets pilot ${AB_MAX_TOKENS:+--max-tokens $AB_MAX_TOKENS --max-model-len $AB_MAX_MODEL_LEN} ${AB_CHAT_KW:+--chat-kw "$AB_CHAT_KW"} ;;  # A/B speed+quality on the first 50 pilot prompts (AB_CHAT_KW / --engine-kw etc. override)
     retry_*)        t=${1#retry_}; bm_ int4; CK=(); [ $t = medium ] && CK=(--chat-kw '{"reasoning_effort": "medium"}')   # hit-limit retry (base+ft int4 preds, one engine), seed 1
                     bash $S/eval_model.sh $A --name $FT_NAME-int4 --names "$EVAL_NAME-int4 $FT_NAME-int4" --model $BM --quant "$BQ" "${BO[@]}" --lora $SFT_OUT --retry $t --seed 1 "${CK[@]}" ;;
-    sft_smoke) bash $S/sft_qlora.sh $A --max-steps 3 --sft-out outputs/smoke-sft; r=$?; rm -rf outputs/smoke-sft; return $r ;;
+    sft_smoke) bash $S/sft_qlora.sh $A --max-steps ${SMOKE_STEPS:-3} --sft-out outputs/smoke-sft; r=$?; rm -rf outputs/smoke-sft; return $r ;;
     sft)       bash $S/sft_qlora.sh $A ;;
     *) echo "unknown stage $1"; return 2 ;;
   esac
