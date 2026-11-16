@@ -10,5 +10,9 @@
  "outputs/sft-cot-qwen3.8-27b": {
   "repo": "Shani123/re-qwen3.8-27b-sft-cot",
   "type": "model"
+ },
+ "data/raw/inss": {
+  "repo": "Shani123/re-inss-raw",
+  "type": "dataset"
  }
 }

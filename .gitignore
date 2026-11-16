@@ -233,3 +233,7 @@ node_modules/
 # machine-specific docker settings
 docker/.env
 unsloth_compiled_cache/
+
+# raw scraped INSS articles (copyrighted; private HF dataset Shani123/re-inss-raw)
+data/raw/
+!data/hard_inss/
