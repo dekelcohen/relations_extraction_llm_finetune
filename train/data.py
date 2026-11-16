@@ -37,7 +37,7 @@ def end_token(tok) -> str:
     return tok.eos_token or ""
 
 
-def to_prompt_completion(rows: list[dict], tok, enable_thinking=False) -> list[dict]:
+def to_prompt_completion(rows: list[dict], tok, enable_thinking=False, **template_kw) -> list[dict]:
     """[{messages:[...,assistant]}] -> [{prompt: str, completion: str}] (completion ends with the turn-end token)."""
     end = end_token(tok)
     out = []
@@ -45,7 +45,7 @@ def to_prompt_completion(rows: list[dict], tok, enable_thinking=False) -> list[d
         msgs = r["messages"]
         if not msgs or msgs[-1]["role"] != "assistant":
             continue
-        out.append({"prompt": render_prompt(tok, msgs[:-1], enable_thinking),
+        out.append({"prompt": render_prompt(tok, msgs[:-1], enable_thinking, **template_kw),
                     "completion": msgs[-1]["content"] + end})
     return out
 

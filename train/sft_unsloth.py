@@ -6,6 +6,7 @@ python train/sft_unsloth.py --model unsloth/Qwen3-8B --train data/synth/export/s
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 
@@ -34,6 +35,7 @@ def main():
     ap.add_argument("--disable_tqdm", action="store_true", help="no progress bars (small logs)")
     ap.add_argument("--save_state", action="store_true",
                     help="after training also write one final checkpoint-N/ (optimizer, scheduler, trainer_state) to resume from")
+    ap.add_argument("--chat_kw", default="{}", help='chat-template kwargs JSON, e.g. {"reasoning_effort": "medium"}')
     ap.add_argument("--init_adapter", help="continue from this LoRA adapter dir (weights only, fresh optimizer/scheduler)")
     ap.add_argument("--warmup_ratio", type=float, default=0.03)
     ap.add_argument("--longest_first", type=int, default=0, help="smoke: put the N longest rows first (peak-VRAM check)")
@@ -59,9 +61,9 @@ def main():
     import math
     from progress import ProgressCallback
 
-    ds = Dataset.from_list(to_prompt_completion(read_jsonl(a.train), tok, a.enable_thinking))
+    ds = Dataset.from_list(to_prompt_completion(read_jsonl(a.train), tok, a.enable_thinking, **json.loads(a.chat_kw)))
     if a.val:
-        val = Dataset.from_list(to_prompt_completion(read_jsonl(a.val), tok, a.enable_thinking))
+        val = Dataset.from_list(to_prompt_completion(read_jsonl(a.val), tok, a.enable_thinking, **json.loads(a.chat_kw)))
     elif a.val_frac > 0:
         sp = ds.train_test_split(test_size=a.val_frac, seed=0)
         ds, val = sp["train"], sp["test"]
