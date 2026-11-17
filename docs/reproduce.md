@@ -61,3 +61,38 @@ Stage-2 runs load the stage-1 adapter weights with a fresh optimizer (`SFT_INIT_
 
 - Score API/CLI preds with `python -m re_synth score --samples <samples> --preds <preds> --out <metrics.json>`. Use `re_synth.mine.score_preds` + `re_synth.score.aggregate` for row-format sets (hard_inss: `outputs/eval/llama-3.3-70b.hard_inss.metrics.json`).
 - Report: `bash scripts/build_report.sh` (comparison, error analysis, strong-gap) → `outputs/report/pilot_compare.html`.
+
+## 5. New machine: 4×A100-80GB server (`configs/machines/a100x4.env`)
+Host volume `/mnt/dekel` is mounted in the container as `/data` (repos in `/data/repos`, envs in `/data/envs`, HF cache in `/data/hf_cache`).
+`docker/docker-compose.yml` is started by the pipeline with `gpus: all`, `network_mode: host` and `ipc: host`; `ipc: host` replaces the old `--shm-size=16g`, which was for torch DataLoader/NCCL shared memory.
+The pipeline is single-GPU: `GPU_IDS=0` in the config. Env versions are pinned to the A100 runs: vLLM 0.33.0, Unsloth 2026.11.4, transformers 5.17.0, trl 1.15.0, peft 0.21.3, bitsandbytes 0.50.2.
+
+```bash
+# on the server host
+mkdir -p /mnt/dekel/repos /mnt/dekel/envs /mnt/dekel/hf_cache && cd /mnt/dekel/repos
+git clone https://github.com/dekelcohen/relations_extraction_llm_finetune.git
+git clone https://github.com/dekelcohen/llm_providers.git        # only for API data/predict steps (re_synth)
+cd relations_extraction_llm_finetune
+printf 'HF_TOKEN=...\nOPENROUTER_API_KEY=...\n' > .env          # never commit
+pip install -q huggingface_hub python-dotenv; set -a; . ./.env; set +a; python3 scripts/hf_sync.py pull        # adapters + large artifacts from HF (hf_artifacts.json)
+R=scripts/pipeline/remote.sh; M="--machine a100x4"
+bash $R $M start --run qwen3.8-27b --stages "setup_vllm setup_unsloth"   # build the image, create the pinned envs (once)
+bash $R $M watchdog --deadline-h 8                                        # GPU-idle alerts + hard stop
+bash $R $M wait                                                           # blocks until the next DONE/FAIL/ALERT
+bash $R $M status
+```
+
+Reproduce each run with `bash $R $M start --run <R> --stages "<S>"` (§3 and §4 give the hyper-parameters):
+
+| what | `--run` | `--stages` |
+|---|---|---|
+| 4B base eval + stage-1 SFT + ft eval | `qwen3-4b` | `download_eval download_sft ; base_eval sft_smoke sft ft_eval` |
+| 4B stage-2 SFT (self-distill) + eval on 4 sets | `qwen3-4b-stage2` | `sft_smoke sft ft_eval` (needs `outputs/sft-cot-qwen3-4b`) |
+| 27B base INT4 eval + stage-1 SFT + ft eval | `qwen3.8-27b` | `download_eval download_sft ; base_eval sft_smoke sft ft_eval` |
+| 27B stage-2 data (self-distill traces) | `qwen3.8-27b-stage2` | `selfdistill_gen`, then `python scripts/build_selfdistill.py` |
+| 27B stage-2 SFT + eval | `qwen3.8-27b-stage2` | `sft_smoke sft ft_eval` |
+| 4B GRPO | none (in the container) | `bash scripts/grpo_retry.sh --max_steps 20 --prompts_per_step 2`, then `bash scripts/eval_grpo.sh` |
+
+- **Fresh training:** `hf_sync pull` restores the finished adapters, and `sft` skips any adapter that already exists. Use a new `--sft-out` (or delete the adapter dir) to retrain.
+- **Results:** `outputs/eval/*.metrics.json`, logs under `outputs/pipeline/a100x4/`. Afterwards: `bash $R $M watchdog-stop`, `docker stop relx-dev-1`, and check `nvidia-smi` is clear.
+- **80 GB:** the 27B runs fit easily, and `MAX_NUM_SEQS=64` (vs 40/48 on the 40 GB A100) only changes throughput, not results.
