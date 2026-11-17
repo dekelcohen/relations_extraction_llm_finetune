@@ -4,7 +4,9 @@ Living summary of where this project stands and what's next. For full detail see
 [research survey](research/entity_relation_extraction.md) and the
 [plan](plans/synth_dataset_and_finetune.md) (execution log in plan §10).
 
-## Where we are
+- Reproduction (exact training/eval files + commands): [reproduce.md](reproduce.md)
+
+Where we are
 Research + plan are done. The synthetic pipeline, scorer, mining, SFT/GRPO training
 scripts and eval harness are implemented and smoke-tested. A **300-sample pilot**
 (he/fa/en, 8 schemas, text/HTML/email) has been generated and scored against
