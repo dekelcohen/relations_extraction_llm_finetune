@@ -34,3 +34,29 @@ multi_entity_bleeding, long_range_or_coref; languages fa 58% / he 40%. Applied:
 Max total sequence **8692 tokens** (p95 5707, mean 2741); CoT mean 424 / max 1861. INSS: max 5296 tokens. See `length_stats.md`.
 CoT tokens per record fall from 162 (1–3 records) to 42 (11+ records). **76 rows are flagged** (≥4 records and <60 CoT tokens/record), mostly
 the 20–30-record H19 table docs (e.g. `he-2-00194`: 20 records, 33 CoT tokens). List in `length_stats.md`; consider dropping/regenerating them (and their ~11 `#dup`s) if the model learns terse reasoning on long docs.
+
+## Self-distilled variant `train_selfdistill.jsonl` (used for the stage-2 run; replaces the short Sonnet-CoT rows)
+Why: stage-1 ft thinks ~1.5k chars/chunk vs 4.3–4.9k for base-INT4 at `reasoning_effort=medium` and loses to base-medium on grpo_dev/test_long;
+`train.jsonl` repeats the same short Sonnet CoT (mean 651 chars). So: **rejection-sampled self-distillation** (`scripts/selfdistill_prep.py` →
+`selfdistill_src.jsonl`, 680 unique docs of `train.jsonl`, eval-format, prompt == the train row's prompt; `scripts/build_selfdistill.py`).
+1. Base `RedHatAI/Qwen3.8-27B-INT4`, reasoning_effort=medium, T=0.6, same engine/eval chunking (902 chunk prompts, 0 max_tokens hits), 1 sample/doc.
+2. Keep docs with merged slot-F1 == 1.0, valid JSON, every chunk closing its think: 581/680. Failed 99 docs re-sampled once (seed 1): +38 → 619/680.
+3. Still failing: Sonnet row only if its CoT ≥ 1500 chars and the doc is not chunked (4 rows), else dropped (57 docs; mostly INSS and fa). Rows with a
+   trace > 12000 chars are dropped (not truncated): see counts below.
+4. One row per CHUNK prompt (eval chunking, ≤4000 chars unchunked), completion = `trace\n</think>\n\nJSON` (the chat template already prefills
+   `<think>\n`, so no leading `<think>`); trained with the same `reasoning_effort=medium` template instruction. 2× oversampling follows `#dup` ids of `train.jsonl`.
+   994 rows (stage-1 `train.jsonl` rows had a doubled `<think>`; not repeated here).
+
+Kept rate / think length (chars) per source and lang (`selfdistill_stats.md`):
+
+| source/lang | docs | self-distill kept | Sonnet fallback | dropped | kept rate | think chars p50/p90/mean |
+|---|---|---|---|---|---|---|
+| inss/fa | 27 | 16 | 1 | 10 | 59% | 2980/4450/3004 |
+| inss/he | 34 | 20 | 1 | 13 | 59% | 2536/4994/2818 |
+| replay_synth_hefa/fa | 76 | 72 | 0 | 4 | 95% | 1499/2528/1790 |
+| replay_synth_hefa/he | 62 | 59 | 0 | 3 | 95% | 1786/3093/1963 |
+| stage2_synth/fa | 239 | 215 | 1 | 23 | 90% | 3086/6892/3710 |
+| stage2_synth/he | 242 | 231 | 1 | 10 | 95% | 3087/7165/3716 |
+
+All rows: think mean 3417 / p50 2755 / p90 6713 chars (replay docs are simple, so shorter) vs base-medium 4279 (grpo_dev) / 4882 (test_long) per chunk
+and ft-stage-1-medium 1458 (grpo_dev); the long/hard stage-2 + INSS rows (≈3.7k) are close to base-medium, no row is shorter than the base trace it comes from.
