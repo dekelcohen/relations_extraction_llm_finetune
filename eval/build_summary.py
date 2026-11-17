@@ -99,6 +99,33 @@ def metrics_slot_f1(path: Path) -> float | None:
     return None
 
 
+def training_runs_table() -> str:
+    """Render docs/reproduce.md's "## 3. Training runs" markdown table as HTML, so the report stays in sync with
+    the single source of truth (no hand-duplicated hyperparams)."""
+    text = (ROOT / "docs/reproduce.md").read_text(encoding="utf-8")
+    m = re.search(r"## 3\. Training runs\n+(\|.*\n)+", text)
+    if not m:
+        return ""
+    lines = [l for l in m.group(0).splitlines()[1:] if l.strip().startswith("|")]
+    header = [c.strip() for c in lines[0].strip("|").split("|")]
+    rows = []
+    for l in lines[2:]:  # skip the --- separator row
+        cells = [c.strip() for c in l.strip("|").split("|")]
+        rows.append(cells)
+    thead = "".join(f"<th>{html.escape(h)}</th>" for h in header)
+
+    def cell(c: str) -> str:
+        c = html.escape(c)
+        return re.sub(r"`([^`]+)`", r"<code>\1</code>", c)
+
+    tbody = "".join("<tr>" + "".join(f"<td>{cell(c)}</td>" for c in r) + "</tr>" for r in rows)
+    return (
+        "<h2 id='train-runs'>Training runs</h2>"
+        "<p class=muted>Source of truth: <code>docs/reproduce.md</code> &sect;3 (regenerate this section by re-running "
+        "<code>eval/build_summary.py</code> after editing that file).</p>"
+        f"<table class=small><tr>{thead}</tr>{tbody}</table>")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", default=str(ROOT / "outputs/report/pilot_compare.html"))
@@ -145,22 +172,25 @@ def main():
         "Bold/shaded = best in that column. &ndash; = not run on that set.</p>"
         "<table><tr><th>model</th>" + "".join(f"<th>{html.escape(s)}</th>" for s in SETS) + "</tr>" + rows + "</table>")
 
-    nav_targets = [("summary", "Summary"), ("", "Pilot overview"), ("err-" + "qwen3.8-27b-ft-int4", "Pilot errors (27B-ft-s1)"),
+    nav_targets = [("summary", "Summary"), ("train-runs", "Training runs"), ("", "Pilot overview"),
+                   ("err-" + "qwen3.8-27b-ft-int4", "Pilot errors (27B-ft-s1)"),
                    ("grpo_dev", "grpo_dev"), ("err27_grpo_dev", "grpo_dev errors"), ("test_long", "test_long"),
                    ("err27_test_long", "test_long errors"), ("hard_inss", "hard_inss"), ("err27_hard_inss", "hard_inss errors"),
                    ("gap27", "Strong-gap (27B wrong, Sonnet+Llama right)")]
     nav = ("<nav style='margin:8px 0'><label>Jump to: <select onchange=\"if(this.value) location.hash=this.value\">"
            + "".join(f"<option value='{html.escape(t)}'>{html.escape(n)}</option>" for t, n in nav_targets)
            + "</select></label></nav>")
+    train_runs = training_runs_table()
 
     h = a.report if isinstance(a.report, str) else str(a.report)
     doc = Path(h).read_text(encoding="utf-8")
     doc = re.sub(r"<!--sec:top-summary-->.*?<!--/sec:top-summary-->", "", doc, flags=re.S)
-    block = f"<!--sec:top-summary-->{nav}{summary}<!--/sec:top-summary-->"
+    block = f"<!--sec:top-summary-->{nav}{summary}{train_runs}<!--/sec:top-summary-->"
     m = re.search(r"</h1>", doc)
     doc = doc[:m.end()] + block + doc[m.end():] if m else block + doc
     if "td.best{" not in doc:
-        doc = doc.replace("</style>", "td.best{background:#dcfce7;font-weight:600}nav select{font-size:13px;padding:2px}</style>")
+        doc = doc.replace("</style>", "td.best{background:#dcfce7;font-weight:600}nav select{font-size:13px;padding:2px}"
+                                       "table.small{font-size:12px}table.small td,table.small th{max-width:260px}</style>")
     Path(h).write_text(doc, encoding="utf-8")
     print(f"summary -> {h}")
     for label, row in table.items():
