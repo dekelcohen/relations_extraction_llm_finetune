@@ -174,8 +174,10 @@ def main():
 
     nav_targets = [("summary", "Summary"), ("train-runs", "Training runs"), ("", "Pilot overview"),
                    ("err-" + "qwen3.8-27b-ft-int4", "Pilot errors (27B-ft-s1)"),
-                   ("grpo_dev", "grpo_dev"), ("err27_grpo_dev", "grpo_dev errors"), ("test_long", "test_long"),
-                   ("err27_test_long", "test_long errors"), ("hard_inss", "hard_inss"), ("err27_hard_inss", "hard_inss errors"),
+                   ("grpo_dev", "grpo_dev"), ("err27_grpo_dev", "grpo_dev errors (27B-ft-s1)"), ("test_long", "test_long"),
+                   ("err27_test_long", "test_long errors (27B-ft-s1)"), ("err4b_test_long", "test_long errors (4B-ft-s2)"),
+                   ("hard_inss", "hard_inss"), ("err27_hard_inss", "hard_inss errors (27B-ft-s1)"),
+                   ("err4b_hard_inss", "hard_inss errors (4B-ft-s2)"),
                    ("gap27", "Strong-gap (27B wrong, Sonnet+Llama right)")]
     nav = ("<nav style='margin:8px 0'><label>Jump to: <select onchange=\"if(this.value) location.hash=this.value\">"
            + "".join(f"<option value='{html.escape(t)}'>{html.escape(n)}</option>" for t, n in nav_targets)
