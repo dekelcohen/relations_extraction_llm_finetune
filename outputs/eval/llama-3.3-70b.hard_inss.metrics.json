@@ -1,0 +1,18 @@
+{
+ "model": "meta-llama/llama-3.3-70b-instruct",
+ "set": "hard_inss",
+ "report": {
+  "all": {
+   "n": 39,
+   "slot_p": 0.9364,
+   "slot_r": 0.8426,
+   "slot_f1": 0.887,
+   "rec_f1": 0.9524,
+   "null_acc": 0.8547,
+   "decoy_hit_rate": 0.0,
+   "halluc_rate": 0.0,
+   "json_valid": 1.0,
+   "exact_sample": 0.3333
+  }
+ }
+}

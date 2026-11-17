@@ -230,3 +230,5 @@ hardening, to be combined with findings from the manual review above:
    review above be done against actual private-doc patterns instead of guesswork.
 2. Output detail: verbatim strings only, or normalized dates/IDs too? Evidence
    spans required?
+
+- 2026-11-17: Llama-3.3-70B (OpenRouter, $0.06) on hard_inss dev: slot-F1 0.887 (P 0.936 / R 0.843), json 1.0, exact 0.33 -> below 27B base-medium 0.911 / ft-s1 0.921 / ft-s2 0.906. Preds `data/hard_inss/preds_weak.jsonl`. Note: dev.jsonl has a duplicate id (hard-inss-438720-05-fa, 38 unique).
