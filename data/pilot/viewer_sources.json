@@ -7,6 +7,7 @@
   "qwen3-4b-nothink": "outputs/eval/qwen3-4b-nothink.preds.jsonl",
   "qwen3-4b-ft-nothink": "outputs/eval/qwen3-4b-ft-nothink.preds.jsonl",
   "qwen3-4b-grpo": "outputs/eval/qwen3-4b-grpo-think.preds.jsonl",
+  "qwen3-4b-ft-stage2": "outputs/eval/qwen3-4b-ft-stage2-awq-think.preds.jsonl",
   "qwen3.8-27b-fp8": "outputs/eval/qwen3.8-27b-fp8-think.preds.jsonl",
   "qwen3.8-27b-int4": "outputs/eval/qwen3.8-27b-int4-think.preds.jsonl",
   "qwen3.8-27b-int4-medium": "outputs/eval/qwen3.8-27b-int4-medium-think.preds.jsonl",

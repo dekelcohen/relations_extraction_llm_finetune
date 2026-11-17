@@ -42,6 +42,9 @@ def main():
     errors, labels = {}, []
     for spec in a.model:
         l, p = spec.split("=", 1)
+        if not os.path.exists(p):   # not every model was run on every set (e.g. Sonnet skipped on hard_inss)
+            print(f"skip {l}: {p} not found")
+            continue
         preds = {x["id"]: x["raw"] for x in load(p)}
         errors[l] = analyze([s for s in samples if s["id"] in preds], preds)
         labels.append(l)
