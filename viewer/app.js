@@ -521,7 +521,7 @@ function selectSample(id) {
   renderReasoningPanel(sample);
   renderPromptsView(sample);
   setView(state.view);
-  if (window.history && window.history.replaceState) window.history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+  if (window.history && window.history.replaceState) window.history.replaceState(null, "", `${window.location.search}#${encodeURIComponent(id)}`);
 }
 
 function refreshCurrent() {
