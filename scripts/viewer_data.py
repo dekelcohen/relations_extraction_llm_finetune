@@ -131,9 +131,22 @@ def _resolve(p: str) -> Path:
 
 
 def read_samples(in_dir: Path) -> list[dict]:
-    """samples.jsonl, or the per-language samples_<x>.jsonl files of a dataset dir (stage 2)."""
+    """samples.jsonl, or the per-language samples_<x>.jsonl files of a dataset dir (stage 2), or a hard_inss-style
+    dev.jsonl (eval-row schema: gt/decoys are JSON-encoded strings, lang/format/hard_cases live under "meta")."""
     f = in_dir / "samples.jsonl"
-    return read_jsonl(f) if f.exists() else [r for p in sorted(in_dir.glob("samples_*.jsonl")) for r in read_jsonl(p)]
+    if f.exists():
+        return read_jsonl(f)
+    multi = sorted(in_dir.glob("samples_*.jsonl"))
+    if multi:
+        return [r for p in multi for r in read_jsonl(p)]
+    dev = in_dir / "dev.jsonl"
+    return [_normalize_eval_row(r) for r in read_jsonl(dev)] if dev.exists() else []
+
+
+def _normalize_eval_row(r: dict) -> dict:
+    gt = json.loads(r["gt"]) if isinstance(r.get("gt"), str) else r.get("gt", {})
+    decoys = json.loads(r["decoys"]) if isinstance(r.get("decoys"), str) else r.get("decoys", [])
+    return {**r, **r.get("meta", {}), "gt": gt, "decoys": decoys}
 
 
 def build_dataset_payload(in_dir: Path, limit: int = 0) -> dict:
@@ -182,7 +195,7 @@ def discover_datasets(root: Path, max_depth: int = 3) -> list[dict]:
     if not root.exists():
         return found
     base_depth = len(root.parts)
-    dirs = sorted({p.parent for pat in ("samples.jsonl", "samples_*.jsonl") for p in root.rglob(pat)})
+    dirs = sorted({p.parent for pat in ("samples.jsonl", "samples_*.jsonl", "dev.jsonl") for p in root.rglob(pat)})
     for d in dirs:
         if len(d.parts) - base_depth > max_depth:
             continue

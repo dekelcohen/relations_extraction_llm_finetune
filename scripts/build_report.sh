@@ -49,16 +49,16 @@ python eval/append_section.py --report outputs/report/pilot_compare.html --id ha
   --model llama-3.3-70b=data/hard_inss/preds_weak.jsonl $(n27 hard_inss) \
   --note "never used for training; lenient scorer; 4B-ft-s1/Sonnet not run on this set"
 # 27B-ft-stage-1 (= qwen3.8-27b-ft-int4) error analysis for grpo_dev and test_long (pilot's is inside the main Error analysis)
-ea() { # id title rows ft_label grpo_label strong_weak_dir
+ea() { # id title rows ft_label grpo_label strong_weak_dir viewer_dataset
   python eval/append_errors.py --report outputs/report/pilot_compare.html --id err27_$1 --title "Error analysis: 27B-ft-stage-1 (qwen3.8-27b-ft-int4) on $2" --rows $3 \
     --model qwen3.8-27b-fp8=$E/qwen3.8-27b-fp8.$1.preds.jsonl --model qwen3.8-27b-int4=$E/qwen3.8-27b-int4.$1.preds.jsonl \
     --model qwen3.8-27b-ft-int4=$E/qwen3.8-27b-ft-int4.$1.preds.jsonl --model qwen3-4b-ft=$E/${4}.$1.preds.jsonl \
     --model qwen3-4b-grpo=$E/${5}.$1.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.$1.preds.jsonl \
     --model llama-3.3-70b=${6}/preds_weak.jsonl --model sonnet-5.5=${6}/preds_strong.jsonl \
-    --em qwen3.8-27b-ft-int4 --ref qwen3.8-27b-int4 --ref qwen3.8-27b-fp8 --viewer_url $VURL
+    --em qwen3.8-27b-ft-int4 --ref qwen3.8-27b-int4 --ref qwen3.8-27b-fp8 --viewer_url $VURL --viewer_dataset $7
 }
-ea grpo_dev "grpo_dev" $D/grpo_dev.jsonl sft grpo-final $D
-ea test_long "test_long" $T/test_long.jsonl sft grpo $T
+ea grpo_dev "grpo_dev" $D/grpo_dev.jsonl sft grpo-final $D stage_2_RL_GRPO
+ea test_long "test_long" $T/test_long.jsonl sft grpo $T test_long
 # 4B-ft-stage-2 (self-distill) own error analysis, focused on it (em=qwen3-4b-ft-stage2) -- was previously only a
 # reference column inside the 27B-focused err27_* sections above.
 python eval/append_errors.py --report outputs/report/pilot_compare.html --id err4b_test_long \
@@ -67,7 +67,7 @@ python eval/append_errors.py --report outputs/report/pilot_compare.html --id err
   --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.test_long.preds.jsonl \
   --model qwen3.8-27b-ft-stage2-int4-medium=$E/qwen3.8-27b-ft-stage2-int4-medium.test_long.preds.jsonl \
   --model llama-3.3-70b=$T/preds_weak.jsonl --model sonnet-5.5=$T/preds_strong.jsonl \
-  --em qwen3-4b-ft-stage2 --ref qwen3-4b-grpo --ref qwen3-4b-ft --viewer_url $VURL
+  --em qwen3-4b-ft-stage2 --ref qwen3-4b-grpo --ref qwen3-4b-ft --viewer_url $VURL --viewer_dataset test_long
 # hard_inss only has the medium-effort 27B runs + 4B-grpo/ft-stage2 + Llama (no fp8, no non-medium 27B, no Sonnet, no 4B-ft-s1)
 python eval/append_errors.py --report outputs/report/pilot_compare.html --id err27_hard_inss \
   --title "Error analysis: 27B-ft-stage-1 (qwen3.8-27b-ft-int4-medium) on hard_inss" --rows data/hard_inss/dev.jsonl \
@@ -76,12 +76,12 @@ python eval/append_errors.py --report outputs/report/pilot_compare.html --id err
   --model qwen3.8-27b-ft-stage2-int4-medium=$E/qwen3.8-27b-ft-stage2-int4-medium.hard_inss.preds.jsonl \
   --model qwen3-4b-grpo=$E/grpo.hard_inss.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.hard_inss.preds.jsonl \
   --model llama-3.3-70b=data/hard_inss/preds_weak.jsonl \
-  --em qwen3.8-27b-ft-int4-medium --ref qwen3.8-27b-int4-medium --viewer_url $VURL
+  --em qwen3.8-27b-ft-int4-medium --ref qwen3.8-27b-int4-medium --viewer_url $VURL --viewer_dataset hard_inss
 python eval/append_errors.py --report outputs/report/pilot_compare.html --id err4b_hard_inss \
   --title "Error analysis: 4B-ft-stage-2 (self-distill) on hard_inss" --rows data/hard_inss/dev.jsonl \
   --model qwen3-4b-grpo=$E/grpo.hard_inss.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.hard_inss.preds.jsonl \
   --model qwen3.8-27b-ft-stage2-int4-medium=$E/qwen3.8-27b-ft-stage2-int4-medium.hard_inss.preds.jsonl \
   --model llama-3.3-70b=data/hard_inss/preds_weak.jsonl \
-  --em qwen3-4b-ft-stage2 --ref qwen3-4b-grpo --viewer_url $VURL
+  --em qwen3-4b-ft-stage2 --ref qwen3-4b-grpo --viewer_url $VURL --viewer_dataset hard_inss
 python eval/strong_gap.py --report outputs/report/pilot_compare.html --viewer_url $VURL   # 27B errors where Sonnet AND Llama are right
 python eval/build_summary.py --report outputs/report/pilot_compare.html   # top summary table (all sets x models) + nav dropdown

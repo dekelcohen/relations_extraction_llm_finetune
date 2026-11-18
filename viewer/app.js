@@ -73,7 +73,8 @@ async function initDatasetSelector() {
     if (!datasets.length) throw new Error("no datasets found on disk");
     select.innerHTML = "";
     for (const d of datasets) select.appendChild(el("option", { value: d.name, text: d.label }, []));
-    const dflt = datasets.find((d) => d.default) || datasets[0];
+    const wanted = new URLSearchParams(window.location.search).get("dataset");  // report links: ?dataset=<name>#<id>
+    const dflt = (wanted && datasets.find((d) => d.name === wanted)) || datasets.find((d) => d.default) || datasets[0];
     select.value = dflt.name;
     select.addEventListener("change", () => loadDataset(select.value));
     await loadDataset(dflt.name);

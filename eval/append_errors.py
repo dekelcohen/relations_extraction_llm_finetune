@@ -30,6 +30,7 @@ def main():
     ap.add_argument("--em", required=True)
     ap.add_argument("--ref", action="append", default=[])
     ap.add_argument("--viewer_url", default="http://127.0.0.1:8111/")
+    ap.add_argument("--viewer_dataset", default="", help="viewer dataset name for ?dataset= (e.g. test_long, hard_inss)")
     ap.add_argument("--audit", default="outputs/audit/label_noise_audit.jsonl")
     ap.add_argument("--audit_set", default="")
     a = ap.parse_args()
@@ -49,7 +50,8 @@ def main():
         errors[l] = analyze([s for s in samples if s["id"] in preds], preds)
         labels.append(l)
     audit = load_audit(a.audit, a.audit_set) if a.audit_set else None
-    link = lambda sid: f'<a href="{a.viewer_url}#{sid}" target="_blank">{sid}</a>'  # noqa: E731
+    qs = f"?dataset={a.viewer_dataset}" if a.viewer_dataset else ""
+    link = lambda sid: f'<a href="{a.viewer_url}{qs}#{sid}" target="_blank">{sid}</a>'  # noqa: E731
     body = render_model_errors(labels, errors, a.em, a.ref, link, HC_DESC, audit, a.title)
     sec = f"<!--sec:{a.id}--><h2 id='{a.id}'>{a.title}</h2>{body}<!--/sec:{a.id}-->"
     h = open(a.report, encoding="utf-8").read()
