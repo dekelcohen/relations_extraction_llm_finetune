@@ -37,7 +37,12 @@ def parse_pred(raw: str) -> list[dict] | None:
 
 
 def reasoning_of(raw) -> str | None:
-    m = re.search(r"<think>(.*?)(?:</think>|$)", raw, flags=re.S) if isinstance(raw, str) else None
+    if not isinstance(raw, str):
+        return None
+    # chunked-inference preds (test_long/hard_inss/grpo_dev) only carry the closing </think> -- the opening
+    # <think> is part of the prompt template, not the generation -- so treat "everything before </think>" as
+    # reasoning in that case too.
+    m = re.search(r"<think>(.*?)(?:</think>|$)", raw, flags=re.S) if "<think>" in raw else re.match(r"(.*?)</think>", raw, flags=re.S)
     return m.group(1).strip() or None if m else None
 
 

@@ -1,5 +1,17 @@
 {
  "preds": {
-  "sonnet-cot": ["data/stage_2_RL_GRPO/cot_he/teacher_raw.jsonl", "data/stage_2_RL_GRPO/cot_fa/teacher_raw.jsonl"]
+  "sonnet-cot": ["data/stage_2_RL_GRPO/cot_he/teacher_raw.jsonl", "data/stage_2_RL_GRPO/cot_fa/teacher_raw.jsonl"],
+  "sonnet-5.5": "data/stage_2_RL_GRPO/preds_strong.jsonl",
+  "llama-3.3-70b": "data/stage_2_RL_GRPO/preds_weak.jsonl",
+  "qwen3-4b-ft": "outputs/eval/sft.grpo_dev.preds.jsonl",
+  "qwen3-4b-grpo": "outputs/eval/grpo-final.grpo_dev.preds.jsonl",
+  "qwen3-4b-ft-stage2": "outputs/eval/qwen3-4b-ft-stage2-awq.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-fp8": "outputs/eval/qwen3.8-27b-fp8.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-int4": "outputs/eval/qwen3.8-27b-int4.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-int4-medium": "outputs/eval/qwen3.8-27b-int4-medium.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-ft-int4": "outputs/eval/qwen3.8-27b-ft-int4.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-ft-int4-medium": "outputs/eval/qwen3.8-27b-ft-int4-medium.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-ft-stage2-int4": "outputs/eval/qwen3.8-27b-ft-stage2-int4.grpo_dev.preds.jsonl",
+  "qwen3.8-27b-ft-stage2-int4-medium": "outputs/eval/qwen3.8-27b-ft-stage2-int4-medium.grpo_dev.preds.jsonl"
  }
 }

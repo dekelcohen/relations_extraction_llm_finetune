@@ -1,6 +1,16 @@
 {
  "preds": {
   "sonnet-5.5": "data/test_long/preds_strong.jsonl",
-  "llama-3.3-70b": "data/test_long/preds_weak.jsonl"
+  "llama-3.3-70b": "data/test_long/preds_weak.jsonl",
+  "qwen3-4b-ft": "outputs/eval/sft.test_long.preds.jsonl",
+  "qwen3-4b-grpo": "outputs/eval/grpo.test_long.preds.jsonl",
+  "qwen3-4b-ft-stage2": "outputs/eval/qwen3-4b-ft-stage2-awq.test_long.preds.jsonl",
+  "qwen3.8-27b-fp8": "outputs/eval/qwen3.8-27b-fp8.test_long.preds.jsonl",
+  "qwen3.8-27b-int4": "outputs/eval/qwen3.8-27b-int4.test_long.preds.jsonl",
+  "qwen3.8-27b-int4-medium": "outputs/eval/qwen3.8-27b-int4-medium.test_long.preds.jsonl",
+  "qwen3.8-27b-ft-int4": "outputs/eval/qwen3.8-27b-ft-int4.test_long.preds.jsonl",
+  "qwen3.8-27b-ft-int4-medium": "outputs/eval/qwen3.8-27b-ft-int4-medium.test_long.preds.jsonl",
+  "qwen3.8-27b-ft-stage2-int4": "outputs/eval/qwen3.8-27b-ft-stage2-int4.test_long.preds.jsonl",
+  "qwen3.8-27b-ft-stage2-int4-medium": "outputs/eval/qwen3.8-27b-ft-stage2-int4-medium.test_long.preds.jsonl"
  }
 }
