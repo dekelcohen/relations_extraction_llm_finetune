@@ -96,3 +96,39 @@ Reproduce each run with `bash $R $M start --run <R> --stages "<S>"` (§3 and §4
 - **Fresh training:** `hf_sync pull` restores the finished adapters, and `sft` skips any adapter that already exists. Use a new `--sft-out` (or delete the adapter dir) to retrain.
 - **Results:** `outputs/eval/*.metrics.json`, logs under `outputs/pipeline/a100x4/`. Afterwards: `bash $R $M watchdog-stop`, `docker stop relx-dev-1`, and check `nvidia-smi` is clear.
 - **80 GB:** the 27B runs fit easily, and `MAX_NUM_SEQS=64` (vs 40/48 on the 40 GB A100) only changes throughput, not results.
+
+## 6. Qwen3.5-4B (new base, in progress — started 2026-11-18)
+
+Status when this was written: configs added, `eval/predict.py` `hf` backend + bitsandbytes 4-bit wired in, **no training/eval run yet** (not started due to session budget; resume on the 4xA100 server).
+
+- **Why not a drop-in with `qwen3-4b.env`:** `Qwen/Qwen3.5-4B` / `unsloth/Qwen3.5-4B` use a new architecture
+  (`model_type: qwen3_5`, hybrid linear/full-attention layers, `config.json` top-level class
+  `Qwen3_5ForConditionalGeneration` — a vision-language wrapper since the repo also supports image input).
+  There is **no `unsloth/Qwen3.5-4B-unsloth-bnb-4bit`** and **no `-AWQ`** checkpoint on HF yet (checked
+  2026-11-18), unlike Qwen3-4B / Qwen3.8-27B.
+- **Confirmed working (local3070, 2026-11-18):** `unsloth` 2026.11.4 / `transformers` 5.17.0 already support
+  this architecture — `unsloth.FastLanguageModel.from_pretrained("unsloth/Qwen3.5-4B", load_in_4bit=True)`
+  loads and patches it ("Fast Qwen3_5 patching"), and `AutoModelForCausalLM` resolves it to the **text-only**
+  `Qwen3_5ForCausalLM` class (not the VLM `...ForConditionalGeneration`), so `train/sft_unsloth.py` works
+  unmodified. The chat template is the same `<think>...</think>` style as Qwen3.
+- **Eval has no AWQ/vLLM-quant checkpoint:** added a `hf` backend to `eval/predict.py` (`--backend hf`):
+  `AutoModelForCausalLM.from_pretrained(..., quantization_config=BitsAndBytesConfig(load_in_4bit=True))` +
+  `.generate()` loop (one prompt at a time, no vLLM batching/KV-cache tricks — slower, but needed until vLLM
+  ships qwen3_5 support with a quantized checkpoint). Wired through `scripts/pipeline/eval_model.sh` via a new
+  `BACKEND` run-config var (passed as `--backend`, no-op/defaults to vLLM when unset — no behavior change for
+  existing runs).
+- **New run configs** (mirror `qwen3-4b.env` / `qwen3-4b-stage2.env` exactly, same hyper-params):
+  `configs/runs/qwen3.5-4b.env` (`EVAL_BASES=bnb4`, `BASE_BNB4_MODEL=unsloth/Qwen3.5-4B`,
+  `BASE_BNB4_QUANT=bitsandbytes`, `BACKEND=hf`) and `configs/runs/qwen3.5-4b-stage2.env`.
+- **To reproduce / resume on the 4xA100 server** (§5 setup, then):
+  ```bash
+  R=scripts/pipeline/remote.sh; M="--machine a100x4"
+  bash $R $M start --run qwen3.5-4b --stages "download_eval download_sft ; base_eval sft_smoke sft ft_eval"
+  bash $R $M start --run qwen3.5-4b-stage2 --stages "sft_smoke sft ft_eval"   # needs outputs/sft-cot-qwen3.5-4b
+  ```
+  Expect `hf`-backend eval to be noticeably slower than vLLM (no continuous batching) — consider lowering
+  `EVAL_SETS`/adding `--limit` for a smoke pass first (`smoke` stage), and re-check HF for a `-bnb-4bit`/`-AWQ`
+  release before running the full eval sets (would let you drop the `hf` backend and go back to vLLM).
+- **Not yet done:** actually running stage-1/stage-2 SFT and eval, pushing the adapter to HF (`hf_sync.py push`),
+  and wiring `qwen3.5-4b-ft[-stage2]` into `scripts/build_report.sh` / `eval/build_summary.py` (same pattern used
+  for `qwen3-4b-ft-stage2` — see §3/§4 above and git history for that addition).

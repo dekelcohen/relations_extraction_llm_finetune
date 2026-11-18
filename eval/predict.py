@@ -130,7 +130,11 @@ def gen_vllm(a, prompts, cache_path=None):
 def gen_hf(a, prompts, tok):
     import torch
     from transformers import AutoModelForCausalLM
-    model = AutoModelForCausalLM.from_pretrained(a.model, dtype=torch.float32)
+    kw = {"dtype": torch.bfloat16}
+    if a.quantization == "bitsandbytes":
+        from transformers import BitsAndBytesConfig
+        kw = {"quantization_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)}
+    model = AutoModelForCausalLM.from_pretrained(a.model, device_map="auto", **kw)
     if a.lora:
         from peft import PeftModel
         model = PeftModel.from_pretrained(model, a.lora)

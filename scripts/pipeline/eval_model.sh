@@ -27,6 +27,7 @@ F="--temperature $TEMPERATURE --top_p $TOP_P --top_k $TOP_K --max_tokens $MAX_TO
 [ "$ENFORCE_EAGER" = 1 ] && F="$F --enforce_eager"
 [ -n "$KV_CACHE_DTYPE" ] && F="$F --kv_cache_dtype $KV_CACHE_DTYPE"
 [ -n "$QUANT" ] && F="$F --quantization $QUANT"
+[ -n "$BACKEND" ] && F="$F --backend $BACKEND"   # hf: AutoModelForCausalLM + .generate() (no vLLM/AWQ support, e.g. Qwen3.5 until vLLM adds it)
 [ -n "$LORA" ] && F="$F --lora $LORA --max_lora_rank $MAX_LORA_RANK"
 [ -n "$LIMIT" ] && F="$F --limit $LIMIT"
 [ -n "$SEED" ] && F="$F --seed $SEED"

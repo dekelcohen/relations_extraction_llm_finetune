@@ -120,7 +120,15 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
       - Keep auto max_len, which will rise to about 4–6k tokens.
       - Render the training data under the `reasoning_effort=medium` instruction.
       - Re-evaluate against `qwen3.8-27b-int4-medium`, which is now the baseline to beat.
-- [ ] **A1 fallback, not needed:** `Qwen/Qwen3.5-9B` exists (Qwen3_5ForConditionalGeneration, same family). There is no `unsloth/...-bnb-4bit` repo.
+- [ ] **A4 (started 2026-11-18, not finished):** Qwen3.5-4B run requested after all. `Qwen/Qwen3.5-4B` / `unsloth/Qwen3.5-4B`
+      exist (`Qwen3_5ForConditionalGeneration`, hybrid linear/full-attention, VLM wrapper); confirmed `unsloth`
+      2026.11.4 loads+patches it in 4-bit on local3070 and `AutoModelForCausalLM` resolves the text-only
+      `Qwen3_5ForCausalLM`, so `train/sft_unsloth.py` works unchanged. No `-unsloth-bnb-4bit`/`-AWQ` checkpoint
+      exists yet, so eval uses a new `hf` backend in `eval/predict.py` (bitsandbytes 4-bit + `.generate()`, no
+      vLLM). Configs added (`configs/runs/qwen3.5-4b[-stage2].env`); **training/eval not yet run** — resume on the
+      4xA100 server, see [reproduce.md §6](reproduce.md#6-qwen35-4b-new-base-in-progress--started-2026-11-18).
+      Once results exist, add `qwen3.5-4b-ft[-stage2]` to `scripts/build_report.sh` / `eval/build_summary.py`
+      summary table + per-dataset error analysis (same pattern as `qwen3-4b-ft-stage2`).
 - [x] Probe done (M2). 84 `frontier_hard` samples is enough, so no harder constructs for now.
       Candidates for a later round: footnote overrides, in-cell changes (`<del>old</del> new`),
       rowspan-merged cells, cross-table ID joins.
