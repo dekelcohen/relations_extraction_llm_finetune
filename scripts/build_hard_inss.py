@@ -3,7 +3,7 @@
 Stages (all resumable, outputs under data/raw/inss/ (git-ignored) and data/hard_inss/):
   chunk      articles.jsonl -> chunks.jsonl (re_synth.chunking, CHUNK_CHARS=2500; keeps source URL + offset)
   translate  ~35% of chunks -> Persian (chunks_fa.jsonl, mapping to the Hebrew chunk id)
-  gen        chunk -> hard sample candidate (LLM rewrite+inject, gold JSON, decoys), --model copilot-<id>
+  gen        chunk -> hard sample candidate (LLM rewrite+inject, gold JSON, decoys)
   verify     programmatic checks + cross-model blind extraction (slot-F1 vs gold via re_synth.score)
   export     verified samples -> data/hard_inss/{train,dev}.jsonl (same row format as grpo_dev / export_eval)
 """
@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from re_synth import chunking, prompting  # noqa: E402
 from re_synth.export import export_eval  # noqa: E402
 from re_synth.inject import script_ratio  # noqa: E402
-from re_synth.llm import chat, parse_json_obj  # noqa: E402
+from re_synth.llm import DEFAULT_MODEL, DEFAULT_REASONING_EFFORT, chat, parse_json_obj  # noqa: E402
 from re_synth.schemas import SCHEMAS  # noqa: E402
 from re_synth.score import norm, parse_prediction_lenient, sample_f1, score_sample, slot_types_for  # noqa: E402
 
@@ -86,7 +86,7 @@ def stage_chunk(a):
     print(len(rows), "chunks")
 
 
-def _llm(prompt, model, salt, effort="low"):
+def _llm(prompt, model, salt, effort=DEFAULT_REASONING_EFFORT):
     return chat([{"role": "user", "content": prompt}], model, temperature=0.7, salt=salt, reasoning_effort=effort)
 
 
@@ -102,7 +102,8 @@ def stage_translate(a):
              "people, organizations, places, all dates and numbers exactly (transliterate names; keep Hebrew-calendar "
              "dates as they are written in Persian words, do not convert calendars). Output only the translation.\n\n"
              + c["text"])
-        return {**c, "id": c["id"] + "-fa", "src_id": c["id"], "text": _llm(p, a.model, "tr").strip()}
+        return {**c, "id": c["id"] + "-fa", "src_id": c["id"],
+                "text": _llm(p, a.model, "tr", a.reasoning_effort).strip()}
     todo = [c for c in pick if c["id"] + "-fa" not in done]
     with ThreadPoolExecutor(4) as ex:
         out = list(ex.map(tr, todo))
@@ -157,7 +158,7 @@ def stage_gen(a):
     def run(j):
         sid_, c, sid, tags = j
         raw = chat([{"role": "user", "content": gen_prompt(c, c["lang"], sid, tags)}], a.model, temperature=0.8,
-                   salt=a.tag, reasoning_effort="low")
+                   salt=a.tag, reasoning_effort=a.reasoning_effort)
         o = parse_json_obj(raw) or {}
         return {"id": sid_, "src_id": c.get("src_id", c["id"].removesuffix("-fa")), "url": c["url"], "lang": c["lang"],
                 "schema_id": sid, "tags": tags, "gen_model": a.model, "text": o.get("text"),
@@ -231,7 +232,8 @@ def stage_verify(a):
         s["qc"] = {"prog_issues": iss}
         if not iss:
             sd = SCHEMAS[s["schema_id"]].to_prompt_dict()
-            raw = chat(prompting.messages(sd, s["text"]), a.judge, temperature=0.0, salt="blind", reasoning_effort="low")
+            raw = chat(prompting.messages(sd, s["text"]), a.judge, temperature=0.0, salt="blind",
+                       reasoning_effort=a.reasoning_effort)
             recs, valid, _ = parse_prediction_lenient(raw)
             m = score_sample(recs, valid, s["gt"], s["decoys"], s["text"], slot_types_for(s["schema_id"]))
             s["qc"]["blind_f1"] = round(sample_f1(m), 3)
@@ -280,12 +282,14 @@ def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
     sp.add_parser("chunk")
-    t = sp.add_parser("translate"); t.add_argument("--n", type=int, default=40); t.add_argument("--model", default="copilot-claude-sonnet-5.5")
-    g = sp.add_parser("gen"); g.add_argument("--model", required=True); g.add_argument("--tag", required=True)
+    t = sp.add_parser("translate"); t.add_argument("--n", type=int, default=40); t.add_argument("--model", default=DEFAULT_MODEL)
+    g = sp.add_parser("gen"); g.add_argument("--model", default=DEFAULT_MODEL); g.add_argument("--tag", required=True)
     g.add_argument("--n", type=int, default=10); g.add_argument("--offset", type=int, default=0)
     g.add_argument("--seed", type=int, default=0); g.add_argument("--lang", choices=["he", "fa"]); g.add_argument("--workers", type=int, default=3)
-    v = sp.add_parser("verify"); v.add_argument("--tag", required=True); v.add_argument("--judge", required=True)
+    v = sp.add_parser("verify"); v.add_argument("--tag", required=True); v.add_argument("--judge", default="copilot-gpt-6.1-terra")
     v.add_argument("--min-f1", type=float, default=0.7, dest="min_f1"); v.add_argument("--workers", type=int, default=3)
+    for parser in (t, g, v):
+        parser.add_argument("--reasoning-effort", default=DEFAULT_REASONING_EFFORT)
     e = sp.add_parser("export"); e.add_argument("--tags", nargs="+", required=True); e.add_argument("--dev-pct", type=int, default=20, dest="dev_pct")
     a = ap.parse_args()
     {"chunk": stage_chunk, "translate": stage_translate, "gen": stage_gen, "verify": stage_verify, "export": stage_export}[a.cmd](a)

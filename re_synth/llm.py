@@ -17,8 +17,11 @@ log = logging.getLogger(__name__)
 _env_loaded = False
 _lock = threading.Lock()
 
+DEFAULT_MODEL = "aws-eu.anthropic.claude-sonnet-5-5"
+DEFAULT_REASONING_EFFORT = "medium"
+
 MODELS = {
-    "gen": "google/gemini-3.7-flash",
+    "gen": DEFAULT_MODEL,
     "weak": "meta-llama/llama-3.3-70b-instruct",
     "strong": "anthropic/claude-sonnet-5.5",
     "strong2": "openai/gpt-5.6-terra",
@@ -47,9 +50,9 @@ def _get_cache():
     return _cache
 
 
-def chat(messages: list[dict], model: str, temperature: float = 0.0, max_tokens: int = 4000,
+def chat(messages: list[dict], model: str = DEFAULT_MODEL, temperature: float = 0.0, max_tokens: int = 4000,
          json_mode: bool = False, salt: str | int | None = None, use_cache: bool = True,
-         reasoning_effort: str | None = None) -> str:
+         reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> str:
     """`salt` differentiates cache keys for repeated sampling (e.g. different seeds)."""
     _ensure_env()
     model = MODELS.get(model, model)

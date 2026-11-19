@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Data pipeline (runs anywhere with internet; no GPU). Needs OPENROUTER_API_KEY (env or RE_ENV_FILE=<.env>)
-# and llm_providers on PYTHONPATH (e.g. export PYTHONPATH=/path/to/llm_providers).
+# Data pipeline (runs anywhere with internet; no GPU). Needs AWS credentials for the generator,
+# OPENROUTER_API_KEY for weak/strong comparisons, and llm_providers on PYTHONPATH.
 # Usage: N=500 bash scripts/gen_data.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."

@@ -9,7 +9,7 @@ import re
 
 from . import layout
 from .hardcases import BLOCK_CASES, directives
-from .llm import chat
+from .llm import DEFAULT_REASONING_EFFORT, chat
 from .schemas import SCHEMAS
 from .score import norm
 
@@ -166,7 +166,8 @@ def verify_and_ground(plan: dict, title: str, body: str) -> tuple[dict | None, l
     return {"records": recs}, issues, kept
 
 
-def generate_sample(plan: dict, seed: dict, rng: random.Random, model: str = "gen", sid: str = "") -> dict:
+def generate_sample(plan: dict, seed: dict, rng: random.Random, model: str = "gen", sid: str = "",
+                    reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> dict:
     """Plan -> LLM -> verify -> layout. Returns a sample dict with qc.status in {ok, fail}."""
     schema = SCHEMAS[plan["schema_id"]]
     lang, fmt = plan["lang"], plan["format"]
@@ -174,7 +175,7 @@ def generate_sample(plan: dict, seed: dict, rng: random.Random, model: str = "ge
     genre = rng.choice(GENRES[fmt])
     prompt = build_prompt(plan, seed, genre, block)
     raw = chat([{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}], model,
-               temperature=0.8, max_tokens=12000, salt=sid, reasoning_effort="low")
+               temperature=0.8, max_tokens=12000, salt=sid, reasoning_effort=reasoning_effort)
     title, body = parse_title_body(raw)
     sample = {"id": sid, "lang": lang, "format": fmt, "schema_id": schema.id, "hard_cases": plan["hard_cases"],
               "seed": {k: seed.get(k) for k in ("source", "dataset", "title", "url")}, "genre": genre,

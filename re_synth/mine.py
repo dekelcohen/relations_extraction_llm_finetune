@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from . import chunking, prompting
-from .llm import chat
+from .llm import DEFAULT_REASONING_EFFORT, chat
 from .schemas import schema_of
 from .score import aggregate, parse_prediction, sample_f1, score_sample, slot_types_for
 
@@ -20,7 +20,7 @@ def sample_messages(s: dict) -> list[dict]:
 
 
 def predict(samples: list[dict], model: str, out_path: Path, workers: int = 8, max_tokens: int = 2000,
-            chunk: dict | None = None) -> None:
+            chunk: dict | None = None, reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> None:
     """chunk: kwargs of chunking.split (max_chars/overlap/min_chars); long docs are predicted per overlapping chunk
     and the chunk outputs merged (raw = merged JSON, "chunks" = per-chunk raw outputs). None disables chunking."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -33,9 +33,11 @@ def predict(samples: list[dict], model: str, out_path: Path, workers: int = 8, m
     def one(s):
         parts = chunking.split(s["text"], **chunk) if chunk is not None else []
         if not parts:
-            return chat(sample_messages(s), model, temperature=0.0, max_tokens=max_tokens), None
+            return chat(sample_messages(s), model, temperature=0.0, max_tokens=max_tokens,
+                        reasoning_effort=reasoning_effort), None
         sd = schema_of(s).to_prompt_dict()
-        raws = [chat(prompting.messages(sd, c), model, temperature=0.0, max_tokens=max_tokens) for c in parts]
+        raws = [chat(prompting.messages(sd, c), model, temperature=0.0, max_tokens=max_tokens,
+                     reasoning_effort=reasoning_effort) for c in parts]
         return chunking.merge_raws(raws, slot_types_for(s["schema_id"], inline=s.get("schema")), s["text"]), raws
 
     with ThreadPoolExecutor(workers) as ex, out_path.open("a", encoding="utf-8") as f:
