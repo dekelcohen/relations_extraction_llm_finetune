@@ -1,6 +1,6 @@
-"""LLM access via D:/NLP/llm_providers (OpenRouter, or the Copilot CLI for `copilot-<model>`) with an on-disk cache.
+"""LLM access via llm_providers with provider-prefix routing and an on-disk cache.
 
-Env: RE_ENV_FILE=<path to .env containing OPENROUTER_API_KEY> (optional; plain env vars also work).
+Env: RE_ENV_FILE=<path to .env containing provider credentials> (optional; plain env vars also work).
      PYTHONPATH must include the llm_providers repo (or `pip install -e <llm_providers>`).
 """
 from __future__ import annotations
@@ -53,17 +53,14 @@ def chat(messages: list[dict], model: str, temperature: float = 0.0, max_tokens:
     """`salt` differentiates cache keys for repeated sampling (e.g. different seeds)."""
     _ensure_env()
     model = MODELS.get(model, model)
-    rf = {"type": "json_object"} if json_mode else None
 
-    if model.startswith("copilot-"):  # GitHub Copilot CLI (no temperature / json_mode / max_tokens flags)
-        def producer():
-            from llm_providers.copilot_cli import call_copilot
-            return call_copilot(messages, model[len("copilot-"):], reasoning_effort=reasoning_effort)
-    else:
-        def producer():
-            from llm_providers.openrouter import call_openrouter
-            return call_openrouter(messages, model, max_tokens=max_tokens, temperature=temperature,
-                                   response_format=rf, reasoning_effort=reasoning_effort)
+    def producer():
+        from llm_providers.dispatch import PROVIDER_PREFIXES, call_llm
+        routed_model = model if model.startswith(PROVIDER_PREFIXES) else "or-" + model
+        # Copilot has no JSON-mode flag; preserve its existing best-effort behavior.
+        rf = {"type": "json_object"} if json_mode and not model.startswith("copilot-") else None
+        return call_llm(messages, routed_model, max_tokens=max_tokens, temperature=temperature,
+                        reasoning_effort=reasoning_effort, response_format=rf)
 
     if not use_cache:
         return producer()
