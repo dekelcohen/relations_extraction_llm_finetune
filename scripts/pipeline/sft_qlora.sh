@@ -5,6 +5,13 @@
 source "$(dirname "$0")/lib.sh"; init "$@"
 SFT_OUT=${SFT_OUT}; B=$(basename $SFT_OUT)
 [ -z "$MAX_STEPS" ] && [ -f $SFT_OUT/adapter_model.safetensors ] && { log sft INFO "skip (adapter exists: $SFT_OUT)"; exit 0; }
+attempt_log=
+if [ "$MACHINE" = a100 ] && [ -z "$MAX_STEPS" ]; then
+    python3 "$LIBDIR/evacuation_guard.py" "$A100_DIR" check-state --run "$RUN" || exit $?
+    mkdir -p "$A100_DIR/evacuation-attempts" || exit $?
+    attempt_log=evacuation-attempts/$(date +%s%6N)-$BASHPID.log
+    printf 'EVACUATION_ATTEMPT %s\n' "$RUN" > "$A100_DIR/$attempt_log" || exit $?
+fi
 if [ "$SFT_MAX_LEN" = auto ]; then   # cover the data: max rendered token length rounded up to 512
   SFT_MAX_LEN=$(py $ENV_UNSLOTH scripts/pipeline/token_len.py $SFT_BASE $SFT_TRAIN "${SFT_CHAT_KW:-{\}}" | tee $A100_DIR/token_len.txt | awk '/^max_len/{print $2}')
   log sft-tokens INFO "$(grep -v max_len $A100_DIR/token_len.txt | tr '\n' ' ') -> max_len=$SFT_MAX_LEN"
@@ -18,7 +25,7 @@ N=${MAX_STEPS:-64}
 rm -f $A100_DIR/.vram
 ( while true; do nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1 >> $A100_DIR/.vram; sleep 15; done ) & VP=$!
 ( sleep 60; while true; do python3 scripts/pipeline/sft_eta.py $SFT_OUT/progress/metrics.jsonl $N | while read l; do log sft-train INFO "$l"; done; sleep 300; done ) & EP=$!
-stage sft-${MAX_STEPS:+smoke-}$B py $ENV_UNSLOTH train/sft_unsloth.py $F; rc=$?
+EVACUATION_STAGE_LOG=$attempt_log stage sft-${MAX_STEPS:+smoke-}$B py $ENV_UNSLOTH train/sft_unsloth.py $F; rc=$?
 kill $VP $EP 2>/dev/null
 log sft-$B INFO "peak_vram_MiB=$(sort -n $A100_DIR/.vram 2>/dev/null | tail -1) progress=$SFT_OUT/progress/metrics.jsonl"
 exit $rc

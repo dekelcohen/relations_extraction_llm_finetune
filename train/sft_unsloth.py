@@ -85,8 +85,25 @@ def main():
     if a.longest_first:  # keep the sorted order for the smoke run
         from torch.utils.data import SequentialSampler
         SFTTrainer._get_train_sampler = lambda self, *x, **k: SequentialSampler(self.train_dataset)
+    callbacks = [ProgressCallback(log_dir, title=f"{os.path.basename(a.out)} ({a.model})")]
+    if os.environ.get("EVACUATION_TRAIN_MARKERS") == "1" and a.max_steps < 0:
+        import time
+        from transformers import TrainerCallback
+
+        class EvacuationMarkers(TrainerCallback):
+            started = False
+
+            def on_step_begin(self, args, state, control, **kwargs):
+                if not self.started:
+                    self.started = True
+                    print(f"\nEVACUATION_TRAIN_BEGIN {time.time_ns() // 1000}", flush=True)
+
+            def on_train_end(self, args, state, control, **kwargs):
+                print("\nEVACUATION_TRAIN_END", flush=True)
+
+        callbacks.append(EvacuationMarkers())
     trainer = SFTTrainer(model=model, processing_class=tok, train_dataset=ds, eval_dataset=val, args=cfg,
-                         callbacks=[ProgressCallback(log_dir, title=f"{os.path.basename(a.out)} ({a.model})")])
+                         callbacks=callbacks)
     if val:
         trainer.evaluate()  # step-0 baseline eval loss
     trainer.train()

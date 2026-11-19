@@ -7,7 +7,12 @@ PIPELINE_CONFIG_LOGGED=1 NO_REEXEC=1 init "${ARGS[@]}" >/dev/null   # config is 
 git pull -q --ff-only 2>/dev/null || true
 cd docker
 [ -f .env ] || printf "HOST_UID=$(id -u)\nHOST_GID=$(id -g)\nDATA_DIR=$HOST_DATA\nENVS_DIR=$HOST_ENVS\nNLP_DIR=$HOST_NLP\n" > .env   # paths only, no secrets
-$DOCKER ps --format '{{.Names}}' | grep -qx "$CONTAINER" || $DOCKER compose -p $COMPOSE_PROJECT up -d --build >/dev/null 2>&1
+if [ "$MACHINE" = a100 ]; then
+  python3 "$LIBDIR/evacuation_guard.py" "$A100_DIR" launch --run "$RUN" \
+    --docker "$DOCKER" --container "$CONTAINER" --project "$COMPOSE_PROJECT" || exit $?
+else
+  $DOCKER ps --format '{{.Names}}' | grep -qx "$CONTAINER" || $DOCKER compose -p $COMPOSE_PROJECT up -d --build >/dev/null 2>&1
+fi
 cd "$ROOT"
 # GPU idle watchdog: separate host process (single instance), survives pipeline crashes
 setsid nohup bash scripts/pipeline/gpu_watchdog.sh --machine "$MACHINE" ${WATCHDOG_IDLE_MIN:+--idle-min $WATCHDOG_IDLE_MIN} \

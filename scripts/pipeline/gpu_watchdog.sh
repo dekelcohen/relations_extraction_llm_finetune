@@ -22,14 +22,25 @@ echo $$ > "$PID"; trap 'rm -f "$PID"' EXIT
 note() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] STAGE watchdog $*" >> "$LOG"; }
 alert_file() { printf '%s\t%s\t%s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" "$2" >> "$ALOG"; }
 alert() { note ALERT "$1 $2"; alert_file "$1" "$2"; }
+evacuation_guard() { python3 scripts/pipeline/evacuation_guard.py "$D" "$1" --docker "$DK" --container "$CONTAINER"; }
+deadline_stop() {
+  if [ "$M" = a100 ]; then evacuation_guard stop; else $DK stop "$CONTAINER" >/dev/null 2>&1; fi
+}
 declare -A SEEN
 note INFO "started pid=$$ gpu=$GPU container=$CONTAINER idle_min=$IDLE_MIN util_max=$UTIL_MAX deadline=${END_TS:+$(date -d @$END_TS '+%F %T')}"
 nl=$(wc -l < "$LOG" 2>/dev/null || echo 0); idle_since=; alerted=0; prev_mem=0; noproc=0
 while [ ! -f "$D/watchdog.stop" ]; do
   now=$(date +%s)
+  [ "$M" != a100 ] || evacuation_guard observe
   if [ -n "$END_TS" ] && [ "$now" -ge "$END_TS" ]; then
     alert_file deadline "${DEADLINE_H}h reached: docker stop $CONTAINER"
-    note DEADLINE "${DEADLINE_H}h reached: docker stop $CONTAINER"; $DK stop "$CONTAINER" >/dev/null 2>&1; note INFO "stopped container $CONTAINER"; break
+    note DEADLINE "${DEADLINE_H}h reached: docker stop $CONTAINER"
+    if deadline_stop; then
+      note INFO "container $CONTAINER stopped or already down"
+    else
+      alert deadline_stop_failed "$CONTAINER"
+    fi
+    break
   fi
   # new FAIL lines since the last poll
   n=$(wc -l < "$LOG" 2>/dev/null || echo 0)

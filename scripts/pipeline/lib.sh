@@ -22,6 +22,10 @@ init() {
   CFG_KEYS="$CFG_KEYS ${OVR_KEYS[*]}"
   A100_DIR=$ROOT/outputs/pipeline/$MACHINE; PIPE_LOG=$A100_DIR/pipeline.log; mkdir -p "$A100_DIR"
   if [ "$RUNNER" = docker ] && [ -z "$IN_CONTAINER" ] && [ -z "$NO_REEXEC" ]; then
+    if [ "$MACHINE" = a100 ] && [[ $script == pipeline_stages.sh || ( $script == sft_qlora.sh && -z $MAX_STEPS ) ]]; then
+      python3 "$LIBDIR/evacuation_guard.py" "$A100_DIR" check --run "$RUN" \
+        --docker "$DOCKER" --container "$CONTAINER" || exit $?
+    fi
     local env=(-e IN_CONTAINER=1); [ "$DETACH" = 1 ] && env+=(-d)
     if [ "$DETACH" = 1 ]; then
       local q=(); for a in "${ORIG[@]}"; do [ "$a" = --detach ] || q+=("$a"); done; local qs; qs=$(printf '%q ' "${q[@]}")
@@ -55,7 +59,16 @@ log() {
 stage() {
   local name=$1; shift; local t0=$SECONDS lf=$A100_DIR/$name.log
   log "$name" START
-  if "$@" > >(tr '\r' '\n' | awk -v pf="$A100_DIR/progress.last" '/[0-9](it\/s|s\/it)|%\|/ {print > pf; close(pf); next} {print}' > "$lf") 2>&1; then
+  local rc=0
+  if [ -n "$EVACUATION_STAGE_LOG" ]; then
+    ln -sfn -- "$EVACUATION_STAGE_LOG" "$lf" || return 1
+    lf=$A100_DIR/$EVACUATION_STAGE_LOG
+    EVACUATION_TRAIN_MARKERS=1 "$@" >> "$lf" 2>&1 || rc=$?
+    printf '\nEVACUATION_STAGE_EXIT %s\n' "$rc" >> "$lf"
+  else
+    "$@" > >(tr '\r' '\n' | awk -v pf="$A100_DIR/progress.last" '/[0-9](it\/s|s\/it)|%\|/ {print > pf; close(pf); next} {print}' > "$lf") 2>&1 || rc=$?
+  fi
+  if [ "$rc" = 0 ]; then
     log "$name" DONE "elapsed=$((SECONDS-t0))s $(cat "$A100_DIR/$name.info" 2>/dev/null)"; rm -f "$A100_DIR/$name.info"
   else
     sleep 1; log "$name" FAIL "elapsed=$((SECONDS-t0))s root=$(root_cause "$lf") tail=$(tail -n 2 "$lf" | tr '\n' ' ' | cut -c1-200)"; return 1
