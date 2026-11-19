@@ -45,7 +45,7 @@ only by OpenRouter; Copilot remains best-effort and other providers reject it.
   `aws-eu.anthropic.claude-sonnet-5-5` with `--reasoning-effort medium`. Override with
   `--model` and `--reasoning-effort`; INSS verification uses `--judge`.
 - INSS blind judge defaults to `copilot-gpt-6.1-terra` to remain independent. `gen_data.sh`
-  explicitly compares OpenRouter Llama-3.3-70B (`weak`) and OpenRouter Sonnet 5.5 (`strong`).
+  compares OpenRouter Llama-3.3-70B (`weak`) and Bedrock Sonnet 5.5 (`strong`).
 - AWS Sonnet 5.5 needs Bedrock access and an AWS profile/credentials. Adaptive thinking omits
   temperature and counts thinking against `max_tokens`; re-check generation budgets and costs.
 - Resumable outputs skip existing IDs; use a new output path or tag to regenerate with new defaults.

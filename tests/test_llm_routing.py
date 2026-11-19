@@ -67,6 +67,9 @@ def test_default_model_and_effort_reach_bedrock(monkeypatch):
     assert provider.call_llm.call_args.kwargs["bedrock_model_id"] == "eu.anthropic.claude-sonnet-5-5"
     assert provider.call_llm.call_args.kwargs["reasoning_effort"] == "medium"
     assert llm.MODELS["gen"] == llm.DEFAULT_MODEL
+    assert llm.chat([], "strong", use_cache=False) == "answer"
+    assert provider.call_llm.call_args.kwargs["bedrock_model_id"] == "eu.anthropic.claude-sonnet-5-5"
+    assert provider.call_llm.call_args.kwargs["reasoning_effort"] == "medium"
     assert llm.MODELS["weak"] == "meta-llama/llama-3.3-70b-instruct"
 
 

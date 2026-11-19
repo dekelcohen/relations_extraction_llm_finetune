@@ -7,7 +7,8 @@ Living summary of where this project stands and what's next. For full detail see
 - Reproduction (exact training/eval files + commands): [reproduce.md](reproduce.md)
 - LLM defaults (2026-11-19): synthetic generation and LLM commands use Bedrock Sonnet 5.5
   with medium adaptive thinking; INSS blind judge remains Copilot GPT-6.1 Terra, and the
-  weak/strong mining comparison remains OpenRouter Llama-3.3-70B / Sonnet 5.5. Existing
+  weak/strong mining comparison uses OpenRouter Llama-3.3-70B / Bedrock Sonnet 5.5
+  (live Bedrock strong-alias smoke test passed). Existing
   resumable output IDs are not regenerated automatically.
 
 Where we are

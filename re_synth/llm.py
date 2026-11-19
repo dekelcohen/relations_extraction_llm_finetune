@@ -23,7 +23,7 @@ DEFAULT_REASONING_EFFORT = "medium"
 MODELS = {
     "gen": DEFAULT_MODEL,
     "weak": "meta-llama/llama-3.3-70b-instruct",
-    "strong": "anthropic/claude-sonnet-5.5",
+    "strong": DEFAULT_MODEL,
     "strong2": "openai/gpt-5.6-terra",
     "cheap": "deepseek/deepseek-v4.1-flash",
 }
