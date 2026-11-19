@@ -16,7 +16,7 @@ from . import layout
 from .hardcases import DECOY_ROLES, LONG_KINDS, _gen_decoy, _plan_section
 from .inject import LANG_NAME, MARK, SYSTEM, build_prompt, dump, parse_title_body, script_ratio, strip_markers, \
     verify_and_ground
-from .llm import chat
+from .llm import DEFAULT_REASONING_EFFORT, chat
 from .schemas import SCHEMAS, gen_main, gen_value
 from .score import norm
 from .source import load_seeds
@@ -243,7 +243,8 @@ def _heading(style: str, k: int, h: str) -> str:
     return {"num": f"{k}. {h}", "md": f"## {h}", "par": f"§{k} {h}"}[style]
 
 
-def generate_realistic(plan: dict, seed: dict, rng: random.Random, model: str = "gen", sid: str = "") -> dict:
+def generate_realistic(plan: dict, seed: dict, rng: random.Random, model: str = "gen", sid: str = "",
+                       reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> dict:
     schema = SCHEMAS[plan["schema_id"]]
     lang, fmt = plan["lang"], plan["format"]
     secs, cross = plan["realistic"]["sections"], plan["realistic"]["cross"]
@@ -256,7 +257,7 @@ def generate_realistic(plan: dict, seed: dict, rng: random.Random, model: str = 
 
     def llm(prompt, salt, system=SYSTEM):
         return chat([{"role": "system", "content": system}, {"role": "user", "content": prompt}], model,
-                    temperature=0.8, max_tokens=12000, salt=salt, reasoning_effort="low")
+                    temperature=0.8, max_tokens=12000, salt=salt, reasoning_effort=reasoning_effort)
 
     frame = None
     for t in range(MAX_TRIES):
@@ -356,7 +357,8 @@ def generate_realistic(plan: dict, seed: dict, rng: random.Random, model: str = 
 
 
 def build_realistic(seeds_path: Path, out_path: Path, langs: list[str], n_per_lang: int, model: str = "gen",
-                    seed: int = 3, workers: int = 6, schema_id: str | None = None) -> dict:
+                    seed: int = 3, workers: int = 6, schema_id: str | None = None,
+                    reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> dict:
     """Resumable parallel build of H20 documents; ids = <lang>-t<seed>-<i+1:05d>."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
@@ -375,7 +377,7 @@ def build_realistic(seeds_path: Path, out_path: Path, langs: list[str], n_per_la
     log.info("build_realistic: %d jobs (%d done) -> %s", len(jobs), len(done), out_path)
     stats = {"ok": 0, "fail": 0, "error": 0}
     with ThreadPoolExecutor(workers) as ex, out_path.open("a", encoding="utf-8") as f:
-        futs = {ex.submit(generate_realistic, plan, sd, rng, model, sid): sid for sid, plan, sd, rng in jobs}
+        futs = {ex.submit(generate_realistic, plan, sd, rng, model, sid, reasoning_effort): sid for sid, plan, sd, rng in jobs}
         for fu in as_completed(futs):
             try:
                 s = fu.result()

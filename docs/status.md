@@ -5,6 +5,11 @@ Living summary of where this project stands and what's next. For full detail see
 [plan](plans/synth_dataset_and_finetune.md) (execution log in plan §10).
 
 - Reproduction (exact training/eval files + commands): [reproduce.md](reproduce.md)
+- LLM defaults (2026-11-19): synthetic generation and LLM commands use Bedrock Sonnet 5.5
+  with medium adaptive thinking; INSS blind judge remains Copilot GPT-6.1 Terra, and the
+  weak/strong mining comparison uses OpenRouter Llama-3.3-70B / Bedrock Sonnet 5.5
+  (live Bedrock strong-alias smoke test passed). Existing
+  resumable output IDs are not regenerated automatically.
 
 Where we are
 Research + plan are done. The synthetic pipeline, scorer, mining, SFT/GRPO training

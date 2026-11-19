@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from . import prompting
-from .llm import chat
+from .llm import DEFAULT_REASONING_EFFORT, chat
 from .mine import TIER_F1
 from .schemas import schema_of
 from .score import parse_prediction, sample_f1, score_sample, slot_types_for
@@ -58,7 +58,7 @@ def max_overlap(text: str, ref_grams: list[set[str]]) -> float:
 
 
 def run(samples: list[dict], model: str, out_dir: Path, ref_texts: list[str] | None = None, workers: int = 8,
-        dedup_thr: float = 0.5) -> dict:
+        dedup_thr: float = 0.5, reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     raw_path = out_dir / "teacher_raw.jsonl"
     done = {}
@@ -67,7 +67,8 @@ def run(samples: list[dict], model: str, out_dir: Path, ref_texts: list[str] | N
     todo = [s for s in samples if s["id"] not in done]
     log.info("teacher-cot %s: %d todo (%d cached) -> %s", model, len(todo), len(done), out_dir)
     with ThreadPoolExecutor(workers) as ex, raw_path.open("a", encoding="utf-8") as f:
-        futs = {ex.submit(chat, cot_messages(s), model, 0.0, 6000): s["id"] for s in todo}
+        futs = {ex.submit(chat, cot_messages(s), model, 0.0, 6000, reasoning_effort=reasoning_effort): s["id"]
+                for s in todo}
         for fu in as_completed(futs):
             try:
                 raw = fu.result()

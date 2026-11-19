@@ -16,6 +16,8 @@ import json
 import logging
 from pathlib import Path
 
+from .llm import DEFAULT_MODEL, DEFAULT_REASONING_EFFORT
+
 
 def _report_md(rep: dict, title: str) -> str:
     cols = ["n", "slot_p", "slot_r", "slot_f1", "rec_f1", "null_acc", "decoy_hit_rate", "halluc_rate", "json_valid",
@@ -57,7 +59,8 @@ def main(argv=None):
     p.add_argument("--out", type=Path, default=Path("data/synth/samples.jsonl"))
     p.add_argument("--langs", default="he,fa,en")
     p.add_argument("--n", type=int, default=50, help="samples per language")
-    p.add_argument("--model", default="gen")
+    p.add_argument("--model", default=DEFAULT_MODEL)
+    p.add_argument("--reasoning-effort", default=DEFAULT_REASONING_EFFORT)
     p.add_argument("--schema", default=None)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--workers", type=int, default=8)
@@ -68,7 +71,8 @@ def main(argv=None):
 
     p = sub.add_parser("predict")
     p.add_argument("--samples", type=Path, required=True)
-    p.add_argument("--model", required=True)
+    p.add_argument("--model", default=DEFAULT_MODEL)
+    p.add_argument("--reasoning-effort", default=DEFAULT_REASONING_EFFORT)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--limit", type=int, default=None)
@@ -104,7 +108,8 @@ def main(argv=None):
 
     p = sub.add_parser("teacher-cot", help="teacher reasoning + verification -> thinking-mode SFT file")
     p.add_argument("--samples", type=Path, required=True)
-    p.add_argument("--model", required=True)
+    p.add_argument("--model", default=DEFAULT_MODEL)
+    p.add_argument("--reasoning-effort", default=DEFAULT_REASONING_EFFORT)
     p.add_argument("--out", type=Path, required=True, help="output dir")
     p.add_argument("--ref", type=Path, nargs="*", default=[], help="samples.jsonl to dedup against (e.g. pilot)")
     p.add_argument("--workers", type=int, default=8)
@@ -138,16 +143,18 @@ def main(argv=None):
             hardcases.FOCUS_LONG_P = a.long_p
         if a.realistic_long:
             from .realistic import build_realistic
-            build_realistic(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema)
+            build_realistic(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema,
+                            reasoning_effort=a.reasoning_effort)
         else:
-            build(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema, a.focus)
+            build(a.seeds, a.out, a.langs.split(","), a.n, a.model, a.seed, a.workers, a.schema, a.focus,
+                  reasoning_effort=a.reasoning_effort)
         log.info("LLM usage: %s", usage_totals())
     elif a.cmd == "predict":
         from .build import load_samples
         from .llm import usage_totals
         from .mine import predict
         s = load_samples(a.samples)[: a.limit]
-        predict(s, a.model, a.out, a.workers, chunk=_chunk_cfg(a))
+        predict(s, a.model, a.out, a.workers, chunk=_chunk_cfg(a), reasoning_effort=a.reasoning_effort)
         log.info("LLM usage: %s", usage_totals())
     elif a.cmd == "score":
         from .build import load_samples
@@ -189,7 +196,7 @@ def main(argv=None):
         from .llm import usage_totals
         from .teacher_cot import run
         ref = [x["text"] for p in a.ref for x in load_samples(p, only_ok=False)]
-        print(run(load_samples(a.samples), a.model, a.out, ref, a.workers))
+        print(run(load_samples(a.samples), a.model, a.out, ref, a.workers, reasoning_effort=a.reasoning_effort))
         log.info("LLM usage: %s", usage_totals())
     elif a.cmd == "convert-redocred":
         from .convert.redocred import convert

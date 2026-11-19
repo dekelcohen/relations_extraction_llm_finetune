@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_hard_inss as B  # noqa: E402
 from re_synth import prompting  # noqa: E402
-from re_synth.llm import chat, parse_json_obj  # noqa: E402
+from re_synth.llm import DEFAULT_MODEL, DEFAULT_REASONING_EFFORT, chat, parse_json_obj  # noqa: E402
 from re_synth.schemas import SCHEMAS  # noqa: E402
 from re_synth.score import parse_prediction_lenient, sample_f1, score_sample, slot_types_for  # noqa: E402
 
@@ -71,7 +71,8 @@ def translate(a):
              "in the translated text; keep null as null and key names unchanged. Keep the same decoys in the same order (translated).\n"
              "Output ONLY JSON: {\"text\": ..., \"records\": [...same keys...], \"decoys\": [...translated strings...]}\n\n"
              + json.dumps(payload, ensure_ascii=False))
-        o = parse_json_obj(chat([{"role": "user", "content": p}], a.model, temperature=0.3, salt="trs", reasoning_effort="low")) or {}
+        o = parse_json_obj(chat([{"role": "user", "content": p}], a.model, temperature=0.3, salt="trs",
+                                reasoning_effort=a.reasoning_effort)) or {}
         ds = o.get("decoys") or []
         new = {**r, "id": r["id"] + "-fa", "lang": "fa", "translated_from": r["id"], "text": o.get("text"),
                "gt": {"records": o.get("records")}, "round": 2,
@@ -94,7 +95,8 @@ def judge(rows, a):
         s["qc"]["prog_issues"] = iss
         if not iss:
             sd = SCHEMAS[s["schema_id"]].to_prompt_dict()
-            raw = chat(prompting.messages(sd, s["text"]), a.judge, temperature=0.0, salt="blind", reasoning_effort="low")
+            raw = chat(prompting.messages(sd, s["text"]), a.judge, temperature=0.0, salt="blind",
+                       reasoning_effort=a.reasoning_effort)
             recs, valid, _ = parse_prediction_lenient(raw)
             m = score_sample(recs, valid, s["gt"], s["decoys"], s["text"], slot_types_for(s["schema_id"]))
             s["qc"]["blind_f1"] = round(sample_f1(m), 3)
@@ -157,7 +159,7 @@ def genlong(a):
         sid, grp, schema, tags = j
         text = "\n\n".join(c["text"] for c in grp)
         o = parse_json_obj(chat([{"role": "user", "content": long_prompt(text, schema, tags)}], a.model, temperature=0.8,
-                                salt="long", reasoning_effort="low")) or {}
+                                salt="long", reasoning_effort=a.reasoning_effort)) or {}
         s = {"id": "hardL-" + sid.replace("inss-", "").replace("|", "+"), "src_id": grp[0]["id"], "url": grp[0]["url"], "lang": "he",
              "schema_id": schema, "tags": tags, "gen_model": a.model, "text": o.get("text"),
              "gt": {"records": o.get("records")}, "decoys": [d for d in (o.get("decoys") or []) if isinstance(d, dict) and d.get("value")],
@@ -210,8 +212,9 @@ def main():
     for name in ("translate", "genlong", "export"):
         p = sp.add_parser(name)
         p.add_argument("--n", type=int, default=30)
-        p.add_argument("--model", default="copilot-claude-sonnet-5.5")
+        p.add_argument("--model", default=DEFAULT_MODEL)
         p.add_argument("--judge", default="copilot-gpt-6.1-terra")
+        p.add_argument("--reasoning-effort", default=DEFAULT_REASONING_EFFORT)
         p.add_argument("--workers", type=int, default=4)
         p.add_argument("--min-f1", type=float, default=0.7, dest="min_f1")
         p.add_argument("--maxlen", type=int, default=3600)

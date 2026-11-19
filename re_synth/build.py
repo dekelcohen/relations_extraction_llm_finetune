@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .hardcases import plan_sample
 from .inject import dump, generate_sample
+from .llm import DEFAULT_REASONING_EFFORT
 from .source import load_seeds
 
 log = logging.getLogger(__name__)
@@ -17,7 +18,8 @@ FOCUS_FORMAT_W = {"text": 0.3, "html": 0.4, "email": 0.3}  # --focus: more table
 
 
 def build(seeds_path: Path, out_path: Path, langs: list[str], n_per_lang: int, model: str = "gen", seed: int = 0,
-          workers: int = 8, schema_id: str | None = None, focus: bool = False) -> dict:
+          workers: int = 8, schema_id: str | None = None, focus: bool = False,
+          reasoning_effort: str | None = DEFAULT_REASONING_EFFORT) -> dict:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if out_path.exists():
@@ -40,7 +42,7 @@ def build(seeds_path: Path, out_path: Path, langs: list[str], n_per_lang: int, m
     log.info("build: %d jobs (%d already done) -> %s", len(jobs), len(done), out_path)
     stats = {"ok": 0, "fail": 0, "error": 0}
     with ThreadPoolExecutor(workers) as ex, out_path.open("a", encoding="utf-8") as f:
-        futs = {ex.submit(generate_sample, plan, sd, rng, model, sid): sid for sid, plan, sd, rng in jobs}
+        futs = {ex.submit(generate_sample, plan, sd, rng, model, sid, reasoning_effort): sid for sid, plan, sd, rng in jobs}
         for fu in as_completed(futs):
             sid = futs[fu]
             try:

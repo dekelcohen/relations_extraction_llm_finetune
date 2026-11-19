@@ -40,9 +40,22 @@ Needs [`llm_providers`](../llm_providers) on `PYTHONPATH` and provider credentia
 Model names prefixed `aws-`, `gemini-`, `or-`, `azure-`, or `copilot-` select that provider;
 unprefixed names retain the OpenRouter default (`OPENROUTER_API_KEY`). `json_mode` is enforced
 only by OpenRouter; Copilot remains best-effort and other providers reject it.
+
+- `re_synth build`, `predict`, `teacher-cot`, and INSS generation/translation default to
+  `aws-eu.anthropic.claude-sonnet-5-5` with `--reasoning-effort medium`. Override with
+  `--model` and `--reasoning-effort`; INSS verification uses `--judge`.
+- INSS blind judge defaults to `copilot-gpt-6.1-terra` to remain independent. `gen_data.sh`
+  compares OpenRouter Llama-3.3-70B (`weak`) and Bedrock Sonnet 5.5 (`strong`).
+- AWS Sonnet 5.5 needs Bedrock access and an AWS profile/credentials. Adaptive thinking omits
+  temperature and counts thinking against `max_tokens`; re-check generation budgets and costs.
+- Resumable outputs skip existing IDs; use a new output path or tag to regenerate with new defaults.
+
 ```bash
 export PYTHONPATH=/path/to/llm_providers RE_ENV_FILE=/path/to/.env
 N=1000 bash scripts/gen_data.sh      # seeds -> build -> predict weak/strong -> score -> mine tiers -> export
+python -m re_synth build --model aws-eu.anthropic.claude-sonnet-5-5 --reasoning-effort medium
+python scripts/build_hard_inss.py gen --tag example --reasoning-effort medium
+python scripts/build_hard_inss2.py genlong --reasoning-effort medium
 # step by step: python -m re_synth {seeds,build,predict,score,mine,export,show} --help
 ```
 Outputs `data/synth/export/{sft,grpo}_{train,val,test}.jsonl` (chat messages; the chat template is applied at train time, Qwen3 with `enable_thinking=False`). LLM calls are cached in `cache/llm` (re-runs are free and resumable).
