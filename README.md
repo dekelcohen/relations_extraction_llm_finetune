@@ -36,7 +36,10 @@ Unsloth (optional, separate env): `conda create -n re-unsloth python=3.11 -y && 
 Version notes: `vllm==0.32.0` pins `torch==2.13.0` and `transformers<5.20`; `trl==1.17.1` accepts `vllm<0.33`. If you change one, re-check the other two.
 
 ## 2. Data (any machine with internet, no GPU)
-Needs `OPENROUTER_API_KEY` (env var, or `RE_ENV_FILE=/path/to/.env`) and [`llm_providers`](../llm_providers) on `PYTHONPATH`.
+Needs [`llm_providers`](../llm_providers) on `PYTHONPATH` and provider credentials (env vars or `RE_ENV_FILE=/path/to/.env`).
+Model names prefixed `aws-`, `gemini-`, `or-`, `azure-`, or `copilot-` select that provider;
+unprefixed names retain the OpenRouter default (`OPENROUTER_API_KEY`). `json_mode` is enforced
+only by OpenRouter; Copilot remains best-effort and other providers reject it.
 ```bash
 export PYTHONPATH=/path/to/llm_providers RE_ENV_FILE=/path/to/.env
 N=1000 bash scripts/gen_data.sh      # seeds -> build -> predict weak/strong -> score -> mine tiers -> export
