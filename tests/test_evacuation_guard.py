@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,8 @@ from unittest.mock import patch
 
 PIPELINE = Path(__file__).resolve().parents[1] / "scripts/pipeline"
 BASE = 1_800_000_000
+LEGACY_RUN = "qwen3.5-9b-stage2"
+LEGACY_OUT = "outputs/sft-cot-qwen3.5-9b-stage2"
 
 
 def docker_time(seconds):
@@ -52,6 +55,9 @@ def mock_host(tmp_path):
         '    print(" ".join(sys.argv[1:]), file=calls)\n'
         'if sys.argv[1] == "inspect":\n'
         '    print(path.read_text())\n'
+        'elif sys.argv[1] == "top":\n'
+        '    assert sys.argv[2:] == ["test-dev", "-eo", "pid,ppid,args"]\n'
+        '    print(path.with_name("docker.top").read_text())\n'
         'elif sys.argv[1] == "stop":\n'
         '    data = json.loads(path.read_text())\n'
         '    data[0]["State"]["Status"] = "exited"\n'
@@ -96,6 +102,34 @@ def runs(host):
     return json.loads(state.read_text())["runs"] if state.exists() else {}
 
 
+def legacy_fixture(host, n):
+    root, _, directory = host
+    event(host, n, log=False, Status="running")
+    timestamp = datetime.fromtimestamp(BASE + n * 1000 + 1).strftime("%Y-%m-%d %H:%M:%S")
+    stage = "sft-" + Path(LEGACY_OUT).name
+    (directory / "pipeline.log").write_text(
+        f"[{timestamp}] STAGE config INFO machine=a100 run={LEGACY_RUN} (resolved config: config.log)\n"
+        f"[{timestamp}] STAGE {stage} START\n"
+    )
+    detail = directory / f"{stage}.log"
+    detail.write_text("Starting training\n")
+    os.utime(detail, (BASE + 10_000, BASE + 10_000))
+    (root / "docker.top").write_text(f"PID PPID COMMAND\n42 30 /venv/bin/python train/sft_unsloth.py --out {LEGACY_OUT}\n")
+    progress = root / LEGACY_OUT / "progress"
+    progress.mkdir(parents=True, exist_ok=True)
+    (progress / "metrics.jsonl").write_text("")
+    return progress
+
+
+def progress_row(progress, step, elapsed, *, done=False, **metrics):
+    metrics_path = progress / "metrics.jsonl"
+    with metrics_path.open("a") as stream:
+        stream.write(json.dumps(dict(step=step, time=elapsed, **metrics)) + "\n")
+    os.utime(metrics_path, (BASE + 10_000, BASE + 10_000))
+    status = json.dumps(dict(step=step, max_steps=116, done=done))
+    (progress / "charts.html").write_text(f"const D=[], S={status};\n")
+
+
 class EvacuationGuardTest(unittest.TestCase):
     def setUp(self):
         project = PIPELINE.parents[1]
@@ -106,12 +140,118 @@ class EvacuationGuardTest(unittest.TestCase):
         env_patch.start()
         self.addCleanup(env_patch.stop)
 
+    def observe_at(self, seconds):
+        argv = command(self.host, "observe")[1:]
+        spec = importlib.util.spec_from_file_location("guard", argv[0])
+        guard = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(guard)
+        with patch.object(sys, "argv", list(map(str, argv))), patch.object(guard.time, "time_ns", return_value=seconds * 10**9):
+            self.assertEqual(guard.main(), 0)
+
+    def test_legacy_requires_two_live_samples_then_counts_once(self):
+        for n in range(2):
+            event(self.host, n, run=LEGACY_RUN)
+            invoke(self.host, "observe")
+        n = 2
+        start = BASE + n * 1000
+        progress = legacy_fixture(self.host, n)
+        docker_top = self.host[0] / "docker.top"
+        trainer = docker_top.read_text().splitlines()[1].split(maxsplit=2)[2]
+        docker_top.write_text(
+            "PID PPID COMMAND\n30 1 micromamba run -p /venv python train/sft_unsloth.py\n"
+            + "".join(f"{pid} 42 {trainer}\n" for pid in range(50, 59))
+            + f"59 50 {trainer}\n42 30 {trainer}\n"
+        )
+        progress_row(progress, 2, 20, loss=1.0)
+        self.observe_at(start + 40)
+        progress_row(progress, 4, 140, loss=0.9)
+        self.observe_at(start + 159)
+        state = self.host[2] / "evacuation_guard.json"
+        self.assertNotIn("qualified", json.loads(state.read_text())["legacy"])
+        docker_top.write_text(docker_top.read_text().replace("59 50 ", "60 50 "))
+        self.observe_at(start + 160)
+        self.assertEqual(json.loads(state.read_text())["legacy"]["identity"]["pid"], "42")
+        self.assertEqual(len(runs(self.host)[LEGACY_RUN]), 2)
+
+        # The loop ended and the adapter was written, but the stage was still saving.
+        progress_row(progress, 116, 150, done=True, train_runtime=150)
+        (progress.parent / "adapter_model.safetensors").touch()
+        with next(self.host[2].glob("sft-*.log")).open("a") as log:
+            log.write("peak_vram_alloc_GiB=29.0\nprogress: stage2/progress/charts.html\n")
+        detail = next(self.host[2].glob("sft-*.log"))
+        os.utime(detail, (BASE + 10_000, BASE + 10_000))
+        event(self.host, n, duration=140, log=False)
+        result = subprocess.run(command(self.host, "check") + ["--run", LEGACY_RUN], cwd=self.host[0],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 3, result.stderr)
+        invoke(self.host, "observe")
+        self.assertEqual(len(runs(self.host)[LEGACY_RUN]), 3)
+
+    def test_legacy_rejects_stale_progress_eval_and_wrong_process(self):
+        for n, mode in enumerate(("already stopped", "unchanged", "eval", "smoke", "replaced trainer", "two roots")):
+            with self.subTest(mode=mode):
+                start = BASE + n * 1000
+                progress = legacy_fixture(self.host, n)
+                progress_row(progress, 2, 20, loss=1.0)
+                if mode != "already stopped":
+                    self.observe_at(start + 40)
+                    if mode != "unchanged":
+                        metrics = {"eval_loss": 0.9} if mode == "eval" else {"loss": 0.9}
+                        progress_row(progress, 4, 140, **metrics)
+                    top = self.host[0] / "docker.top"
+                    if mode == "smoke":
+                        top.write_text(top.read_text().rstrip() + " --max_steps 3\n")
+                    elif mode == "replaced trainer":
+                        top.write_text(top.read_text().replace("42 ", "43 "))
+                    elif mode == "two roots":
+                        trainer = top.read_text().splitlines()[1].split(maxsplit=2)[2]
+                        with top.open("a") as stream:
+                            stream.write(f"43 31 {trainer}\n50 42 {trainer}\n51 43 {trainer}\n")
+                    self.observe_at(start + 160)
+                    if mode == "two roots":
+                        state = self.host[2] / "evacuation_guard.json"
+                        self.assertNotIn("legacy", json.loads(state.read_text()))
+                event(self.host, n, duration=140, log=False)
+                invoke(self.host, "observe")
+                self.assertEqual(runs(self.host), {})
+
+    def test_adopted_legacy_rechecks_completion_and_errors(self):
+        for n, evidence in enumerate(("stage done", "legacy deadline",
+                                      "technical error", "inspect OOM", "inspect error")):
+            with self.subTest(evidence=evidence):
+                start = BASE + n * 1000
+                progress = legacy_fixture(self.host, n)
+                progress_row(progress, 2, 20, loss=1.0)
+                self.observe_at(start + 40)
+                progress_row(progress, 4, 140, loss=0.9)
+                self.observe_at(start + 160)
+                state = self.host[2] / "evacuation_guard.json"
+                self.assertIn("qualified", json.loads(state.read_text())["legacy"])
+                if evidence in ("stage done", "legacy deadline"):
+                    progress_row(progress, 116, 150, done=True, train_runtime=150)
+                    pipeline = self.host[2] / "pipeline.log"
+                    line = pipeline.read_text().splitlines()[-1]
+                    with pipeline.open("a") as log:
+                        if evidence == "stage done":
+                            log.write(line.replace("START", "DONE") + "\n")
+                        else:
+                            log.write(line.split(" STAGE")[0] + " STAGE watchdog DEADLINE docker stop test-dev\n")
+                elif evidence == "technical error":
+                    with next(self.host[2].glob("sft-*.log")).open("a") as log:
+                        log.write("RuntimeError: device-side assert triggered\n")
+                    detail = next(self.host[2].glob("sft-*.log"))
+                    os.utime(detail, (BASE + 10_000, BASE + 10_000))
+                event(self.host, n, duration=140, log=False, OOMKilled=evidence == "inspect OOM",
+                      Error="runtime failure" if evidence == "inspect error" else "")
+                invoke(self.host, "observe")
+                self.assertEqual(runs(self.host), {})
+
     def test_third_stop_blocks_launcher_before_compose(self):
         root, scripts, _ = self.host
         for n in range(2):
             event(self.host, n)
             invoke(self.host, "observe")
-        event(self.host, 2, log_tail="WARNING: out of memory is a possible fallback condition\n")
+        event(self.host, 2, log_tail="WARNING: out of memory is a possible fallback condition\nEVACUATION_TRAIN_END\n")
         launch = ["bash", scripts / "run_pipeline.sh", "--foreground"]
         blocked = subprocess.run(launch, cwd=root, capture_output=True, text=True)
         self.assertEqual(blocked.returncode, 3, blocked.stderr)
@@ -135,8 +275,8 @@ class EvacuationGuardTest(unittest.TestCase):
             {"Error": "runtime failure"},
             {"log_tail": "Traceback (most recent call last):\ntorch.OutOfMemoryError: CUDA out of memory.\n"},
             {"log_tail": "RuntimeError: device-side assert triggered\n"},
-            {"log_tail": "EVACUATION_TRAIN_END\n"},
-            {"log_tail": "EVACUATION_STAGE_EXIT 0\n"},
+            {"log_tail": "EVACUATION_TRAIN_END\nEVACUATION_STAGE_EXIT 0\n"},
+            {"log_tail": "EVACUATION_TRAIN_END\nOSError: no space left on device\n"},
             {"log": False},  # non-training/smoke stages do not create attempt logs
         ]):
             with self.subTest(options=options):
