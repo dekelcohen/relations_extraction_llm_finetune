@@ -30,6 +30,14 @@ MODELS = {
                                       "grpo_dev": E / "qwen3-4b-ft-stage2-awq.grpo_dev.preds.jsonl",
                                       "test_long": E / "qwen3-4b-ft-stage2-awq.test_long.preds.jsonl",
                                       "hard_inss": E / "qwen3-4b-ft-stage2-awq.hard_inss.preds.jsonl"},
+    "qwen3.5-9b-ft (s1)": {"pilot": E / "qwen3.5-9b-ft-think.preds.jsonl",
+                           "grpo_dev": E / "qwen3.5-9b-ft.grpo_dev.preds.jsonl",
+                           "test_long": E / "qwen3.5-9b-ft.test_long.preds.jsonl",
+                           "hard_inss": E / "qwen3.5-9b-ft.hard_inss.preds.jsonl"},
+    "qwen3.5-9b-ft (s2 self-distill)": {"pilot": E / "qwen3.5-9b-ft-stage2-think.preds.jsonl",
+                                        "grpo_dev": E / "qwen3.5-9b-ft-stage2.grpo_dev.preds.jsonl",
+                                        "test_long": E / "qwen3.5-9b-ft-stage2.test_long.preds.jsonl",
+                                        "hard_inss": E / "qwen3.5-9b-ft-stage2.hard_inss.preds.jsonl"},
     "qwen3.8-27b base (medium)": {"pilot": E / "qwen3.8-27b-int4-medium-think.preds.jsonl",
                                   "grpo_dev": E / "qwen3.8-27b-int4-medium.grpo_dev.preds.jsonl",
                                   "test_long": E / "qwen3.8-27b-int4-medium.test_long.preds.jsonl",
@@ -174,10 +182,13 @@ def main():
 
     nav_targets = [("summary", "Summary"), ("train-runs", "Training runs"), ("", "Pilot overview"),
                    ("err-" + "qwen3.8-27b-ft-int4", "Pilot errors (27B-ft-s1)"),
-                   ("grpo_dev", "grpo_dev"), ("err27_grpo_dev", "grpo_dev errors (27B-ft-s1)"), ("test_long", "test_long"),
+                   ("err35_pilot", "Pilot errors (9B s2 vs s1)"),
+                   ("grpo_dev", "grpo_dev"), ("err27_grpo_dev", "grpo_dev errors (27B-ft-s1)"),
+                   ("err35_grpo_dev", "grpo_dev errors (9B s2 vs s1)"), ("test_long", "test_long"),
                    ("err27_test_long", "test_long errors (27B-ft-s1)"), ("err4b_test_long", "test_long errors (4B-ft-s2)"),
+                   ("err35_test_long", "test_long errors (9B s2 vs s1)"),
                    ("hard_inss", "hard_inss"), ("err27_hard_inss", "hard_inss errors (27B-ft-s1)"),
-                   ("err4b_hard_inss", "hard_inss errors (4B-ft-s2)"),
+                   ("err4b_hard_inss", "hard_inss errors (4B-ft-s2)"), ("err35_hard_inss", "hard_inss errors (9B s2 vs s1)"),
                    ("gap27", "Strong-gap (27B wrong, Sonnet+Llama right)")]
     nav = ("<nav style='margin:8px 0'><label>Jump to: <select onchange=\"if(this.value) location.hash=this.value\">"
            + "".join(f"<option value='{html.escape(t)}'>{html.escape(n)}</option>" for t, n in nav_targets)

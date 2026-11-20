@@ -22,7 +22,7 @@ case $CMD in
     [ -z "$SSH_HOST" ] && { echo "local machine: nothing to pull"; exit 0; }
     rsync_ --include='*/' --include='qwen3*' --include='smoke.*' --exclude='*' $SRC$RR/outputs/eval/ outputs/eval/
     rsync_ --exclude='.vram' --exclude='*.out' $SRC$P/ outputs/pipeline/$M/
-    for d in $(rs "ls -d $RR/outputs/sft-cot-qwen3.8* 2>/dev/null"); do   # adapter only, no optimizer state
+    for d in $(rs "ls -d $RR/outputs/sft-cot-qwen3.8* $RR/outputs/sft-cot-qwen3.5-9b* 2>/dev/null"); do   # adapter only, no optimizer state
       rsync_ --exclude='checkpoint-*' $SRC$d/ outputs/$(basename $d)/; done ;;
   *) sed -n 2,5p "$0" ;;
 esac

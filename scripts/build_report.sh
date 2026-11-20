@@ -24,29 +24,38 @@ NOTES=(--note "sonnet-5.5=anthropic/claude-sonnet-5.5 via OpenRouter, T=0" --not
   --note "qwen3.8-27b-ft-fp8=27B + QLoRA adapter (r32, 2 ep, same data/recipe as qwen3-4b-ft; trained on the bnb-4bit base) served on the FP8 base, $TH"
   --note "qwen3.8-27b-ft-bnb4=27B + the same QLoRA adapter served on its training base (bnb-4bit), $TH"
   --note "qwen3-4b-ft-stage2=qwen3-4b-ft + stage-2 SFT continued on data/sft_stage2/train_selfdistill.jsonl (same recipe/data as qwen3.8-27b-ft-stage2-int4, lr 5e-5, 2 ep), same thinking settings")
+NOTES+=(--note "qwen3.5-9b-ft=unsloth/Qwen3.5-9B + stage-1 QLoRA adapter (4-bit HF backend, thinking, max 5120 tokens)"
+  --note "qwen3.5-9b-ft-stage2=stage-1 adapter continued on data/sft_stage2/train_selfdistill.jsonl (4-bit HF backend, thinking, max 5120 tokens)")
 python eval/compare_report.py --samples $P/samples.jsonl --model sonnet-5.5=$P/preds_strong.jsonl --model llama-3.3-70b=$P/preds_weak.jsonl \
   --model qwen3-4b=$E/qwen3-4b-think.preds.jsonl --model qwen3-4b-ft=$E/qwen3-4b-ft-think.preds.jsonl \
   --model qwen3-4b-nothink=$E/qwen3-4b-nothink.preds.jsonl --model qwen3-4b-ft-nothink=$E/qwen3-4b-ft-nothink.preds.jsonl \
-  --model qwen3-4b-grpo=$E/qwen3-4b-grpo-think.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq-think.preds.jsonl $(n27 pilot) \
+  --model qwen3-4b-grpo=$E/qwen3-4b-grpo-think.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq-think.preds.jsonl \
+  --model qwen3.5-9b-ft=$E/qwen3.5-9b-ft-think.preds.jsonl --model qwen3.5-9b-ft-stage2=$E/qwen3.5-9b-ft-stage2-think.preds.jsonl $(n27 pilot) \
   --base qwen3-4b --ft qwen3-4b-ft --frontier sonnet-5.5 --oss70 llama-3.3-70b "${NOTES[@]}" --viewer_dir $P --viewer_url $VURL \
   --err27 qwen3.8-27b-ft-int4 --err27_ref qwen3.8-27b-int4 --err27_ref qwen3.8-27b-fp8 \
-  --section_models qwen3.8-27b-fp8,qwen3.8-27b-int4,qwen3.8-27b-int4-medium,qwen3.8-27b-ft-int4,qwen3.8-27b-ft-stage2-int4-medium,qwen3-4b-ft,qwen3-4b-grpo,qwen3-4b-ft-stage2,llama-3.3-70b,sonnet-5.5 --out outputs/report/pilot_compare.html
+  --section_models qwen3.8-27b-fp8,qwen3.8-27b-int4,qwen3.8-27b-int4-medium,qwen3.8-27b-ft-int4,qwen3.8-27b-ft-stage2-int4-medium,qwen3-4b-ft,qwen3-4b-grpo,qwen3-4b-ft-stage2,qwen3.5-9b-ft,qwen3.5-9b-ft-stage2,llama-3.3-70b,sonnet-5.5 --out outputs/report/pilot_compare.html
 python eval/append_section.py --report outputs/report/pilot_compare.html --id grpo_dev \
   --title "Stage-2 grpo_dev (60 held-out hard docs, doc-level, chunked inference)" --rows $D/grpo_dev.jsonl \
   --model qwen3-4b-ft=$E/sft.grpo_dev.preds.jsonl --model grpo-ckpt10=$E/grpo-mid.grpo_dev.preds.jsonl \
   --model qwen3-4b-grpo=$E/grpo-final.grpo_dev.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.grpo_dev.preds.jsonl \
   --model sonnet-5.5=$D/preds_strong.jsonl --model llama-3.3-70b=$D/preds_weak.jsonl \
+  --model qwen3.5-9b-ft=$E/qwen3.5-9b-ft.grpo_dev.preds.jsonl \
+  --model qwen3.5-9b-ft-stage2=$E/qwen3.5-9b-ft-stage2.grpo_dev.preds.jsonl \
   $(n27 grpo_dev) --note "lenient scorer; used for checkpoint selection (final adapter chosen by dev slot-F1)"
 python eval/append_section.py --report outputs/report/pilot_compare.html --id test_long \
   --title "Held-out test_long (80 realistic long hard docs, he+fa, chunked inference)" --rows $T/test_long.jsonl \
   --model qwen3-4b-ft=$E/sft.test_long.preds.jsonl --model qwen3-4b-grpo=$E/grpo.test_long.preds.jsonl \
   --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.test_long.preds.jsonl \
-  --model llama-3.3-70b=$T/preds_weak.jsonl --model sonnet-5.5=$T/preds_strong.jsonl $(n27 test_long) \
+  --model llama-3.3-70b=$T/preds_weak.jsonl --model sonnet-5.5=$T/preds_strong.jsonl \
+  --model qwen3.5-9b-ft=$E/qwen3.5-9b-ft.test_long.preds.jsonl \
+  --model qwen3.5-9b-ft-stage2=$E/qwen3.5-9b-ft-stage2.test_long.preds.jsonl $(n27 test_long) \
   --note "never used for training or checkpoint selection; lenient scorer"
 python eval/append_section.py --report outputs/report/pilot_compare.html --id hard_inss \
   --title "hard_inss dev (39 hard INSS-hosted docs, he+fa, up to 9.6k chars, chunked inference)" --rows data/hard_inss/dev.jsonl \
   --model qwen3-4b-grpo=$E/grpo.hard_inss.preds.jsonl --model qwen3-4b-ft-stage2=$E/qwen3-4b-ft-stage2-awq.hard_inss.preds.jsonl \
-  --model llama-3.3-70b=data/hard_inss/preds_weak.jsonl $(n27 hard_inss) \
+  --model llama-3.3-70b=data/hard_inss/preds_weak.jsonl \
+  --model qwen3.5-9b-ft=$E/qwen3.5-9b-ft.hard_inss.preds.jsonl \
+  --model qwen3.5-9b-ft-stage2=$E/qwen3.5-9b-ft-stage2.hard_inss.preds.jsonl $(n27 hard_inss) \
   --note "never used for training; lenient scorer; 4B-ft-s1/Sonnet not run on this set"
 # 27B-ft-stage-1 (= qwen3.8-27b-ft-int4) error analysis for grpo_dev and test_long (pilot's is inside the main Error analysis)
 ea() { # id title rows ft_label grpo_label strong_weak_dir viewer_dataset
@@ -83,5 +92,17 @@ python eval/append_errors.py --report outputs/report/pilot_compare.html --id err
   --model qwen3.8-27b-ft-stage2-int4-medium=$E/qwen3.8-27b-ft-stage2-int4-medium.hard_inss.preds.jsonl \
   --model llama-3.3-70b=data/hard_inss/preds_weak.jsonl \
   --em qwen3-4b-ft-stage2 --ref qwen3-4b-grpo --viewer_url $VURL --viewer_dataset hard_inss
+for set in pilot grpo_dev test_long hard_inss; do
+  case $set in
+    pilot) rows=$P/export/pilot_all.jsonl; p1=$E/qwen3.5-9b-ft-think.preds.jsonl; p2=$E/qwen3.5-9b-ft-stage2-think.preds.jsonl ;;
+    grpo_dev) rows=$D/grpo_dev.jsonl; p1=$E/qwen3.5-9b-ft.$set.preds.jsonl; p2=$E/qwen3.5-9b-ft-stage2.$set.preds.jsonl ;;
+    test_long) rows=$T/test_long.jsonl; p1=$E/qwen3.5-9b-ft.$set.preds.jsonl; p2=$E/qwen3.5-9b-ft-stage2.$set.preds.jsonl ;;
+    hard_inss) rows=data/hard_inss/dev.jsonl; p1=$E/qwen3.5-9b-ft.$set.preds.jsonl; p2=$E/qwen3.5-9b-ft-stage2.$set.preds.jsonl ;;
+  esac
+  python eval/append_errors.py --report outputs/report/pilot_compare.html --id err35_$set \
+    --title "Error analysis: Qwen3.5-9B SFT stage 2 vs stage 1 on $set" --rows $rows \
+    --model qwen3.5-9b-ft=$p1 --model qwen3.5-9b-ft-stage2=$p2 \
+    --em qwen3.5-9b-ft-stage2 --ref qwen3.5-9b-ft --viewer_url $VURL --viewer_dataset $set
+done
 python eval/strong_gap.py --report outputs/report/pilot_compare.html --viewer_url $VURL   # 27B errors where Sonnet AND Llama are right
 python eval/build_summary.py --report outputs/report/pilot_compare.html   # top summary table (all sets x models) + nav dropdown

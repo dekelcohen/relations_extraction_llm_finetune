@@ -46,6 +46,8 @@ metrics file. Results live in [status.md](status.md); the data builders are docu
 | 27B SFT stage 1 | `unsloth/Qwen3.8-27B-unsloth-bnb-4bit` | none | `synth_hefa/sft_cot_train` | r32, 2 ep, lr 1e-4, bs1×ga16, max_len auto (= longest row) | `remote.sh --machine a100 start --run qwen3.8-27b --stages "setup_unsloth download_sft ; sft_smoke sft"` | `Shani123/re-qwen3.8-27b-sft-cot` |
 | 27B SFT stage 2 | same | 27B stage 1 (weights only) | `sft_stage2/train_selfdistill` | r32, 2 ep (116 steps), lr 5e-5, warmup 0.05, bs1×ga16, max_len 8704, chat kw `reasoning_effort=medium` | `remote.sh --machine a100 start --run qwen3.8-27b-stage2 --stages "sft_smoke sft"` | `Shani123/re-qwen3.8-27b-sft-cot-stage2` |
 | 4B SFT stage 2 (apples-to-apples with 27B stage 2) | `unsloth/Qwen3-4B-unsloth-bnb-4bit` | 4B stage 1 | `sft_stage2/train_selfdistill` | as 27B stage 2, but max_len auto = 9728 and no `reasoning_effort` (the 4B template has none) | `remote.sh --machine local3070 start --run qwen3-4b-stage2` (stages `sft_smoke sft ft_eval`) | `outputs/sft-cot-qwen3-4b-stage2` |
+| Qwen3.5-9B SFT stage 1 | `unsloth/Qwen3.5-9B` | none | `synth_hefa/sft_cot_train` | same QLoRA recipe as Qwen3.5-4B: r32, 2 ep, lr 1e-4, bs1×ga16, max_len auto | `remote.sh --machine a100 start --run qwen3.5-9b --stages "setup_unsloth download_sft ; sft_smoke sft"` | `Shani123/re-qwen3.5-9b-sft-cot` |
+| Qwen3.5-9B SFT stage 2 | `unsloth/Qwen3.5-9B` | Qwen3.5-9B stage 1 (weights only) | `sft_stage2/train_selfdistill` | same stage-2 recipe as Qwen3.5-4B: r32, 2 ep, lr 5e-5, warmup 0.05, bs1×ga16 | `remote.sh --machine a100 start --run qwen3.5-9b-stage2 --stages "sft_smoke sft"` | `Shani123/re-qwen3.5-9b-sft-cot-stage2` |
 
 Stage-2 runs load the stage-1 adapter weights with a fresh optimizer (`SFT_INIT_ADAPTER`). Known bug: a `--sft-epochs` CLI override is ignored when the run config sets `SFT_EPOCHS`.
 
@@ -61,6 +63,7 @@ Stage-2 runs load the stage-1 adapter weights with a fresh optimizer (`SFT_INIT_
 
 - Score API/CLI preds with `python -m re_synth score --samples <samples> --preds <preds> --out <metrics.json>`. Use `re_synth.mine.score_preds` + `re_synth.score.aggregate` for row-format sets (hard_inss: `outputs/eval/llama-3.3-70b.hard_inss.metrics.json`).
 - Report: `bash scripts/build_report.sh` (comparison, error analysis, strong-gap) → `outputs/report/pilot_compare.html`.
+- Qwen3.5-9B adapter evals use the HF backend with bitsandbytes 4-bit (base `unsloth/Qwen3.5-9B`), thinking, max 5120 tokens. Run both adapters over all four sets: `remote.sh --machine a100 start --run qwen3.5-9b --stages ft_eval` for stage 1 and `--run qwen3.5-9b-stage2 --stages ft_eval` for stage 2. Outputs are `qwen3.5-9b-ft[-stage2]-think.preds.jsonl` for pilot and `qwen3.5-9b-ft[-stage2].<set>.preds.jsonl` for other sets.
 
 ## 5. New machine: 4×A100-80GB server (`configs/machines/a100x4.env`)
 Host volume `/mnt/dekel` is mounted in the container as `/data` (repos in `/data/repos`, envs in `/data/envs`, HF cache in `/data/hf_cache`).
@@ -132,3 +135,11 @@ Status when this was written: configs added, `eval/predict.py` `hf` backend + bi
 - **Not yet done:** actually running stage-1/stage-2 SFT and eval, pushing the adapter to HF (`hf_sync.py push`),
   and wiring `qwen3.5-4b-ft[-stage2]` into `scripts/build_report.sh` / `eval/build_summary.py` (same pattern used
   for `qwen3-4b-ft-stage2` — see §3/§4 above and git history for that addition).
+
+## 7. Qwen3.5-9B
+
+Stage-1 and stage-2 SFT completed on the shared A100 on 2026-11-19. Both adapters use the Qwen3.5-4B recipe and
+the stage-2 self-distillation set. Eval uses the HF backend with bitsandbytes 4-bit because vLLM does not yet
+support this architecture; run stage-1 and stage-2 `ft_eval` over pilot, grpo_dev, test_long and hard_inss.
+The results are added to `outputs/report/pilot_compare.html`, with the report summary and error analysis as the
+source of truth for measured scores.

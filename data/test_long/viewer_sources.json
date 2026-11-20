@@ -5,6 +5,8 @@
   "qwen3-4b-ft": "outputs/eval/sft.test_long.preds.jsonl",
   "qwen3-4b-grpo": "outputs/eval/grpo.test_long.preds.jsonl",
   "qwen3-4b-ft-stage2": "outputs/eval/qwen3-4b-ft-stage2-awq.test_long.preds.jsonl",
+  "qwen3.5-9b-ft": "outputs/eval/qwen3.5-9b-ft.test_long.preds.jsonl",
+  "qwen3.5-9b-ft-stage2": "outputs/eval/qwen3.5-9b-ft-stage2.test_long.preds.jsonl",
   "qwen3.8-27b-fp8": "outputs/eval/qwen3.8-27b-fp8.test_long.preds.jsonl",
   "qwen3.8-27b-int4": "outputs/eval/qwen3.8-27b-int4.test_long.preds.jsonl",
   "qwen3.8-27b-int4-medium": "outputs/eval/qwen3.8-27b-int4-medium.test_long.preds.jsonl",
