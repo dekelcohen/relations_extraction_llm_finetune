@@ -63,7 +63,7 @@ Stage-2 runs load the stage-1 adapter weights with a fresh optimizer (`SFT_INIT_
 
 - Score API/CLI preds with `python -m re_synth score --samples <samples> --preds <preds> --out <metrics.json>`. Use `re_synth.mine.score_preds` + `re_synth.score.aggregate` for row-format sets (hard_inss: `outputs/eval/llama-3.3-70b.hard_inss.metrics.json`).
 - Report: `bash scripts/build_report.sh` (comparison, error analysis, strong-gap) → `outputs/report/pilot_compare.html`.
-- Qwen3.5-9B adapter evals use the HF backend with bitsandbytes 4-bit (base `unsloth/Qwen3.5-9B`), thinking, max 5120 tokens. Run both adapters over all four sets: `remote.sh --machine a100 start --run qwen3.5-9b --stages ft_eval` for stage 1 and `--run qwen3.5-9b-stage2 --stages ft_eval` for stage 2. Outputs are `qwen3.5-9b-ft[-stage2]-think.preds.jsonl` for pilot and `qwen3.5-9b-ft[-stage2].<set>.preds.jsonl` for other sets.
+- Qwen3.5-9B adapter evals use the HF backend in `$ENV_UNSLOTH` (required `accelerate` is absent from `$ENV_VLLM`), with bitsandbytes 4-bit (base `unsloth/Qwen3.5-9B`), thinking, max 5120 tokens. Run both adapters over all four sets: `remote.sh --machine a100 start --run qwen3.5-9b --stages ft_eval` for stage 1 and `--run qwen3.5-9b-stage2 --stages ft_eval` for stage 2. Outputs are `qwen3.5-9b-ft[-stage2]-think.preds.jsonl` for pilot and `qwen3.5-9b-ft[-stage2].<set>.preds.jsonl` for other sets.
 
 ## 5. New machine: 4×A100-80GB server (`configs/machines/a100x4.env`)
 Host volume `/mnt/dekel` is mounted in the container as `/data` (repos in `/data/repos`, envs in `/data/envs`, HF cache in `/data/hf_cache`).

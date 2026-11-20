@@ -35,4 +35,5 @@ CK=(); [ -n "$CHAT_KW" ] && CK=(--chat_kw "$CHAT_KW")   # JSON: keep as one argv
 # predict.py logs engine load, progress/throughput/ETA (every $PROGRESS_EVERY s) and per-set results to pipeline.log;
 # finished prompts go to <out>.partial.jsonl, so a restart resumes mid-set
 SCRIPT=(eval/predict.py); [ -n "$RETRY" ] && SCRIPT=(eval/retry_hits.py --tag $RETRY)
-stage ${RETRY:+retry-$RETRY-}eval-$NAME py $ENV_VLLM "${SCRIPT[@]}" --model $MODEL "${D[@]}" "${O[@]}" $F "${CK[@]}" ${ENGINE_KW:+--engine_kw "$ENGINE_KW"}
+EVAL_ENV=${EVAL_ENV:-$ENV_VLLM}
+stage ${RETRY:+retry-$RETRY-}eval-$NAME py "$EVAL_ENV" "${SCRIPT[@]}" --model $MODEL "${D[@]}" "${O[@]}" $F "${CK[@]}" ${ENGINE_KW:+--engine_kw "$ENGINE_KW"}
