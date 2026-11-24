@@ -130,19 +130,42 @@ def gen_vllm(a, prompts, cache_path=None):
 def gen_hf(a, prompts, tok):
     import torch
     from transformers import AutoModelForCausalLM
-    kw = {"dtype": torch.bfloat16}
-    if a.quantization == "bitsandbytes":
-        from transformers import BitsAndBytesConfig
-        kw = {"quantization_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)}
-    model = AutoModelForCausalLM.from_pretrained(a.model, device_map="auto", **kw)
-    if a.lora:
-        from peft import PeftModel
-        model = PeftModel.from_pretrained(model, a.lora)
+    if not prompts:
+        return []
+    model = getattr(a, "_hf_model", None)
+    if model is None:
+        start = time.monotonic()
+        kw = {"dtype": torch.bfloat16}
+        if a.quantization == "bitsandbytes":
+            from transformers import BitsAndBytesConfig
+            kw = {"quantization_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)}
+        model = AutoModelForCausalLM.from_pretrained(a.model, device_map="auto", **kw)
+        if a.lora:
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, a.lora)
+        a._hf_model = model.eval()
+        devices = sorted({str(d) for d in getattr(model, "hf_device_map", {}).values()})
+        _pipe_log(f"HF model loaded in {time.monotonic() - start:.0f}s; device map: {devices}")
+    device = model.get_input_embeddings().weight.device
+    batch_size = max(1, a.hf_batch_size)
+    tok.padding_side = "left"
+    if batch_size > 1 and tok.pad_token_id is None:
+        tok.pad_token = tok.eos_token
     res = []
-    for p in prompts:
-        ids = tok(p, return_tensors="pt", add_special_tokens=False)
+    start = last = time.monotonic()
+    every = float(os.environ.get("PROGRESS_EVERY", 300))
+    for i in range(0, len(prompts), batch_size):
+        batch = prompts[i:i + batch_size]
+        ids = tok(batch, return_tensors="pt", add_special_tokens=False, padding=len(batch) > 1).to(device)
         out = model.generate(**ids, max_new_tokens=a.max_tokens, do_sample=False)
-        res.append(tok.decode(out[0, ids["input_ids"].shape[1]:], skip_special_tokens=True))
+        res.extend(tok.batch_decode(out[:, ids["input_ids"].shape[1]:], skip_special_tokens=True))
+        now = time.monotonic()
+        if i == 0 or now - last >= every or len(res) == len(prompts):
+            elapsed = max(now - start, 1e-6)
+            msg = f"HF progress {len(res)}/{len(prompts)} prompts, {len(res) * 60 / elapsed:.1f} prompts/min"
+            log.info(msg)
+            _pipe_log(msg)
+            last = now
     return res
 
 
@@ -198,6 +221,7 @@ def build_parser():
     ap.add_argument("--quantization", default=None, help="e.g. bitsandbytes (pre-quantized bnb-4bit checkpoints)")
     ap.add_argument("--kv_cache_dtype", default=None, help="e.g. fp8 to fit longer contexts on small GPUs")
     ap.add_argument("--max_num_seqs", type=int, default=None)
+    ap.add_argument("--hf_batch_size", type=int, default=1)
     ap.add_argument("--enforce_eager", action="store_true", help="skip CUDA graphs (saves VRAM on small GPUs)")
     ap.add_argument("--engine_kw", default=None, help='extra vLLM LLM(...) kwargs as JSON, e.g. {"language_model_only": true}')
     ap.add_argument("--chat_kw", default=None, help='extra chat-template kwargs as JSON, e.g. {"reasoning_effort": "medium"}')
