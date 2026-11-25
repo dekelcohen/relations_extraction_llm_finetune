@@ -29,7 +29,25 @@ run_stage() {
     *) echo "unknown stage $1"; return 2 ;;
   esac
 }
-run_track() { for s in $1; do run_stage $s || return 1; done; }
+run_track() {
+  local s train_smoked=0 eval_smoked=0
+  for s in $1; do
+    if [ "$PUBLISH" = 1 ]; then
+      case $s in
+        sft|sft_smoke) publish_auth "$ENV_UNSLOTH" || return 1 ;;
+        smoke|base_eval*|ft_eval*|ft1_eval_*)
+          publish_auth "${EVAL_ENV:-$ENV_VLLM}" || return 1 ;;
+      esac
+      case $s in
+        sft) [ "$train_smoked" = 1 ] || run_stage sft_smoke || return 1; train_smoked=1 ;;
+        base_eval*|ft_eval*|ft1_eval_*)
+          [ "$eval_smoked" = 1 ] || run_stage smoke || return 1; eval_smoked=1 ;;
+      esac
+    fi
+    run_stage "$s" || return 1
+    case $s in sft_smoke) train_smoked=1 ;; smoke) eval_smoked=1 ;; esac
+  done
+}
 # STAGES: groups separated by ';' run in order; tracks inside a group separated by '|' run in parallel (e.g. GPU eval || CPU/network setup)
 IFS=';' read -ra GROUPS_ <<< "$STAGES"
 for g in "${GROUPS_[@]}"; do

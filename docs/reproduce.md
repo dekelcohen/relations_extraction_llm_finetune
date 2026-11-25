@@ -100,6 +100,22 @@ Reproduce each run with `bash $R $M start --run <R> --stages "<S>"` (§3 and §4
 - **Results:** `outputs/eval/*.metrics.json`, logs under `outputs/pipeline/a100x4/`. Afterwards: `bash $R $M watchdog-stop`, `docker stop relx-dev-1`, and check `nvidia-smi` is clear.
 - **80 GB:** the 27B runs fit easily, and `MAX_NUM_SEQS=64` (vs 40/48 on the 40 GB A100) only changes throughput, not results.
 
+### Publish completed runs
+
+On the pipeline host, use a checkout on a branch with a GitHub HTTPS upstream. Inject a Hugging Face write token and a GitHub token with repository Contents write access into the launch environment (for example via a secret manager or silent shell input). Do not put either token in files or command arguments.
+
+```bash
+read -rs -p 'HF token: ' HF_TOKEN; echo
+read -rs -p 'GitHub token: ' GH_TOKEN; echo
+export HF_TOKEN GH_TOKEN
+bash scripts/pipeline/run_pipeline.sh --machine a100x4 --run qwen3.8-27b --publish
+unset HF_TOKEN GH_TOKEN
+```
+
+In publish mode the detached pipeline checks HF authentication without storing a login, dry-runs Git push, and gates full SFT and eval on their respective short smoke runs. The auth check validates the token; fine-grained HF tokens still need access to the target repo. Full SFT immediately uploads final weights and tokenizer/config files to a private HF repository (not checkpoints or optimizer state) and commits `hf_artifacts.json`. Use `--hf-results-repo OWNER/NAME` to override the default repo for a training run.
+
+Each completed full eval pushes its predictions, metrics, and `outputs/report/<run>.html` with comparison and grouped error sections. A `git pull` makes the HTML and results available on another machine; use `python scripts/hf_sync.py pull` for the weights. Publication failures are logged separately and do not stop later compute; rerunning the same stage in publish mode republishes completed local outputs without recomputing them. Do not start a second pipeline in the same checkout just to retry publication.
+
 ## 6. Qwen3.5-4B (new base, in progress — started 2026-11-18)
 
 Status when this was written: configs added, `eval/predict.py` `hf` backend + bitsandbytes 4-bit wired in, **no training/eval run yet** (not started due to session budget; resume on the 4xA100 server).

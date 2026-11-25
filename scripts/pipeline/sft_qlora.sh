@@ -4,7 +4,16 @@
 #   sft_qlora.sh --machine M --run R [--max-steps 3 --sft-out outputs/smoke-sft] [--sft-max-len 6144] [--sft-lr ...]
 source "$(dirname "$0")/lib.sh"; init "$@"
 SFT_OUT=${SFT_OUT}; B=$(basename $SFT_OUT)
-[ -z "$MAX_STEPS" ] && [ -f $SFT_OUT/adapter_model.safetensors ] && { log sft INFO "skip (adapter exists: $SFT_OUT)"; exit 0; }
+publish_auth "$ENV_UNSLOTH" || exit 1
+publish_model() {
+  [ "$PUBLISH" = 1 ] && [ -z "$MAX_STEPS" ] || return 0
+  local args=()
+  [ -n "$HF_RESULTS_REPO" ] && args+=(--repo "$HF_RESULTS_REPO")
+  publish_result "$ENV_UNSLOTH" model "$SFT_OUT" "${args[@]}"
+}
+[ -z "$MAX_STEPS" ] && [ -f "$SFT_OUT/adapter_model.safetensors" ] && {
+  log sft INFO "skip (adapter exists: $SFT_OUT)"; publish_model; exit 0;
+}
 attempt_log=
 if [ "$MACHINE" = a100 ] && [ -z "$MAX_STEPS" ]; then
     python3 "$LIBDIR/evacuation_guard.py" "$A100_DIR" check-state --run "$RUN" || exit $?
@@ -28,4 +37,5 @@ rm -f $A100_DIR/.vram
 EVACUATION_STAGE_LOG=$attempt_log stage sft-${MAX_STEPS:+smoke-}$B py $ENV_UNSLOTH train/sft_unsloth.py $F; rc=$?
 kill $VP $EP 2>/dev/null
 log sft-$B INFO "peak_vram_MiB=$(sort -n $A100_DIR/.vram 2>/dev/null | tail -1) progress=$SFT_OUT/progress/metrics.jsonl"
+[ "$rc" = 0 ] && publish_model
 exit $rc

@@ -4,7 +4,7 @@
 # Tracks only OUR usage: GPU processes whose host pid belongs to $CONTAINER (docker top) — memory from
 # nvidia-smi --query-compute-apps, SM util from nvidia-smi pmon. Foreign GPU load neither masks our idleness nor alarms.
 # Alerts (pipeline.log 'STAGE watchdog ALERT <kind> ...' + machine-readable alerts.log '<ts>\t<kind>\t<detail>'):
-#   gpu_idle      our util <= UTIL_MAX and our memory not growing for IDLE_MIN (setup*/download* stages exempt); once per episode
+#   gpu_idle      our util <= UTIL_MAX and our memory not growing for IDLE_MIN (CPU/network stages exempt); once per episode
 #   stage_fail    a 'STAGE <x> FAIL' line appeared (alerts.log only; the FAIL line itself is already in pipeline.log)
 #   pipeline_dead a stage is still START but no pipeline process runs in the container (2 polls)
 # --deadline-h: hard wall-clock budget; logs 'STAGE watchdog DEADLINE' and docker-stops OUR container. Stop: touch <dir>/watchdog.stop
@@ -67,9 +67,9 @@ while [ ! -f "$D/watchdog.stop" ]; do
   if [ -n "$open" ] && ! echo "$top" | grep -qE 'pipeline_stages\.sh|eval_model\.sh|sft_qlora\.sh|setup_env\.sh|download\.sh|predict\.py|sft_unsloth\.py'; then
     noproc=$((noproc + 1)); [ $noproc -ge 2 ] && [ -z "${SEEN[$open]}" ] && { SEEN[$open]=1; alert pipeline_dead "open=${open% } container_procs=$(echo "$top" | grep -c .)"; }
   else noproc=0; fi
-  # gpu_idle (ours only). Non-GPU stages (setup*/download*) are exempt.
+  # gpu_idle (ours only). Non-GPU stages are exempt.
   cur=$(grep -oE '"stage":"[^"]*","state":"START"' "$D/status.json" 2>/dev/null | cut -d'"' -f4)
-  if [[ $cur =~ ^(setup|download) ]] || { [ "$util" -gt "$UTIL_MAX" ] || [ $((mem - prev_mem)) -ge 500 ]; }; then
+  if [[ $cur =~ ^(setup|download|auth-smoke|publish-) ]] || { [ "$util" -gt "$UTIL_MAX" ] || [ $((mem - prev_mem)) -ge 500 ]; }; then
     [ $alerted = 1 ] && note INFO "gpu_busy again util=$util mem=${mem}MiB"
     idle_since=; alerted=0
   else

@@ -12,8 +12,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "eval"))
-from error_analysis import analyze, load_audit, render_model_errors  # noqa: E402
-from compare_report import HC_DESC  # noqa: E402
+from error_analysis import HC_DESC, analyze, load_audit, render_model_errors  # noqa: E402
 
 
 def load(p):

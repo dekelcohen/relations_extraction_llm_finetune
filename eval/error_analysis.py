@@ -18,7 +18,10 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
+from re_synth.hardcases import HARD_CASES
 from re_synth.score import align, compact, in_text, match, norm, parse_date, parse_prediction_lenient, slot_types_for
+
+HC_DESC = {**HARD_CASES, "H7c": "H7 variant: the shared org is stated only in the table caption"}
 
 CATS = ["no_answer", "missed_record", "extra_record", "decoy_value", "cross_record", "missed_value", "spurious_value",
         "hallucinated", "date_mismatch", "span_boundary", "wrong_value"]

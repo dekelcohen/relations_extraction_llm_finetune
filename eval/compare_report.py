@@ -22,12 +22,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from re_synth.hardcases import HARD_CASES  # noqa: E402
 from re_synth.mine import load_preds, score_preds  # noqa: E402
 from re_synth.score import aggregate, parse_prediction_lenient, sample_f1, score_sample, slot_types_for  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "eval"))
-from error_analysis import render_model_errors, ADJ, ADJ_SUB, CAT_DESC, CATS, ROOTS, analyze, audit_verdict, load_audit, verdict_label  # noqa: E402
+from error_analysis import render_model_errors, ADJ, ADJ_SUB, CAT_DESC, CATS, HC_DESC, ROOTS, analyze, audit_verdict, load_audit, verdict_label  # noqa: E402
 
 LENIENT_LEGEND = (
     "Lenient = same scorer, but model outputs that fail strict JSON parsing are repaired first by a deterministic "
@@ -89,7 +88,6 @@ TIER_DESC = {
     "frontier_hard": "Sonnet wrong although the gold is deterministic (rendered table/list block, H6/H7/H13): "
                      "hardest trustworthy samples.",
 }
-HC_DESC = {**HARD_CASES, "H7c": "H7 variant: the shared org is stated only in the table caption"}
 NOTES: dict[str, str] = {}
 
 

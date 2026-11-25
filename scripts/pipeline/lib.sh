@@ -27,6 +27,9 @@ init() {
         --docker "$DOCKER" --container "$CONTAINER" || exit $?
     fi
     local env=(-e IN_CONTAINER=1); [ "$DETACH" = 1 ] && env+=(-d)
+    if [ "$PUBLISH" = 1 ]; then
+      env+=(-e PUBLISH=1 -e HF_TOKEN -e GH_TOKEN)
+    fi
     if [ "$DETACH" = 1 ]; then
       local q=(); for a in "${ORIG[@]}"; do [ "$a" = --detach ] || q+=("$a"); done; local qs; qs=$(printf '%q ' "${q[@]}")
       exec $DOCKER exec "${env[@]}" -w "$REPO" "$CONTAINER" bash -c "bash scripts/pipeline/$script $qs >> $REPO/outputs/pipeline/$MACHINE/pipeline.out 2>&1"
@@ -80,3 +83,15 @@ root_cause() {
     | tail -n 1 | sed -E 's/^.*\] //' | tr -s ' ' | cut -c1-300
 }
 py() { local e=$1; shift; micromamba run -p "$e" python "$@"; }
+
+publish_auth() {
+  [ "$PUBLISH" = 1 ] && [ "$PUBLISH_AUTH_OK" != 1 ] || return 0
+  stage auth-smoke py "$1" "$LIBDIR/publish_results.py" preflight || return 1
+  export PUBLISH_AUTH_OK=1
+}
+
+publish_result() {
+  local env=$1 action=$2; shift 2
+  stage "publish-$action" py "$env" "$LIBDIR/publish_results.py" "$action" "$@" ||
+    log "publish-$action" WARN "publication failed; retained local results for retry"
+}
