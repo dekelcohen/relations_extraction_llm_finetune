@@ -9,8 +9,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = "qwen3-8b-bnb4"
-STAGE2 = "qwen3-8b-ft-stage2-bnb4"
+BASE = "qwen3-8b-bf16"
+STAGE1 = "qwen3-8b-ft-bf16"
+STAGE2 = "qwen3-8b-ft-stage2-bf16"
 DATASETS = {
     "pilot": ("data/pilot", "export/pilot_all.jsonl", "-think"),
     "test_long": ("data/test_long", "test_long.jsonl", ".test_long"),
@@ -35,7 +36,7 @@ def build_report(eval_dir: Path, out: Path) -> None:
         )
         draft.write_text(
             '<!doctype html><meta charset="utf-8"><title>Qwen3-8B evaluation</title><body>'
-            "<h1>Qwen3-8B 4-bit: base vs stage-2 SFT</h1>"
+            "<h1>Qwen3-8B (vLLM bf16 base + LoRA): base vs stage-1 vs stage-2 SFT</h1>"
             "<p>References: cached Llama 3.3 70B, Sonnet 5.5, Qwen3-4B stage 2 (AWQ), "
             "and Qwen3.8-27B stage 2 (INT4, medium reasoning).</p>"
             f"<ul>{links}</ul></body>",
@@ -47,6 +48,7 @@ def build_report(eval_dir: Path, out: Path) -> None:
             expected = ids(rows)
             models = {
                 BASE: eval_dir / f"{BASE}{suffix}.preds.jsonl",
+                STAGE1: eval_dir / f"{STAGE1}{suffix}.preds.jsonl",
                 STAGE2: eval_dir / f"{STAGE2}{suffix}.preds.jsonl",
                 BASELINES[0]: directory / "preds_weak.jsonl",
                 BASELINES[1]: directory / "preds_strong.jsonl",
@@ -62,7 +64,7 @@ def build_report(eval_dir: Path, out: Path) -> None:
             subprocess.run([sys.executable, str(ROOT / "eval/append_section.py"), *common,
                             "--id", name, "--title", f"{name}: scores"], check=True)
             for phase, model, other in (("before", BASE, STAGE2), ("after", STAGE2, BASE)):
-                refs = [arg for label in (other, *BASELINES) for arg in ("--ref", label)]
+                refs = [arg for label in (other, STAGE1, *BASELINES) for arg in ("--ref", label)]
                 subprocess.run([sys.executable, str(ROOT / "eval/append_errors.py"), *common,
                                 "--id", f"{name}-{phase}", "--title", f"{name}: {model} errors",
                                 "--em", model, "--viewer_dataset", name, *refs], check=True)
@@ -72,6 +74,6 @@ def build_report(eval_dir: Path, out: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--eval-dir", type=Path, default=ROOT / "outputs/eval")
-    parser.add_argument("--out", type=Path, default=ROOT / "outputs/report/qwen3-8b-local3070.html")
+    parser.add_argument("--out", type=Path, default=ROOT / "outputs/report/qwen3-8b.html")
     args = parser.parse_args()
     build_report(args.eval_dir.resolve(), args.out.resolve())

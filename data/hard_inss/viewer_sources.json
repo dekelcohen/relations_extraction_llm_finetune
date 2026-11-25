@@ -9,8 +9,8 @@
   "qwen3.8-27b-ft-int4-medium": "outputs/eval/qwen3.8-27b-ft-int4-medium.hard_inss.preds.jsonl",
   "qwen3.8-27b-ft-stage2-int4": "outputs/eval/qwen3.8-27b-ft-stage2-int4.hard_inss.preds.jsonl",
   "qwen3.8-27b-ft-stage2-int4-medium": "outputs/eval/qwen3.8-27b-ft-stage2-int4-medium.hard_inss.preds.jsonl",
-  "qwen3-8b-bnb4": "outputs/eval/qwen3-8b-bnb4.hard_inss.preds.jsonl",
-  "qwen3-8b-ft-bnb4": "outputs/eval/qwen3-8b-ft-bnb4.hard_inss.preds.jsonl",
-  "qwen3-8b-ft-stage2-bnb4": "outputs/eval/qwen3-8b-ft-stage2-bnb4.hard_inss.preds.jsonl"
+  "qwen3-8b-bf16": "outputs/eval/qwen3-8b-bf16.hard_inss.preds.jsonl",
+  "qwen3-8b-ft-bf16": "outputs/eval/qwen3-8b-ft-bf16.hard_inss.preds.jsonl",
+  "qwen3-8b-ft-stage2-bf16": "outputs/eval/qwen3-8b-ft-stage2-bf16.hard_inss.preds.jsonl"
  }
 }
