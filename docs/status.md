@@ -121,6 +121,8 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 
 ### Next items
 
+**Qwen3-8B 4-bit eval archive (2026-11-25):** The original Unsloth bnb-4bit run was stopped after stage 2 finished all three sets and base and stage 1 finished Pilot. Stage-2 slot-F1: 0.9735 Pilot, 0.9615 Test Long, 0.8626 Hard INSS (100% valid JSON, no token-limit hits). Base and stage-1 Pilot: 0.8878 and 0.9750. See `outputs/report/qwen3-8b-bnb4-archive.html` for the five completed evaluations; `outputs/report/qwen3-8b.html` is the separately completed BF16 comparison. Both adapters are listed in `hf_artifacts.json`.
+
 - [ ] **Qwen3-8B on GPU 0:** Repeat the two 9B SFT datasets with Unsloth QLoRA. Keep CoT targets but match the Qwen3 chat template's think delimiters. Evaluate base, stage 1, and stage 2 with thinking enabled and Qwen's recommended sampled decoding (T=0.6, top-p=0.95, top-k=20), gated on real JSON-producing smokes. Publish adapters and a three-set comparison with grouped errors.
 
 - [ ] **Publish future pipeline runs from the GPU host.** Use `--publish` with runtime HF/GitHub credentials. Auth and short compute smokes gate the full stages; final weights go to private HF and complete eval results and per-run HTML reports go to GitHub. Verify the first live run's published artifacts from another machine.

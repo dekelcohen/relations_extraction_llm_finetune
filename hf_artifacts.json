@@ -22,5 +22,13 @@
  "outputs/sft-cot-qwen3-4b-stage2": {
   "repo": "Shani123/re-qwen3-4b-sft-cot-stage2",
   "type": "model"
+ },
+ "outputs/sft-cot-qwen3-8b": {
+  "repo": "Shani123/re-qwen3-8b-sft-cot",
+  "type": "model"
+ },
+ "outputs/sft-cot-qwen3-8b-stage2": {
+  "repo": "Shani123/re-qwen3-8b-sft-cot-stage2",
+  "type": "model"
  }
 }
