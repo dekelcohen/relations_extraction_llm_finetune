@@ -37,12 +37,12 @@ F="--temperature $TEMPERATURE --top_p $TOP_P --top_k $TOP_K --max_tokens $MAX_TO
 [ -n "$QUANT" ] && F="$F --quantization $QUANT"
 [ -n "$BACKEND" ] && F="$F --backend $BACKEND"   # hf: AutoModelForCausalLM + .generate() (no vLLM/AWQ support, e.g. Qwen3.5 until vLLM adds it)
 [ -n "$HF_BATCH_SIZE" ] && F="$F --hf_batch_size $HF_BATCH_SIZE"
-[ -n "$LORA" ] && F="$F --lora $LORA --max_lora_rank $MAX_LORA_RANK"
+LORA_ARGS=(); [ -n "$LORA" ] && LORA_ARGS=(--lora "$LORA" --max_lora_rank "$MAX_LORA_RANK")
 [ -n "$LIMIT" ] && F="$F --limit $LIMIT"
 [ -n "$SEED" ] && F="$F --seed $SEED"
 CK=(); [ -n "$CHAT_KW" ] && CK=(--chat_kw "$CHAT_KW")   # JSON: keep as one argv word (no re-splitting)
 # predict.py logs engine load, progress/throughput/ETA (every $PROGRESS_EVERY s) and per-set results to pipeline.log;
 # finished prompts go to <out>.partial.jsonl, so a restart resumes mid-set
 SCRIPT=(eval/predict.py); [ -n "$RETRY" ] && SCRIPT=(eval/retry_hits.py --tag $RETRY)
-stage ${RETRY:+retry-$RETRY-}eval-$NAME py "$EVAL_ENV" "${SCRIPT[@]}" --model $MODEL "${D[@]}" "${O[@]}" $F "${CK[@]}" ${ENGINE_KW:+--engine_kw "$ENGINE_KW"} || exit 1
+stage ${RETRY:+retry-$RETRY-}eval-$NAME py "$EVAL_ENV" "${SCRIPT[@]}" --model $MODEL "${D[@]}" "${O[@]}" $F "${LORA_ARGS[@]}" "${CK[@]}" ${ENGINE_KW:+--engine_kw "$ENGINE_KW"} || exit 1
 publish_eval

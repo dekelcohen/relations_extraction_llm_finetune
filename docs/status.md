@@ -129,6 +129,7 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 - [ ] **Test-time verifier: measure the gain over extraction alone.** Hold Llama-3.3-70B's extracted candidates fixed on pilot, test_long, and hard_inss. Compare extractor-only with a separate verification pass by Llama-3.3-70B (same model) and, if available, Qwen3.8-27B or DeepSeek 4 Flash (cross-model). Have each verifier accept or reject candidates based on the source text without adding new ones. Report paired changes in slot precision, recall, and F1, grouped errors (false positives removed and true positives lost), and added latency.
 - [ ] **Train a small verifier-only model for the same test-time experiment.** Try Qwen 4B/9B as a binary verifier and DeBERTa or a similar fast encoder classifier (System 1). Train on source text and labeled relation candidates, including hard negatives from extractor mistakes. Tune the accept/reject threshold on a separate validation split, then use the same fixed candidates, held-out sets, and metrics to compare with the large verifiers. These models verify only; they do not extract or generate candidates.
 - [ ] **Qwen3-8B eval:** pull published evaluation commits or import the completed supervisor bundle (`/mnt/dekel/relx-qwen35-9b/qwen3-8b-run/results/qwen3-8b-results.tgz` on the run host). The viewer shows predictions once the full JSONL files are present under `outputs/eval/`.
+- [ ] **Local RTX 3070 comparison:** evaluate `unsloth/Qwen3-8B-unsloth-bnb-4bit` before and after `Shani123/re-qwen3-8b-sft-cot-stage2` on pilot, test_long and hard_inss. The [Qwen3-8B launcher](#qwen3-8b-launcher) can run training, evaluation and report together or select stages.
 - **Qwen3.5-9B eval paused:** not currently viable; keep existing adapters and smoke results, but prioritize Qwen3-8B for full evaluation.
 - [x] **Shared A100 cleanup:** backed up and verified both 27B optimizer checkpoints in their existing private HF adapter repositories, then removed those checkpoint directories and the 27B FP8 and INT4 cache directories from the A100. The 9B cache and stage-1 checkpoint were left in place.
 - [ ] **A2 follow-up:** stage 2 vs stage 1 (medium): grpo_dev +0.012, test_long +0.015 (now ≥ base-medium 0.987/0.986 by +0.005/+0.002, i.e. within noise), **pilot −0.017** (0.979 → 0.962 ≈ base-medium 0.966: the pilot gain over base from stage 1 is gone, so some forgetting of the short-CoT precision), hard_inss −0.015 (0.921 → 0.906, n=39 docs, base-medium 0.911; not a win: no hard_inss gain from INSS rows, 40% of INSS docs failed the F1=1 filter so the hardest cases are under-represented). Strong-gap items (27B wrong, Sonnet+Llama right; `outputs/audit/27b_vs_strong.md`, stage-2 = medium): pilot 14 → 40, grpo_dev 30 → 1, test_long 99 → 27. Per root cause stage-1 → stage-2: multi_entity_bleeding grpo_dev 19 → 1, test_long 44 → 8; long_range_or_coref test_long 52 → 9; distractor_or_role grpo_dev 10 → 0, test_long 3 → 7; fa test_long 61 → 17 (he 38 → 10), pilot fa 5 → 16 / null_slot_filled 2 → 15 (new pilot regressions: span/null conventions). Ideas: mix pilot-style short-CoT replay back in, longer INSS/hard_inss self-distill with 2–4 samples per doc, 1 more epoch on hard rows. Only 1 sample/doc and the run used the whole 2 epochs (data prep ran ahead of the 0.8-epoch override, which was not applied).
@@ -165,6 +166,28 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
       scored as a slot, exact decoy check, +0.1 all-exact bonus; eval stays lenient + `exact_sample`. Table in
       [`datasets/stage_2_RL_GRPO.md`](datasets/stage_2_RL_GRPO.md#reward-lenient-eval-vs-strict-training).
 - [ ] Update this file and the dataset doc with the actual counts and results.
+
+### Qwen3-8B launcher
+
+On the GPU host, with the configured container already running:
+
+```bash
+# Full run: download, train stages 1 and 2, evaluate base and stage 2, build report.
+bash scripts/pipeline/qwen3_8b/run.sh --machine local3070
+# Eval only: point to an existing stage-2 adapter as seen inside the container.
+bash scripts/pipeline/qwen3_8b/run.sh --machine local3070 \
+  --stages "eval_base eval_stage2 report" --stage2-adapter outputs/sft-cot-qwen3-8b-stage2
+tail -f outputs/pipeline/local3070/qwen3-8b/run.log outputs/pipeline/local3070/pipeline.log
+```
+
+Default is detached (`nohup`); use `--foreground` to wait or `--dry-run` to inspect commands.
+Evaluation resumes partial files and skips already completed sets; archive prior eval files
+before rerunning with different generation settings. Local training starts with a memory smoke
+test; fitting inference on the 3070 does not imply training will fit.
+
+The final report is `outputs/report/qwen3-8b-local3070.html`. It requires all six prediction
+sets to cover the same sample IDs, including the cached Sonnet hard_inss baseline at
+`data/hard_inss/preds_strong.jsonl`.
 
 ### Open issues
 - **A1 hypothesis (b), LoRA drift bnb-4bit→GPTQ, untested.** The `ftlim_bnb4` stage failed: vLLM 0.33 has no `bitsandbytes` quantization ("Unknown quantization method").
