@@ -120,6 +120,8 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 
 ### Next items
 
+- [ ] **Qwen3-8B on GPU 0:** Repeat the two 9B SFT datasets with Unsloth QLoRA. Keep CoT targets but match the Qwen3 chat template's think delimiters. Evaluate base, stage 1, and stage 2 with thinking enabled and Qwen's recommended sampled decoding (T=0.6, top-p=0.95, top-k=20), gated on real JSON-producing smokes. Publish adapters and a three-set comparison with grouped errors.
+
 - [ ] **Publish future pipeline runs from the GPU host.** Use `--publish` with runtime HF/GitHub credentials. Auth and short compute smokes gate the full stages; final weights go to private HF and complete eval results and per-run HTML reports go to GitHub. Verify the first live run's published artifacts from another machine.
 
 - [ ] **Train a synthetic sample generator to replace Sonnet 5.5.** Train on diverse source passages and documents for use inside the corporate network, with locally hosted Llama-3.3-70B, Qwen3.8-27B, or DeepSeek 4 Flash as sample verifiers. Start with `data/synth_hefa/seeds.jsonl` (524 source passages) and `data/synth_hefa/samples.jsonl` (600 saved Sonnet-generated samples with plans, text, gold relations, decoys, and QC). All 600 samples match a unique seed by language, source, dataset, title, and URL. Split by source document before training and compare with Sonnet on held-out verifier pass rate, difficulty, and manual audit error rate. The `cot_{he,fa}/teacher_raw.jsonl` files are extraction-teacher outputs, not generator targets. Planning only; no data preparation or training yet.

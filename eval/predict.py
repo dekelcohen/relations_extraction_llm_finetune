@@ -164,14 +164,29 @@ def gen_hf(a, prompts, tok):
     tok.padding_side = "left"
     if batch_size > 1 and tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
+    generation = {"do_sample": a.temperature > 0}
+    if generation["do_sample"]:
+        torch.manual_seed(a.seed)
+        generation.update(temperature=a.temperature, top_p=a.top_p, top_k=max(0, a.top_k))
+    eos = model.generation_config.eos_token_id
+    eos_ids = {eos} if isinstance(eos, int) else set(eos or ())
+    thought_tags = {"<think>", "</think>"}
+    special_ids = set(tok.all_special_ids) - {tok.convert_tokens_to_ids(t) for t in thought_tags}
+    a._hf_stats = {"hit_limit": 0, "tokens": 0, "closed_think": 0}
     res = []
     start = last = time.monotonic()
     every = float(os.environ.get("PROGRESS_EVERY", 300))
     for i in range(0, len(prompts), batch_size):
         batch = prompts[i:i + batch_size]
         ids = tok(batch, return_tensors="pt", add_special_tokens=False, padding=len(batch) > 1).to(device)
-        out = model.generate(**ids, max_new_tokens=a.max_tokens, do_sample=False)
-        res.extend(tok.batch_decode(out[:, ids["input_ids"].shape[1]:], skip_special_tokens=True))
+        out = model.generate(**ids, max_new_tokens=a.max_tokens, **generation)
+        for tokens in out[:, ids["input_ids"].shape[1]:].tolist():
+            end = next((j for j, t in enumerate(tokens) if t in eos_ids), len(tokens))
+            a._hf_stats["hit_limit"] += end == a.max_tokens
+            a._hf_stats["tokens"] += end
+            text = tok.decode([t for t in tokens[:end] if t not in special_ids], skip_special_tokens=False)
+            a._hf_stats["closed_think"] += "</think>" in text
+            res.append(text)
         now = time.monotonic()
         if i == 0 or now - last >= every or len(res) == len(prompts):
             elapsed = max(now - start, 1e-6)
@@ -282,10 +297,14 @@ def run_set(a, tok, data, out_path):
             row = {"id": r["id"], "model": a.model, "lora": a.lora, "raw": t} | ({"chunks": o} if len(o) > 1 else {})
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     per, rep = score_rows(rows, {r["id"]: t for r, t in zip(rows, texts)})
+    stats = getattr(a, "_hf_stats", None)
     with open(out_path + ".metrics.json", "w", encoding="utf-8") as f:
-        json.dump({"report": rep, "per_sample": per}, f, indent=1)
+        metrics = {"report": rep, "per_sample": per}
+        if stats is not None:
+            metrics["generation"] = {**stats, "prompts": len(prompts)}
+        json.dump(metrics, f, indent=1)
     print(to_md(rep))
-    ntrunc = ntok = 0
+    ntrunc, ntok = (stats["hit_limit"], stats["tokens"] / max(1, len(prompts))) if stats else (0, 0)
     if os.path.exists(cache):
         cl = [json.loads(l) for l in open(cache, encoding="utf-8") if l.strip().endswith("}")]
         ntrunc = sum(d.get("finish") == "length" for d in cl)

@@ -37,7 +37,8 @@ def end_token(tok) -> str:
     return tok.eos_token or ""
 
 
-def to_prompt_completion(rows: list[dict], tok, enable_thinking=False, **template_kw) -> list[dict]:
+def to_prompt_completion(rows: list[dict], tok, enable_thinking=False, *, normalize_think_tags=False,
+                         **template_kw) -> list[dict]:
     """[{messages:[...,assistant]}] -> [{prompt: str, completion: str}] (completion ends with the turn-end token)."""
     end = end_token(tok)
     out = []
@@ -45,8 +46,16 @@ def to_prompt_completion(rows: list[dict], tok, enable_thinking=False, **templat
         msgs = r["messages"]
         if not msgs or msgs[-1]["role"] != "assistant":
             continue
-        out.append({"prompt": render_prompt(tok, msgs[:-1], enable_thinking, **template_kw),
-                    "completion": msgs[-1]["content"] + end})
+        prompt = render_prompt(tok, msgs[:-1], enable_thinking, **template_kw)
+        completion = msgs[-1]["content"]
+        if normalize_think_tags and enable_thinking and "</think>" in completion:
+            prefilled = prompt.rstrip().endswith("<think>")
+            starts_think = completion.lstrip().startswith("<think>")
+            if prefilled and starts_think:
+                completion = completion.lstrip()[len("<think>"):].lstrip("\n")
+            elif not prefilled and not starts_think:
+                completion = "<think>\n" + completion
+        out.append({"prompt": prompt, "completion": completion + end})
     return out
 
 
