@@ -129,20 +129,33 @@ def gen_vllm(a, prompts, cache_path=None):
 
 def gen_hf(a, prompts, tok):
     import torch
-    from transformers import AutoModelForCausalLM
     if not prompts:
         return []
     model = getattr(a, "_hf_model", None)
     if model is None:
         start = time.monotonic()
-        kw = {"dtype": torch.bfloat16}
-        if a.quantization == "bitsandbytes":
-            from transformers import BitsAndBytesConfig
-            kw = {"quantization_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)}
-        model = AutoModelForCausalLM.from_pretrained(a.model, device_map="auto", **kw)
-        if a.lora:
-            from peft import PeftModel
-            model = PeftModel.from_pretrained(model, a.lora)
+        if a.backend == "unsloth":
+            from unsloth import FastLanguageModel
+            model, _ = FastLanguageModel.from_pretrained(
+                a.lora or a.model, max_seq_length=a.max_model_len,
+                load_in_4bit=a.quantization == "bitsandbytes", fast_inference=False)
+            FastLanguageModel.for_inference(model)
+            if a.lora and not any(p.detach().count_nonzero().item()
+                                  for name, p in model.named_parameters() if "lora_B" in name):
+                raise ValueError(f"No nonzero LoRA B weights loaded from {a.lora}")
+        else:
+            from transformers import AutoModelForCausalLM
+            kw = {"dtype": torch.bfloat16}
+            if a.quantization == "bitsandbytes":
+                from transformers import BitsAndBytesConfig
+                kw = {"quantization_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)}
+            model = AutoModelForCausalLM.from_pretrained(a.model, device_map="auto", **kw)
+            if a.lora:
+                from peft import PeftModel
+                model = PeftModel.from_pretrained(model, a.lora)
+                if not any(p.detach().count_nonzero().item()
+                           for name, p in model.named_parameters() if "lora_B" in name):
+                    raise ValueError(f"No nonzero LoRA B weights loaded from {a.lora}; check the model architecture")
         a._hf_model = model.eval()
         devices = sorted({str(d) for d in getattr(model, "hf_device_map", {}).values()})
         _pipe_log(f"HF model loaded in {time.monotonic() - start:.0f}s; device map: {devices}")
@@ -208,7 +221,7 @@ def build_parser():
     ap.add_argument("--data", action="append", required=True, help="repeatable: several datasets share one engine load")
     ap.add_argument("--out", action="append", required=True, help="one per --data")
     ap.add_argument("--lora", default=None)
-    ap.add_argument("--backend", choices=["vllm", "hf"], default="vllm")
+    ap.add_argument("--backend", choices=["vllm", "hf", "unsloth"], default="vllm")
     ap.add_argument("--tp", type=int, default=1)
     ap.add_argument("--max_model_len", type=int, default=12288)
     ap.add_argument("--max_tokens", type=int, default=1536)
@@ -238,6 +251,8 @@ def build_parser():
 def main():
     a = build_parser().parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    if a.backend == "unsloth":
+        import unsloth  # noqa: F401 - apply patches before importing Transformers
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(a.lora or a.model)
     assert len(a.data) == len(a.out), "--data/--out must pair up"
