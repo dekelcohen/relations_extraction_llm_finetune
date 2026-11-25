@@ -132,6 +132,7 @@ def gen_hf(a, prompts, tok):
     if not prompts:
         return []
     model = getattr(a, "_hf_model", None)
+    load_seconds = 0.0
     if model is None:
         start = time.monotonic()
         if a.backend == "unsloth":
@@ -149,16 +150,20 @@ def gen_hf(a, prompts, tok):
             if a.quantization == "bitsandbytes":
                 from transformers import BitsAndBytesConfig
                 kw = {"quantization_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16)}
-            model = AutoModelForCausalLM.from_pretrained(a.model, device_map="auto", **kw)
+            model = AutoModelForCausalLM.from_pretrained(a.model, device_map={"": 0} if a.hf_gpu_map else "auto", **kw)
             if a.lora:
                 from peft import PeftModel
-                model = PeftModel.from_pretrained(model, a.lora)
+                adapter_kw = {}
+                if a.hf_offload_kv:
+                    adapter_kw.update(torch_device="cpu", low_cpu_mem_usage=True, autocast_adapter_dtype=False)
+                model = PeftModel.from_pretrained(model, a.lora, **adapter_kw)
                 if not any(p.detach().count_nonzero().item()
                            for name, p in model.named_parameters() if "lora_B" in name):
                     raise ValueError(f"No nonzero LoRA B weights loaded from {a.lora}; check the model architecture")
         a._hf_model = model.eval()
         devices = sorted({str(d) for d in getattr(model, "hf_device_map", {}).values()})
-        _pipe_log(f"HF model loaded in {time.monotonic() - start:.0f}s; device map: {devices}")
+        load_seconds = time.monotonic() - start
+        _pipe_log(f"HF model loaded in {load_seconds:.0f}s; device map: {devices}")
     device = model.get_input_embeddings().weight.device
     batch_size = max(1, a.hf_batch_size)
     tok.padding_side = "left"
@@ -168,11 +173,13 @@ def gen_hf(a, prompts, tok):
     if generation["do_sample"]:
         torch.manual_seed(a.seed)
         generation.update(temperature=a.temperature, top_p=a.top_p, top_k=max(0, a.top_k))
+    if a.hf_offload_kv:
+        generation["cache_implementation"] = "offloaded"
     eos = model.generation_config.eos_token_id
     eos_ids = {eos} if isinstance(eos, int) else set(eos or ())
     thought_tags = {"<think>", "</think>"}
     special_ids = set(tok.all_special_ids) - {tok.convert_tokens_to_ids(t) for t in thought_tags}
-    a._hf_stats = {"hit_limit": 0, "tokens": 0, "closed_think": 0}
+    a._hf_stats = {"hit_limit": 0, "tokens": 0, "closed_think": 0, "load_seconds": round(load_seconds, 1)}
     res = []
     start = last = time.monotonic()
     every = float(os.environ.get("PROGRESS_EVERY", 300))
@@ -194,6 +201,7 @@ def gen_hf(a, prompts, tok):
             log.info(msg)
             _pipe_log(msg)
             last = now
+    a._hf_stats["generation_seconds"] = round(time.monotonic() - start, 1)
     return res
 
 
@@ -250,6 +258,8 @@ def build_parser():
     ap.add_argument("--kv_cache_dtype", default=None, help="e.g. fp8 to fit longer contexts on small GPUs")
     ap.add_argument("--max_num_seqs", type=int, default=None)
     ap.add_argument("--hf_batch_size", type=int, default=1)
+    ap.add_argument("--hf_gpu_map", action="store_true", help="hf backend: place the whole model on cuda:0 (no auto CPU split)")
+    ap.add_argument("--hf_offload_kv", action="store_true", help="hf backend: generate with cache_implementation='offloaded' (KV cache layers live in CPU RAM)")
     ap.add_argument("--enforce_eager", action="store_true", help="skip CUDA graphs (saves VRAM on small GPUs)")
     ap.add_argument("--engine_kw", default=None, help='extra vLLM LLM(...) kwargs as JSON, e.g. {"language_model_only": true}')
     ap.add_argument("--chat_kw", default=None, help='extra chat-template kwargs as JSON, e.g. {"reasoning_effort": "medium"}')

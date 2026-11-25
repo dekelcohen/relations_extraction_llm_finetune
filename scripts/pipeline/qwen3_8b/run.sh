@@ -11,6 +11,7 @@ Run on the host with the configured GPU container already running.
   --hf-batch-size N       Both evaluations' batch size (default: 1)
   --max-tokens N          Both evaluations' generation cap (default: 8192)
   --max-model-len N       Both evaluations' context cap (default: 16384)
+  --cpu-offload-kv        Use HF evaluation with KV cache offloaded to CPU RAM
   --foreground           Wait for completion instead of launching with nohup
   --dry-run              Print commands without starting work
 EOF
@@ -23,11 +24,13 @@ stages="download train1 train2 eval_base eval_stage2 report"
 adapter=outputs/sft-cot-qwen3-8b-stage2
 batch=1 max_tokens=8192 max_len=16384
 foreground=0 dry_run=0
+eval_backend=()
 while (($#)); do
   case $1 in
     --help|-h) usage; exit 0 ;;
     --foreground) foreground=1; shift ;;
     --dry-run) dry_run=1; shift ;;
+    --cpu-offload-kv) eval_backend=(--cpu-offload-kv); shift ;;
     --machine|--stages|--stage2-adapter|--hf-batch-size|--max-tokens|--max-model-len)
       if (($# < 2)) || [[ -z $2 || $2 == --* ]]; then
         printf 'Missing value for %s\n' "$1" >&2; exit 2
@@ -71,7 +74,7 @@ if (( ! dry_run )); then
   if (( ! foreground )); then
     setsid nohup bash "$script" --foreground --machine "$machine" --stages "$stages" \
       --stage2-adapter "$adapter" --hf-batch-size "$batch" --max-tokens "$max_tokens" \
-      --max-model-len "$max_len" >> "$log" 2>&1 < /dev/null &
+      --max-model-len "$max_len" "${eval_backend[@]}" >> "$log" 2>&1 < /dev/null &
     printf 'Launcher PID %s; follow %s\n' "$!" "$log"
     exit 0
   fi
@@ -83,6 +86,9 @@ pipeline=(bash scripts/pipeline/pipeline_stages.sh --machine "$machine")
 eval_cmd=(bash scripts/pipeline/eval_model.sh --machine "$machine"
           --model unsloth/Qwen3-8B-unsloth-bnb-4bit --quant bitsandbytes
           --hf-batch-size "$batch" --max-tokens "$max_tokens" --max-model-len "$max_len")
+if ((${#eval_backend[@]})); then
+  eval_cmd+=(--backend hf --hf-gpu-map --hf-offload-kv)
+fi
 run() {
   if (( dry_run )); then
     printf '%q ' "$@"; printf '\n'

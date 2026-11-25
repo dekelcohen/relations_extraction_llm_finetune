@@ -185,6 +185,13 @@ Evaluation resumes partial files and skips already completed sets; archive prior
 before rerunning with different generation settings. Local training starts with a memory smoke
 test; fitting inference on the 3070 does not imply training will fit.
 
+On the RTX 3070, the base 4-bit model loaded with `--cpu-offload-kv`. One test_long smoke
+took 32m13s for three prompts, hit the generation cap twice, and produced no valid document
+JSON. Extrapolating that rate to all 662 prompts gives about 118 hours for the base alone;
+this is a rough estimate from one long document, not a measured full-run time.
+Use `python scripts/estimate_eval_runtime.py <smoke1.metrics.json> [<smoke2.metrics.json>]`
+to extrapolate from completed HF smoke timings.
+
 The final report is `outputs/report/qwen3-8b-local3070.html`. It requires all six prediction
 sets to cover the same sample IDs, including the cached Sonnet hard_inss baseline at
 `data/hard_inss/preds_strong.jsonl`.
