@@ -121,6 +121,8 @@ completions were clipped at 1024 tokens early (reward 0), `frac_reward_zero_std`
 
 ### Next items
 
+**Test Long GLM-5.3 baseline (2026-11-27):** On the same 80 documents and 296 chunks as the cached baselines, GLM-5.3 scored **0.9838** slot-F1 vs Llama-3.3-70B **0.9737** and Sonnet 5.5 **0.9877**. GLM scored 0.9885 Hebrew / 0.9789 Persian; exact document match was 34/80 vs Llama's 15/80 and Sonnet's 43/80. All three returned valid JSON throughout. The OpenRouter run used medium reasoning, had no token-limit hits, and cost **$0.7782**. See `outputs/report/test_long-glm-5.3.html` for the comparison and grouped errors.
+
 **Hard INSS GLM-5.3 baseline (2026-11-27):** OpenRouter `z-ai/glm-5.3`, medium reasoning, 67 chunk requests, **$0.0986** billed, no token-limit hits. On the legacy Llama scoring protocol (39 rows, 38 unique IDs), GLM scored **0.9424** slot-F1 vs Llama-3.3-70B's **0.8870**. Recall rose from 0.8426 to 0.9618 while precision fell from 0.9364 to 0.9237; both returned valid JSON throughout. Deduplicated slot-F1 was 0.9417 vs 0.8870 (Hebrew 0.9393 vs 0.8878; Persian 0.9443 vs 0.8861). Predictions, per-item metrics, and settings are in `outputs/eval/glm-5.3.hard_inss.preds.jsonl*`.
 
 **Qwen3-8B 4-bit eval archive (2026-11-25):** The original Unsloth bnb-4bit run was stopped after stage 2 finished all three sets and base and stage 1 finished Pilot. Stage-2 slot-F1: 0.9735 Pilot, 0.9615 Test Long, 0.8626 Hard INSS (100% valid JSON, no token-limit hits). Base and stage-1 Pilot: 0.8878 and 0.9750. See `outputs/report/qwen3-8b-bnb4-archive.html` for the five completed evaluations; `outputs/report/qwen3-8b.html` is the separately completed BF16 comparison. Both adapters are listed in `hf_artifacts.json`.
